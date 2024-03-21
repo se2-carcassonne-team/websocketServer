@@ -29,6 +29,9 @@
         <!--<sonar.coverage.jacoco.xmlReportPaths>
             ${project.build.directory}/reports/jacoco/jacocoTestReport/jacocoTestReport.xml
         </sonar.coverage.jacoco.xmlReportPaths>-->
+        <sonar.coverage.jacoco.xmlReportPaths>
+            ${project.build.directory}/site/jacoco/jacoco.xml
+        </sonar.coverage.jacoco.xmlReportPaths>
     </properties>
 
     <dependencies>
