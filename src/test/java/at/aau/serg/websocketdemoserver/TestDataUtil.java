@@ -43,4 +43,24 @@ public class TestDataUtil {
                 .gameState(GameState.LOBBY.toString())
                 .build();
     }
+
+    public static GameLobbyEntity createTestGameLobbyEntityB() {
+        Timestamp timeStamp = Timestamp.valueOf("2024-03-26 15:01:00.000");
+        return GameLobbyEntity.builder()
+                .id(2L)
+                .name("lobbyB")
+                .gameStartTimestamp(timeStamp)
+                .gameState(GameState.LOBBY.toString())
+                .build();
+    }
+
+    public static GameLobbyEntity createTestGameLobbyEntityC() {
+        Timestamp timeStamp = Timestamp.valueOf("2024-03-26 15:02:00.000");
+        return GameLobbyEntity.builder()
+                .id(3L)
+                .name("lobbyC")
+                .gameStartTimestamp(timeStamp)
+                .gameState(GameState.LOBBY.toString())
+                .build();
+    }
 }
