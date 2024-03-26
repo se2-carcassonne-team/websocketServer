@@ -5,7 +5,7 @@ import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.util.HtmlUtils;
 
-@Controller
+//@Controller
 public class WebSocketBrokerController {
 
     @MessageMapping("/hello")

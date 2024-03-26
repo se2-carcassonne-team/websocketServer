@@ -12,7 +12,7 @@ import java.util.ArrayList;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class GambeLobbyDto {
+public class GameLobbyDto {
 
     private Long id;
 
