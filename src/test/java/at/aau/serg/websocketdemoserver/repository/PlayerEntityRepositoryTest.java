@@ -94,4 +94,34 @@ public class PlayerEntityRepositoryTest {
 
         assertThat(result).isEmpty();
     }
+
+    @Test
+    void testThatPlayersCanBeFoundByGameLobbyId() {
+        GameLobbyEntity gameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
+        PlayerEntity playerEntityA = TestDataUtil.createTestPlayerEntityA(gameLobbyEntityA);
+        PlayerEntity playerEntityB = TestDataUtil.createTestPlayerEntityB(gameLobbyEntityA);
+
+        GameLobbyEntity gameLobbyEntityB = TestDataUtil.createTestGameLobbyEntityB();
+        PlayerEntity playerEntityC = TestDataUtil.createTestPlayerEntityC(gameLobbyEntityB);
+
+        GameLobbyEntity gameLobbyEntityC = TestDataUtil.createTestGameLobbyEntityC();
+
+
+        underTest.save(playerEntityA);
+        underTest.save(playerEntityB);
+        underTest.save(playerEntityC);
+
+        List<PlayerEntity> resultA = underTest.findPlayerEntitiesByGameLobbyEntity_Id(gameLobbyEntityA.getId());
+        assertThat(resultA)
+                .hasSize(2)
+                .containsExactly(playerEntityA, playerEntityB);
+
+        List<PlayerEntity> resultB = underTest.findPlayerEntitiesByGameLobbyEntity_Id(gameLobbyEntityB.getId());
+        assertThat(resultB)
+                .hasSize(1)
+                .containsExactly(playerEntityC);
+
+        List<PlayerEntity> resultC = underTest.findPlayerEntitiesByGameLobbyEntity_Id(gameLobbyEntityC.getId());
+        assertThat(resultC).isEmpty();
+    }
 }
