@@ -42,5 +42,6 @@ public class GameLobbyController {
     @SendTo("/topic/join-lobby")
     public GameLobbyDto handleLobbyJoin(GameLobbyDto lobby, PlayerDto player) {
         GameLobbyDto dto = playerService.joinLobby(lobby, player);
+        return dto;
     }
 }
