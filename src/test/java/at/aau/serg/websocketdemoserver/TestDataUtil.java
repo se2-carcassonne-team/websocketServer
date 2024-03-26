@@ -1,6 +1,8 @@
 package at.aau.serg.websocketdemoserver;
 
+import at.aau.serg.websocketdemoserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketdemoserver.domain.dto.GameState;
+import at.aau.serg.websocketdemoserver.domain.dto.PlayerDto;
 import at.aau.serg.websocketdemoserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketdemoserver.domain.entity.PlayerEntity;
 
@@ -61,6 +63,15 @@ public class TestDataUtil {
                 .name("lobbyC")
                 .gameStartTimestamp(timeStamp)
                 .gameState(GameState.LOBBY.toString())
+                .build();
+    }
+
+    public static PlayerDto createTestPlayerDtoA(GameLobbyDto gameLobbyDto) {
+
+        return PlayerDto.builder()
+                .id(1L)
+                .username("usernameA")
+                .gameLobbyDto(gameLobbyDto)
                 .build();
     }
 }

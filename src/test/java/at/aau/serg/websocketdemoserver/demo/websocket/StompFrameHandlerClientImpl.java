@@ -1,4 +1,4 @@
-package at.aau.serg.websocketdemoserver.websocket;
+package at.aau.serg.websocketdemoserver.demo.websocket;
 
 import org.springframework.messaging.simp.stomp.StompFrameHandler;
 import org.springframework.messaging.simp.stomp.StompHeaders;

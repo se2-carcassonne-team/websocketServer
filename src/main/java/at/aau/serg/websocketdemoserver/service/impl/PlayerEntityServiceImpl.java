@@ -19,15 +19,17 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
     PlayerEntityRepository playerEntityRepository;
     GameLobbyEntityRepository gameLobbyEntityRepository;
 
-    public PlayerEntityServiceImpl(PlayerEntityRepository playerEntityRepository,
-                                   GameLobbyEntityRepository gameLobbyEntityRepository) {
+    public PlayerEntityServiceImpl(
+            PlayerEntityRepository playerEntityRepository,
+            GameLobbyEntityRepository gameLobbyEntityRepository)
+    {
         this.playerEntityRepository = playerEntityRepository;
         this.gameLobbyEntityRepository = gameLobbyEntityRepository;
     }
 
     @Override
-    public void createPlayer(String name) {
-
+    public PlayerEntity createPlayer(PlayerEntity playerEntity) {
+        return playerEntityRepository.save(playerEntity);
     }
 
     @Override

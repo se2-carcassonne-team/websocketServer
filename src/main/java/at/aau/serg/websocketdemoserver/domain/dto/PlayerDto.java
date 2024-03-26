@@ -14,4 +14,6 @@ public class PlayerDto {
 
     private String username;
 
+    private GameLobbyDto gameLobbyDto;
+
 }

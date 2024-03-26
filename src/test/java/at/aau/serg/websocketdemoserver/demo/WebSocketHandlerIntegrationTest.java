@@ -1,6 +1,6 @@
-package at.aau.serg.websocketdemoserver.websocket;
+package at.aau.serg.websocketdemoserver.demo;
 
-import at.aau.serg.websocketdemoserver.websocket.WebSocketHandlerClientImpl;
+import at.aau.serg.websocketdemoserver.demo.websocket.WebSocketHandlerClientImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
