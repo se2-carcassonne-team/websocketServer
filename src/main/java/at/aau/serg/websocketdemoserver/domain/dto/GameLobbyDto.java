@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.sql.Date;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 
 @Data
@@ -19,7 +20,7 @@ public class GameLobbyDto {
     private String name;
 
     // time stamp of game start
-    private Date gameStartTimestamp;
+    private Timestamp gameStartTimestamp;
 
     // game states: LOBBY, IN_GAME, FINISHED
     private GameState gameState;

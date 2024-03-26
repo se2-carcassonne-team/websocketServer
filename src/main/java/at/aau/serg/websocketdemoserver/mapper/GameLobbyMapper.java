@@ -7,6 +7,7 @@ import at.aau.serg.websocketdemoserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketdemoserver.domain.entity.PlayerEntity;
 import lombok.AllArgsConstructor;
 
+import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
 

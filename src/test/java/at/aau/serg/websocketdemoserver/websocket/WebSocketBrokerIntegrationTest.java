@@ -1,4 +1,4 @@
-package at.aau.serg.websocketdemoserver;
+package at.aau.serg.websocketdemoserver.websocket;
 
 import at.aau.serg.websocketdemoserver.websocket.StompFrameHandlerClientImpl;
 import org.junit.jupiter.api.Test;

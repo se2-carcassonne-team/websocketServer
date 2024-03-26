@@ -2,6 +2,7 @@ package at.aau.serg.websocketdemoserver.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -10,6 +11,7 @@ import java.sql.Date;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 @Entity
 @Table(name="gamelobby")
 public class GameLobbyEntity {
@@ -20,8 +22,8 @@ public class GameLobbyEntity {
     private String name;
 
     // time stamp of game start
-    @Temporal(TemporalType.TIMESTAMP)
-    private Date gameStartTimestamp;
+    //@Temporal(TemporalType.TIMESTAMP)
+    private java.sql.Timestamp gameStartTimestamp;
 
     // game states: lobby, game, gameFinished
     private String gameState;
