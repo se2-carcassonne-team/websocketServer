@@ -9,6 +9,8 @@ import at.aau.serg.websocketdemoserver.mapper.PlayerMapper;
 import at.aau.serg.websocketdemoserver.service.PlayerEntityService;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 public class PlayerEntityServiceImpl implements PlayerEntityService {
 
@@ -29,14 +31,21 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
         this.playerMapper = playerMapper;
     }
 
-    // slightly different approach: expose only entity objects to the service
+    // @Dominik: slightly different approach: expose only entity objects to the service
     @Override
     public PlayerEntity createPlayer(PlayerEntity playerEntity) {
         return playerEntityRepository.save(playerEntity);
     }
 
     @Override
-    public void updatePlayer(String name) {
+    public PlayerEntity updateUsername(Long id, PlayerEntity playerEntity) {
+        playerEntity.setId(id);
+
+        // retrieve player entity from database, then update the username
+        return playerEntityRepository.findById(id).map( playerEntityToUpdate -> {
+            Optional.ofNullable(playerEntity.getUsername()).ifPresent(playerEntityToUpdate::setUsername);
+            return playerEntityRepository.save(playerEntityToUpdate);
+        }).orElseThrow(()-> new RuntimeException("Player does not exist"));
 
     }
 

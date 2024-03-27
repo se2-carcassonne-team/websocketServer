@@ -35,7 +35,8 @@ public class PlayerController {
 
     // test value
     @MessageMapping("/create-user")
-    @SendTo("/topic/create-user-response")
+    //@SendTo("/topic/create-user-response")
+    @SendTo("/topic/websocket-broker-response")
     public String handleCreateUser(String playerDtoJson) throws JsonProcessingException {
         // TODO handle the messages here
         // read in the JSON String and convert to PlayerDTO Object
@@ -44,12 +45,13 @@ public class PlayerController {
         PlayerEntity playerEntity = playerEntityService.createPlayer(playerMapper.mapToEntity(playerDto));
 
         //return "echo from broker: " + HtmlUtils.htmlEscape(playerDto);
-        return "echo from broker: " + objectMapper.writeValueAsString(playerDto);
+        return "response from broker: " + objectMapper.writeValueAsString(playerDto);
     }
 
     @MessageMapping("/player-join-lobby")
-    @SendTo("/topic/player-join-lobby-response")
-    public String handleUpdatePlayer(String gameLobbyDtoAndPlayerDtoJson) throws JsonProcessingException {
+    //@SendTo("/topic/player-join-lobby-response")
+    @SendTo("/topic/websocket-broker-response")
+    public String handlePlayerJoinLobby(String gameLobbyDtoAndPlayerDtoJson) throws JsonProcessingException {
 
         // TODO: error handling, e.g. when the lobby to join doesn't exist, etc.
 
@@ -57,6 +59,7 @@ public class PlayerController {
         String[] splitJsonStrings = gameLobbyDtoAndPlayerDtoJson.split("\\|");
         String gameLobbyDtoJson = splitJsonStrings[0];
         String playerDtoJson = splitJsonStrings[1];
+
         GameLobbyDto gameLobbyDto = objectMapper.readValue(gameLobbyDtoJson, GameLobbyDto.class);
         PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
 
@@ -78,7 +81,27 @@ public class PlayerController {
         PlayerDto dto = playerMapper.mapToDto(updatedPlayerEntity);
 
         // return the dto equivalent of the updated player entity
-        return "echo from broker: " + objectMapper.writeValueAsString(dto);
+        return "response from broker: " + objectMapper.writeValueAsString(dto);
+    }
+
+    @MessageMapping("/player-update-username")
+    @SendTo("/topic/websocket-broker-response")
+    public String handlePlayerUpdateUsername(String playerIdAndPlayerDto) throws JsonProcessingException {
+        String[] splitJsonStrings = playerIdAndPlayerDto.split("\\|");
+        String playerIdString = splitJsonStrings[0];
+        String playerDtoJson = splitJsonStrings[1];
+
+        // convert the sent String content to objects we can work with:
+        PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
+        Long playerId = Long.parseLong(playerIdString);
+
+        // TODO: error handling in case of faulty inputs! E.g. try-catch around the Long.parseLong()
+
+        PlayerEntity playerEntity = playerMapper.mapToEntity(playerDto);
+
+        PlayerEntity updatedPlayerEntity = playerEntityService.updateUsername(playerId, playerEntity);
+
+        return "response from broker: " + objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
     }
 
 }

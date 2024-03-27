@@ -4,6 +4,8 @@ import at.aau.serg.websocketdemoserver.TestDataUtil;
 import at.aau.serg.websocketdemoserver.demo.websocket.StompFrameHandlerClientImpl;
 import at.aau.serg.websocketdemoserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketdemoserver.domain.dto.PlayerDto;
+import at.aau.serg.websocketdemoserver.domain.entity.PlayerEntity;
+import at.aau.serg.websocketdemoserver.mapper.PlayerMapper;
 import at.aau.serg.websocketdemoserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketdemoserver.service.PlayerEntityService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,12 +36,14 @@ public class PlayerControllerIntegrationTest {
 
     private PlayerEntityService playerEntityService;
     private GameLobbyEntityService gameLobbyEntityService;
+    private PlayerMapper playerMapper;
 
     @Autowired
-    public PlayerControllerIntegrationTest(ObjectMapper objectMapper, PlayerEntityService playerEntityService, GameLobbyEntityService gameLobbyEntityService) {
+    public PlayerControllerIntegrationTest(ObjectMapper objectMapper, PlayerEntityService playerEntityService, GameLobbyEntityService gameLobbyEntityService, PlayerMapper playerMapper) {
         this.objectMapper = objectMapper;
         this.playerEntityService = playerEntityService;
         this.gameLobbyEntityService = gameLobbyEntityService;
+        this.playerMapper = playerMapper;
     }
 
 
@@ -47,7 +51,7 @@ public class PlayerControllerIntegrationTest {
     @LocalServerPort
     private int port;
     private final String WEBSOCKET_URI = "ws://localhost:%d/websocket-broker";
-    private String WEBSOCKET_TOPIC = "/topic/create-user-response";
+    private final String WEBSOCKET_TOPIC = "/topic/websocket-broker-response";
 
     /**
      * Queue of messages from the server.
@@ -57,8 +61,8 @@ public class PlayerControllerIntegrationTest {
 
 
     @Test
-    public void testThatCreatePlayerSuccessfullyReturnsSentPlayerDto() throws Exception {
-        WEBSOCKET_TOPIC = "/topic/create-user-response";
+    public void testThatCreatePlayerSuccessfullyReturnsCreatedPlayerDto() throws Exception {
+        //WEBSOCKET_TOPIC = "/topic/create-user-response";
         StompSession session = initStompSession();
 
         PlayerDto playerDto = TestDataUtil.createTestPlayerDtoA(null);
@@ -68,14 +72,14 @@ public class PlayerControllerIntegrationTest {
 
         session.send("/app/create-user", playerDtoJson);
 
-        var expectedResponse = "echo from broker: " + playerDtoJson;
+        var expectedResponse = "response from broker: " + playerDtoJson;
 
         assertThat(messages.poll(1, TimeUnit.SECONDS)).isEqualTo(expectedResponse);
     }
 
     @Test
     void testThatJoinLobbySuccessfullyReturnsUpdatedPlayerDto() throws Exception {
-        WEBSOCKET_TOPIC = "/topic/player-join-lobby-response";
+        //WEBSOCKET_TOPIC = "/topic/player-join-lobby-response";
         StompSession session = initStompSession();
 
         // Pre-populate the database
@@ -98,11 +102,33 @@ public class PlayerControllerIntegrationTest {
         // expected response: updated playerDto with the Lobby, which itself should also be updated to have incremented numPlayers
         testGameLobbyDtoA.setNumPlayers(testGameLobbyDtoA.getNumPlayers()+1);
         testPlayerDtoA.setGameLobbyDto(testGameLobbyDtoA);
-        var expectedResponse = "echo from broker: " + objectMapper.writeValueAsString(testPlayerDtoA);
+        var expectedResponse = "response from broker: " + objectMapper.writeValueAsString(testPlayerDtoA);
 
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
         assertThat(actualResponse).isEqualTo(expectedResponse);
+    }
 
+    @Test
+    void testThatUpdatePlayerUsernameSuccessfullyReturnsUpdatedPlayerDto() throws Exception {
+        //WEBSOCKET_TOPIC = "/topic/player-update-username-response";
+        StompSession session = initStompSession();
+
+        // Populate the database with testPlayerEntityA
+        PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        playerEntityService.createPlayer(testPlayerEntityA);
+
+        PlayerDto testPlayerDtoA = TestDataUtil.createTestPlayerDtoA(null);
+        testPlayerDtoA.setUsername("UPDATED");
+
+        String payload = testPlayerDtoA.getId() + "|" + objectMapper.writeValueAsString(testPlayerDtoA);
+
+        session.send("/app/player-update-username", payload);
+
+        var expectedResponse = "response from broker: " + objectMapper.writeValueAsString(testPlayerDtoA);
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
     /////////start: von Demo-Projekt übernommen

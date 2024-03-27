@@ -6,7 +6,7 @@ import at.aau.serg.websocketdemoserver.domain.entity.PlayerEntity;
 public interface PlayerEntityService {
 
     PlayerEntity createPlayer(PlayerEntity playerEntity);
-    void updatePlayer(String name);
+    PlayerEntity updateUsername(Long id, PlayerEntity playerEntity);
     PlayerEntity joinLobby(GameLobbyEntity gameLobbyEntity, PlayerEntity playerEntity);
     void leaveLobby(Long id);
     void deletePlayer(Long id);
