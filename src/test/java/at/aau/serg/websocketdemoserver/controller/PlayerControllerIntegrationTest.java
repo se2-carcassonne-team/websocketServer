@@ -140,11 +140,9 @@ public class PlayerControllerIntegrationTest {
     void testThatLeaveLobbySuccessfullyReturnsUpdatedPlayerDto() throws Exception {
         StompSession session = initStompSession();
 
-        // Populate the database with testPlayerEntityA who joins testGameLobbyEntityA
+        // Populate the database with testPlayerEntityA who joins testGameLobbyEntityA:
         PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
         playerEntityService.createPlayer(testPlayerEntityA);
-
-
         // TODO: maybe don't use joinLobby() and instead set the data manually?
         GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
         playerEntityService.joinLobby(testGameLobbyEntityA, testPlayerEntityA);
@@ -164,6 +162,19 @@ public class PlayerControllerIntegrationTest {
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
 
         assertThat(actualResponse).isEqualTo(expectedResponse);
+    }
+
+    @Test
+    void testThatDeletePlayerReturnsSuccessfulDeleteResponse() throws Exception {
+        StompSession session = initStompSession();
+
+        PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        playerEntityService.createPlayer(testPlayerEntityA);
+
+        session.send("/app/player-delete", testPlayerEntityA.getId()+"");
+
+        var expectedResponse = "response from broker: player no longer exists in database";
+
 
     }
 
