@@ -71,6 +71,7 @@ public class PlayerController {
         PlayerEntity updatedPlayerEntity = playerEntityService.joinLobby(gameLobbyEntity, playerEntity);
 
 
+        // TODO: fix up code here, the check if the game lobby exists should be done earlier, as the joinLobby will (probably) create a new LobbyEntity if the given one doesn't exist yet (due to cascading)
         Optional<GameLobbyEntity> updatedGameLobbyEntityOptional = gameLobbyEntityService.findById(gameLobbyEntity.getId());
         if (updatedGameLobbyEntityOptional.isPresent()){
             GameLobbyEntity updatedGameLobbyEntity = updatedGameLobbyEntityOptional.get();
@@ -104,4 +105,27 @@ public class PlayerController {
         return "response from broker: " + objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
     }
 
+    @MessageMapping("/player-leave-lobby")
+    @SendTo("/topic/websocket-broker-response")
+    public String handlePlayerLeaveLobby(String gameLobbyDtoAndPlayerDtoJson) throws JsonProcessingException {
+        // TODO: error handling
+
+        // 1) extract GameLobbyDto and PlayerDto objects from the string payload:
+        String[] splitJsonStrings = gameLobbyDtoAndPlayerDtoJson.split("\\|");
+        String gameLobbyDtoJson = splitJsonStrings[0];
+        String playerDtoJson = splitJsonStrings[1];
+
+        GameLobbyDto gameLobbyDto = objectMapper.readValue(gameLobbyDtoJson, GameLobbyDto.class);
+        PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
+
+        // 2) convert the DTOs to Entity Objects for Service:
+        PlayerEntity playerEntity = playerMapper.mapToEntity(playerDto);
+        GameLobbyEntity gameLobbyEntity = gameLobbyMapper.mapToEntity(gameLobbyDto);
+
+        // 3) player leaves lobby
+        PlayerEntity updatedPlayerEntity = playerEntityService.leaveLobby(gameLobbyEntity, playerEntity);
+
+        return "response from broker: " + objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
+
+    }
 }

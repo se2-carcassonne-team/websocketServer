@@ -73,8 +73,12 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
 
 
     @Override
-    public void leaveLobby(Long id) {
-
+    public PlayerEntity leaveLobby(GameLobbyEntity gameLobbyEntity, PlayerEntity playerEntity) {
+        playerEntity.setGameLobbyEntity(null);
+        gameLobbyEntity.setNumPlayers(gameLobbyEntity.getNumPlayers()-1);
+        gameLobbyEntityRepository.save(gameLobbyEntity);
+        playerEntityRepository.save(playerEntity);
+        return playerEntity;
     }
 
     @Override

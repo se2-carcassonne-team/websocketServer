@@ -8,7 +8,7 @@ public interface PlayerEntityService {
     PlayerEntity createPlayer(PlayerEntity playerEntity);
     PlayerEntity updateUsername(Long id, PlayerEntity playerEntity);
     PlayerEntity joinLobby(GameLobbyEntity gameLobbyEntity, PlayerEntity playerEntity);
-    void leaveLobby(Long id);
+    PlayerEntity leaveLobby(GameLobbyEntity gameLobbyEntity, PlayerEntity playerEntity);
     void deletePlayer(Long id);
     boolean exists(Long id);
 }
