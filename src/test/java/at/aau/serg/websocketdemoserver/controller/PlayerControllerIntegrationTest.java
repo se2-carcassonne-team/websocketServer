@@ -4,7 +4,9 @@ import at.aau.serg.websocketdemoserver.TestDataUtil;
 import at.aau.serg.websocketdemoserver.demo.websocket.StompFrameHandlerClientImpl;
 import at.aau.serg.websocketdemoserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketdemoserver.domain.dto.PlayerDto;
+import at.aau.serg.websocketdemoserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketdemoserver.domain.entity.PlayerEntity;
+import at.aau.serg.websocketdemoserver.mapper.GameLobbyMapper;
 import at.aau.serg.websocketdemoserver.mapper.PlayerMapper;
 import at.aau.serg.websocketdemoserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketdemoserver.service.PlayerEntityService;
@@ -37,14 +39,19 @@ public class PlayerControllerIntegrationTest {
     private PlayerEntityService playerEntityService;
     private GameLobbyEntityService gameLobbyEntityService;
     private PlayerMapper playerMapper;
+    private GameLobbyMapper gameLobbyMapper;
 
     @Autowired
-    public PlayerControllerIntegrationTest(ObjectMapper objectMapper, PlayerEntityService playerEntityService, GameLobbyEntityService gameLobbyEntityService, PlayerMapper playerMapper) {
+    public PlayerControllerIntegrationTest(ObjectMapper objectMapper, PlayerEntityService playerEntityService, GameLobbyEntityService gameLobbyEntityService, PlayerMapper playerMapper, GameLobbyMapper gameLobbyMapper) {
         this.objectMapper = objectMapper;
         this.playerEntityService = playerEntityService;
         this.gameLobbyEntityService = gameLobbyEntityService;
         this.playerMapper = playerMapper;
+        this.gameLobbyMapper = gameLobbyMapper;
     }
+
+
+
 
 
     /////////start: von Demo-Projekt übernommen & leicht geändert
@@ -86,10 +93,8 @@ public class PlayerControllerIntegrationTest {
         gameLobbyEntityService.createLobby(TestDataUtil.createTestGameLobbyEntityA());
         playerEntityService.createPlayer(TestDataUtil.createTestPlayerEntityA(null));
 
-        //
         PlayerDto testPlayerDtoA = TestDataUtil.createTestPlayerDtoA(null);
         GameLobbyDto testGameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
-
 
         // manually transform objects to JSON-strings and combine them:
         String playerDtoJson = objectMapper.writeValueAsString(testPlayerDtoA);
@@ -129,6 +134,37 @@ public class PlayerControllerIntegrationTest {
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
 
         assertThat(actualResponse).isEqualTo(expectedResponse);
+    }
+
+    @Test
+    void testThatLeaveLobbySuccessfullyReturnsUpdatedPlayerDto() throws Exception {
+        StompSession session = initStompSession();
+
+        // Populate the database with testPlayerEntityA who joins testGameLobbyEntityA
+        PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        playerEntityService.createPlayer(testPlayerEntityA);
+
+
+        // TODO: maybe don't use joinLobby() and instead set the data manually?
+        GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
+        playerEntityService.joinLobby(testGameLobbyEntityA, testPlayerEntityA);
+
+        PlayerDto testPlayerDtoA = playerMapper.mapToDto(testPlayerEntityA);
+        GameLobbyDto testGameLobbyDtoA = gameLobbyMapper.mapToDto(testGameLobbyEntityA);
+
+        String payload = objectMapper.writeValueAsString(testGameLobbyDtoA)
+                + "|"
+                + objectMapper.writeValueAsString(testPlayerDtoA);
+
+        session.send("/app/player-leave-lobby", payload);
+
+        testPlayerDtoA.setGameLobbyDto(null);
+        var expectedResponse = "response from broker: " + objectMapper.writeValueAsString(testPlayerDtoA);
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+
     }
 
     /////////start: von Demo-Projekt übernommen
