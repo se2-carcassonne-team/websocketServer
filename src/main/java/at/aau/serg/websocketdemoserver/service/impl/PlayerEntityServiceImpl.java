@@ -83,11 +83,22 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
 
     @Override
     public void deletePlayer(Long id) {
-
+        playerEntityRepository.deleteById(id);
     }
+    // alternative suggestion:
+//    public void deletePlayer(PlayerEntity playerEntity) {
+//        playerEntityRepository.delete(playerEntity);
+//    }
+
+
 
     @Override
     public boolean exists(Long id) {
         return playerEntityRepository.existsById(id);
+    }
+
+    @Override
+    public Optional<PlayerEntity> findPlayerById(Long id) {
+        return playerEntityRepository.findById(id);
     }
 }

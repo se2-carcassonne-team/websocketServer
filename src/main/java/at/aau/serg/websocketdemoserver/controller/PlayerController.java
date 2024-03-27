@@ -126,6 +126,20 @@ public class PlayerController {
         PlayerEntity updatedPlayerEntity = playerEntityService.leaveLobby(gameLobbyEntity, playerEntity);
 
         return "response from broker: " + objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
+    }
+
+    @MessageMapping("/player-delete")
+    @SendTo("/topic/websocket-broker-response")
+    public String handleDeletePlayer(String playerDtoJson) throws JsonProcessingException {
+        PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
+
+        playerEntityService.deletePlayer(playerDto.getId());
+        Optional<PlayerEntity> shouldBeEmpty = playerEntityService.findPlayerById(playerDto.getId());
+        if (shouldBeEmpty.isEmpty()){
+            return  "response from broker: player no longer exists in database";
+        } else {
+            return "response from broker: player still exists in database";
+        }
 
     }
 }
