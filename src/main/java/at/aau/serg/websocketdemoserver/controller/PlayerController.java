@@ -1,27 +1,36 @@
 package at.aau.serg.websocketdemoserver.controller;
 
+import at.aau.serg.websocketdemoserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketdemoserver.domain.dto.PlayerDto;
+import at.aau.serg.websocketdemoserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketdemoserver.domain.entity.PlayerEntity;
+import at.aau.serg.websocketdemoserver.mapper.GameLobbyMapper;
 import at.aau.serg.websocketdemoserver.mapper.PlayerMapper;
+import at.aau.serg.websocketdemoserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketdemoserver.service.PlayerEntityService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.util.HtmlUtils;
+
+import java.util.Optional;
 
 @Controller
 public class PlayerController {
 
     private PlayerEntityService playerEntityService;
+    private GameLobbyEntityService gameLobbyEntityService;
     private ObjectMapper objectMapper;
     private PlayerMapper playerMapper;
+    private GameLobbyMapper gameLobbyMapper;
 
-    public PlayerController(PlayerEntityService playerEntityService, ObjectMapper objectMapper, PlayerMapper playerMapper) {
+    public PlayerController(PlayerEntityService playerEntityService, GameLobbyEntityService gameLobbyEntityService, ObjectMapper objectMapper, PlayerMapper playerMapper, GameLobbyMapper gameLobbyMapper) {
         this.playerEntityService = playerEntityService;
+        this.gameLobbyEntityService = gameLobbyEntityService;
         this.objectMapper = objectMapper;
         this.playerMapper = playerMapper;
+        this.gameLobbyMapper = gameLobbyMapper;
     }
 
     // test value
@@ -36,6 +45,40 @@ public class PlayerController {
 
         //return "echo from broker: " + HtmlUtils.htmlEscape(playerDto);
         return "echo from broker: " + objectMapper.writeValueAsString(playerDto);
+    }
+
+    @MessageMapping("/player-join-lobby")
+    @SendTo("/topic/player-join-lobby-response")
+    public String handleUpdatePlayer(String gameLobbyDtoAndPlayerDtoJson) throws JsonProcessingException {
+
+        // TODO: error handling, e.g. when the lobby to join doesn't exist, etc.
+
+        // 1) extract GameLobbyDto and PlayerDto objects from the string payload:
+        String[] splitJsonStrings = gameLobbyDtoAndPlayerDtoJson.split("\\|");
+        String gameLobbyDtoJson = splitJsonStrings[0];
+        String playerDtoJson = splitJsonStrings[1];
+        GameLobbyDto gameLobbyDto = objectMapper.readValue(gameLobbyDtoJson, GameLobbyDto.class);
+        PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
+
+        // 2) convert the DTOs to Entity Objects for Service:
+        PlayerEntity playerEntity = playerMapper.mapToEntity(playerDto);
+        GameLobbyEntity gameLobbyEntity = gameLobbyMapper.mapToEntity(gameLobbyDto);
+
+        // 3) player joins lobby:
+        PlayerEntity updatedPlayerEntity = playerEntityService.joinLobby(gameLobbyEntity, playerEntity);
+
+
+        Optional<GameLobbyEntity> updatedGameLobbyEntityOptional = gameLobbyEntityService.findById(gameLobbyEntity.getId());
+        if (updatedGameLobbyEntityOptional.isPresent()){
+            GameLobbyEntity updatedGameLobbyEntity = updatedGameLobbyEntityOptional.get();
+        } else {
+            // lobby doesn't exist --> error handling
+        }
+
+        PlayerDto dto = playerMapper.mapToDto(updatedPlayerEntity);
+
+        // return the dto equivalent of the updated player entity
+        return "echo from broker: " + objectMapper.writeValueAsString(dto);
     }
 
 }

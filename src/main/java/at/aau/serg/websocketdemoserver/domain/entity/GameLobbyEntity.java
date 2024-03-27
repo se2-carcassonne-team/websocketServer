@@ -6,8 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.sql.Date;
-
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -27,5 +25,10 @@ public class GameLobbyEntity {
 
     // game states: lobby, game, gameFinished
     private String gameState;
+
+    // counter for the number of players
+    private Integer numPlayers;
+
+    // TODO: lobby owner reference
 
 }

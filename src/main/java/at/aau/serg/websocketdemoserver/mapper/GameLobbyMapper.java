@@ -1,51 +1,65 @@
 package at.aau.serg.websocketdemoserver.mapper;
 
 import at.aau.serg.websocketdemoserver.domain.dto.GameLobbyDto;
-import at.aau.serg.websocketdemoserver.domain.dto.GameState;
-import at.aau.serg.websocketdemoserver.domain.dto.PlayerDto;
 import at.aau.serg.websocketdemoserver.domain.entity.GameLobbyEntity;
-import at.aau.serg.websocketdemoserver.domain.entity.PlayerEntity;
-import lombok.AllArgsConstructor;
+import at.aau.serg.websocketdemoserver.domain.entity.repository.PlayerEntityRepository;
+import org.modelmapper.ModelMapper;
+import org.springframework.stereotype.Component;
 
-import java.sql.Date;
-import java.util.ArrayList;
-import java.util.List;
-
-@AllArgsConstructor
+@Component
 public class GameLobbyMapper {
 
-    /*@Autowired
-    private ModelMapper mapper;*/
+    private ModelMapper modelMapper;
+    private PlayerEntityRepository playerEntityRepository;
+    private PlayerMapper playerMapper;
 
-    GameLobbyEntity gameLobbyEntity;
-    List<PlayerEntity> playerEntities;
-
-    public GameLobbyEntity mapEntityForDB(GameLobbyDto dto) {
-        //return this.mapper.map(dto, GameLobbyEntity.class);
-        return null;
+    public GameLobbyMapper(ModelMapper modelMapper, PlayerEntityRepository playerEntityRepository, PlayerMapper playerMapper) {
+        this.modelMapper = modelMapper;
+        this.playerEntityRepository = playerEntityRepository;
+        this.playerMapper = playerMapper;
     }
 
-    public GameLobbyDto mapDtoFromDB() {
 
-        GameLobbyDto gameLobbyDto = new GameLobbyDto();
-
-        gameLobbyDto.setId(gameLobbyEntity.getId());
-        gameLobbyDto.setName(gameLobbyEntity.getName());
-        gameLobbyDto.setGameStartTimestamp(gameLobbyEntity.getGameStartTimestamp());
-        gameLobbyDto.setGameState(GameState.valueOf(gameLobbyEntity.getGameState()));
-
-        List<PlayerDto> playerDtos = new ArrayList<>();
-
-        for(PlayerEntity p : playerEntities) {
-            PlayerDto playerDto = new PlayerDto();
-            playerDto.setId(p.getId());
-            playerDto.setUsername(p.getUsername());
-            playerDtos.add(playerDto);
-        }
-
-        return gameLobbyDto;
-
-        //return this.mapper.map(entity, GameLobbyDto.class);
+    //////// Albert ////////
+    public GameLobbyDto mapToDto(GameLobbyEntity gameLobbyEntity) {
+        return modelMapper.map(gameLobbyEntity, GameLobbyDto.class);
     }
+    public GameLobbyEntity mapToEntity(GameLobbyDto gameLobbyDto) {
+        return modelMapper.map(gameLobbyDto, GameLobbyEntity.class);
+    }
+
+
+
+
+//    //////// Dominik ////////
+//    List<PlayerEntity> playerEntities;
+//
+//    public GameLobbyEntity mapToDB(GameLobbyDto dto) {
+//        return this.modelMapper.map(dto, GameLobbyEntity.class);
+//        //return null;
+//    }
+//
+//    public GameLobbyDto mapFromDB(GameLobbyEntity gameLobbyEntity) {
+//
+//        GameLobbyDto gameLobbyDto = new GameLobbyDto();
+//
+//        gameLobbyDto.setId(gameLobbyEntity.getId());
+//        gameLobbyDto.setName(gameLobbyEntity.getName());
+//        gameLobbyDto.setGameStartTimestamp(gameLobbyEntity.getGameStartTimestamp());
+//        gameLobbyDto.setGameState(GameState.valueOf(gameLobbyEntity.getGameState()));
+//
+//        List<PlayerDto> playerDtos = new ArrayList<>();
+//
+//        for(PlayerEntity p : playerEntities) {
+//            PlayerDto playerDto = new PlayerDto();
+//            playerDto.setId(p.getId());
+//            playerDto.setUsername(p.getUsername());
+//            playerDtos.add(playerDto);
+//        }
+//
+//        return gameLobbyDto;
+//
+//        //return this.mapper.map(entity, GameLobbyDto.class);
+//    }
 
 }

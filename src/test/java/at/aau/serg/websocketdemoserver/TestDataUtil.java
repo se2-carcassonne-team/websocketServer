@@ -7,10 +7,6 @@ import at.aau.serg.websocketdemoserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketdemoserver.domain.entity.PlayerEntity;
 
 import java.sql.Timestamp;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.sql.Date;
 
 
 public class TestDataUtil {
@@ -43,6 +39,7 @@ public class TestDataUtil {
                 .name("lobbyA")
                 .gameStartTimestamp(timeStamp)
                 .gameState(GameState.LOBBY.toString())
+                .numPlayers(0)
                 .build();
     }
 
@@ -53,6 +50,7 @@ public class TestDataUtil {
                 .name("lobbyB")
                 .gameStartTimestamp(timeStamp)
                 .gameState(GameState.LOBBY.toString())
+                .numPlayers(0)
                 .build();
     }
 
@@ -63,6 +61,7 @@ public class TestDataUtil {
                 .name("lobbyC")
                 .gameStartTimestamp(timeStamp)
                 .gameState(GameState.LOBBY.toString())
+                .numPlayers(0)
                 .build();
     }
 
@@ -72,6 +71,17 @@ public class TestDataUtil {
                 .id(1L)
                 .username("usernameA")
                 .gameLobbyDto(gameLobbyDto)
+                .build();
+    }
+
+    public static GameLobbyDto createTestGameLobbyDtoA() {
+        Timestamp timeStamp = Timestamp.valueOf("2024-03-26 15:00:00.000");
+        return GameLobbyDto.builder()
+                .id(1L)
+                .name("lobbyA")
+                .gameStartTimestamp(timeStamp)
+                .gameState(GameState.LOBBY)
+                .numPlayers(0)
                 .build();
     }
 }

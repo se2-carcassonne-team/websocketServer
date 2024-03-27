@@ -2,14 +2,14 @@ package at.aau.serg.websocketdemoserver.controller;
 
 import at.aau.serg.websocketdemoserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketdemoserver.domain.dto.PlayerDto;
-import at.aau.serg.websocketdemoserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketdemoserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketdemoserver.service.PlayerEntityService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.util.HtmlUtils;
 
 @Controller
 public class GameLobbyController {
@@ -32,16 +32,27 @@ public class GameLobbyController {
     GameLobbyEntityService gameLobbyService;
     @Autowired
     PlayerEntityService playerService;
+    @Autowired
+    ObjectMapper objectMapper;
 
     public GameLobbyController(GameLobbyEntityService gameLobbyService, PlayerEntityService playerService) {
         this.gameLobbyService = gameLobbyService;
         this.playerService = playerService;
     }
 
-    @MessageMapping("/join-lobby")
-    @SendTo("/topic/join-lobby")
-    public GameLobbyDto handleLobbyJoin(GameLobbyDto lobby, PlayerDto player) {
-        GameLobbyDto dto = playerService.joinLobby(lobby, player);
-        return dto;
+    @MessageMapping("/create-lobby")
+    @SendTo("/topic/create-lobby-response")
+    public String handleLobbyJoin(String gameLobbyDtoAndPlayerDtoJson) throws JsonProcessingException {
+        // TODO: Replace!
+
+        String[] splitJsonStrings = gameLobbyDtoAndPlayerDtoJson.split("\\|");
+
+        String gameLobbyDtoJson = splitJsonStrings[0];
+        String playerDtoJson = splitJsonStrings[1];
+
+        GameLobbyDto gameLobbyDto = objectMapper.readValue(gameLobbyDtoJson, GameLobbyDto.class);
+        PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
+
+        return "echo from broker: " + objectMapper.writeValueAsString("");
     }
 }

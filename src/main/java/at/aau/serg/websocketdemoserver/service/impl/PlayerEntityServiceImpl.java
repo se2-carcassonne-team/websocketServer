@@ -1,32 +1,35 @@
 package at.aau.serg.websocketdemoserver.service.impl;
 
-import at.aau.serg.websocketdemoserver.domain.dto.GameLobbyDto;
-import at.aau.serg.websocketdemoserver.domain.dto.PlayerDto;
 import at.aau.serg.websocketdemoserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketdemoserver.domain.entity.PlayerEntity;
 import at.aau.serg.websocketdemoserver.domain.entity.repository.GameLobbyEntityRepository;
 import at.aau.serg.websocketdemoserver.domain.entity.repository.PlayerEntityRepository;
 import at.aau.serg.websocketdemoserver.mapper.GameLobbyMapper;
+import at.aau.serg.websocketdemoserver.mapper.PlayerMapper;
 import at.aau.serg.websocketdemoserver.service.PlayerEntityService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.Optional;
 
 @Service
 public class PlayerEntityServiceImpl implements PlayerEntityService {
 
     PlayerEntityRepository playerEntityRepository;
     GameLobbyEntityRepository gameLobbyEntityRepository;
+    GameLobbyMapper gameLobbyMapper;
+    PlayerMapper playerMapper;
 
     public PlayerEntityServiceImpl(
             PlayerEntityRepository playerEntityRepository,
-            GameLobbyEntityRepository gameLobbyEntityRepository)
+            GameLobbyEntityRepository gameLobbyEntityRepository,
+            GameLobbyMapper gameLobbyMapper,
+            PlayerMapper playerMapper)
     {
         this.playerEntityRepository = playerEntityRepository;
         this.gameLobbyEntityRepository = gameLobbyEntityRepository;
+        this.gameLobbyMapper = gameLobbyMapper;
+        this.playerMapper = playerMapper;
     }
 
+    // slightly different approach: expose only entity objects to the service
     @Override
     public PlayerEntity createPlayer(PlayerEntity playerEntity) {
         return playerEntityRepository.save(playerEntity);
@@ -37,39 +40,28 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
 
     }
 
+
+    /**
+     * updates the PlayerEntity in the Database to reference gameLobbyEntity and
+     * updates the GameLobbyEntity in the Database by incrementing numPlayers by 1
+     * @param gameLobbyEntity  the gameLobbyEntity to join
+     * @param playerEntity  the PlayerEntity who wants to join the gameLobbyEntity
+     * @return updated PlayerEntity from the database
+     */
     @Override
-    public GameLobbyDto joinLobby(GameLobbyDto lobby, PlayerDto player) {
+    public PlayerEntity joinLobby(GameLobbyEntity gameLobbyEntity, PlayerEntity playerEntity) {
 
-        Optional<PlayerEntity> playerEntityOptional = playerEntityRepository.findById(player.getId());
-        Optional<GameLobbyEntity> gameLobbyEntityOptional = gameLobbyEntityRepository.findById(lobby.getId());
+        // TODO: only allow lobby join if lobby is not full yet
 
-        if (playerEntityOptional.isPresent()) {
-            PlayerEntity playerEntity = playerEntityOptional.get();
+        // update the PlayerEntity's gameLobby property to reference the gameLobbyEntity which should be joined
+        playerEntity.setGameLobbyEntity(gameLobbyEntity);
+        // update the numPlayers property of the gameLobbyEntity by 1
+        gameLobbyEntity.setNumPlayers(gameLobbyEntity.getNumPlayers()+1);
+        gameLobbyEntityRepository.save(gameLobbyEntity);
 
-            if (gameLobbyEntityOptional.isPresent()) {
-                GameLobbyEntity gameLobbyEntity = gameLobbyEntityOptional.get();
-                playerEntity.setGameLobbyEntity(gameLobbyEntity);
-
-                playerEntityRepository.save(playerEntity);
-
-                return new GameLobbyMapper(gameLobbyEntity, playerEntityRepository.findPlayerEntitiesByGameLobbyEntity_Id(gameLobbyEntity.getId())).mapDtoFromDB();
-
-            } else {
-                throw new RuntimeException("Lobby not found");
-            }
-
-        } else {
-            throw new RuntimeException("Player not found");
-        }
-
-
-/*
-        bookRepository.findById(isbn).map(existingBook -> {
-            Optional.ofNullable(bookEntity.getTitle()).ifPresent(existingBook::setTitle);
-            return bookRepository.save(existingBook);
-        }).orElseThrow(() -> new RuntimeException("Book does not exist"));*/
-
+        return playerEntityRepository.save(playerEntity);
     }
+
 
     @Override
     public void leaveLobby(Long id) {
@@ -79,5 +71,10 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
     @Override
     public void deletePlayer(Long id) {
 
+    }
+
+    @Override
+    public boolean exists(Long id) {
+        return playerEntityRepository.existsById(id);
     }
 }

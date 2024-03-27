@@ -5,9 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.sql.Date;
 import java.sql.Timestamp;
-import java.util.ArrayList;
 
 @Data
 @AllArgsConstructor
@@ -25,6 +23,9 @@ public class GameLobbyDto {
     // game states: LOBBY, IN_GAME, FINISHED
     private GameState gameState;
 
-    private ArrayList<PlayerDto> players;
+    // counter for the number of players
+    private Integer numPlayers;
+
+    //private List<PlayerDto> players;
 }
 
