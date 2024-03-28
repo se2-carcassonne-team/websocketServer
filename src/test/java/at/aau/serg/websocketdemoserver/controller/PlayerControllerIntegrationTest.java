@@ -98,16 +98,18 @@ public class PlayerControllerIntegrationTest {
 
     @Test
     // Maybe use @SQL Annotation
-    void testThatJoinLobbySuccessfullyReturnsUpdatedPlayerDto() throws Exception {
+    void testThatJoinLobbySuccessfullyMakesPlayerJoinLobby() throws Exception {
         //WEBSOCKET_TOPIC = "/topic/player-join-lobby-response";
         StompSession session = initStompSession();
 
         // Pre-populate the database
-        gameLobbyEntityService.createLobby(TestDataUtil.createTestGameLobbyEntityA());
-        playerEntityService.createPlayer(TestDataUtil.createTestPlayerEntityA(null));
+        GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
+        PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        gameLobbyEntityService.createLobby(testGameLobbyEntityA);
+        playerEntityService.createPlayer(testPlayerEntityA);
 
-        PlayerDto testPlayerDtoA = TestDataUtil.createTestPlayerDtoA(null);
-        GameLobbyDto testGameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
+        PlayerDto testPlayerDtoA = playerMapper.mapToDto(testPlayerEntityA);
+        GameLobbyDto testGameLobbyDtoA = gameLobbyMapper.mapToDto(testGameLobbyEntityA);
 
         // manually transform objects to JSON-strings and combine them:
         String playerDtoJson = objectMapper.writeValueAsString(testPlayerDtoA);
@@ -115,14 +117,29 @@ public class PlayerControllerIntegrationTest {
 
         String payload = gameLobbyDtoJson + "|" +  playerDtoJson;
 
+        // before sending payload:
+        // 1) assert that the test player doesn't reference a game lobby
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get().getGameLobbyEntity()).isEqualTo(null);
+        // 2) assert the numPlayers of the test game lobby is 0
+        assertThat(gameLobbyEntityService.findById(testPlayerEntityA.getId()).get().getNumPlayers()).isEqualTo(0);
+
         session.send("/app/player-join-lobby", payload);
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        // after sending & controller processing payload:
+        // 1) assert that the test game lobby now has numPlayers = 1
+        assertThat(gameLobbyEntityService.findById(testGameLobbyEntityA.getId()).get().getNumPlayers()).isEqualTo(1);
+        // 2) assert that the test player references the test game lobby
+        testGameLobbyEntityA.setNumPlayers(testGameLobbyEntityA.getNumPlayers()+1);
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get().getGameLobbyEntity()).isEqualTo(testGameLobbyEntityA);
+
 
         // expected response: updated playerDto with the Lobby, which itself should also be updated to have incremented numPlayers
         testGameLobbyDtoA.setNumPlayers(testGameLobbyDtoA.getNumPlayers()+1);
         testPlayerDtoA.setGameLobbyDto(testGameLobbyDtoA);
-        var expectedResponse = "response from broker: " + objectMapper.writeValueAsString(testPlayerDtoA);
+        var expectedResponse = objectMapper.writeValueAsString(testPlayerDtoA);
 
-        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
