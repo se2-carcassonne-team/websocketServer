@@ -177,45 +177,66 @@ public class PlayerControllerIntegrationTest {
     }
 
     @Test
-    void testThatLeaveLobbySuccessfullyReturnsUpdatedPlayerDto() throws Exception {
+    void testThatLeaveLobbySuccessfullyRemovesPlayerFromGameLobby() throws Exception {
         StompSession session = initStompSession();
 
         // Populate the database with testPlayerEntityA who joins testGameLobbyEntityA:
         PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
-        playerEntityService.createPlayer(testPlayerEntityA);
-        // TODO: maybe don't use joinLobby() and instead set the data manually?
         GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
-        playerEntityService.joinLobby(testGameLobbyEntityA, testPlayerEntityA);
+        testPlayerEntityA.setGameLobbyEntity(testGameLobbyEntityA);
+        testGameLobbyEntityA.setNumPlayers(1);
+        playerEntityService.createPlayer(testPlayerEntityA);
+        // the referenced game lobby should automatically be created as well due to cascading (see entity definition)
 
+        // before controller method call:
+        // assert that the player and the game lobby (that player is in) exist in the database
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get()).isEqualTo(testPlayerEntityA);
+        assertThat(gameLobbyEntityService.findById(testGameLobbyEntityA.getId()).get()).isEqualTo(testGameLobbyEntityA);
+
+        // create payload string:
         PlayerDto testPlayerDtoA = playerMapper.mapToDto(testPlayerEntityA);
         GameLobbyDto testGameLobbyDtoA = gameLobbyMapper.mapToDto(testGameLobbyEntityA);
-
         String payload = objectMapper.writeValueAsString(testGameLobbyDtoA)
                 + "|"
                 + objectMapper.writeValueAsString(testPlayerDtoA);
 
         session.send("/app/player-leave-lobby", payload);
 
-        testPlayerDtoA.setGameLobbyDto(null);
-        var expectedResponse = "response from broker: " + objectMapper.writeValueAsString(testPlayerDtoA);
 
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
 
+        // after controller method call:
+        // assert that the player and game lobby entities in the database have updated as expected
+        testGameLobbyEntityA.setNumPlayers(0);
+        assertThat(gameLobbyEntityService.findById(testPlayerDtoA.getId()).get()).isEqualTo(testGameLobbyEntityA);
+        testPlayerEntityA.setGameLobbyEntity(null);
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get()).isEqualTo(testPlayerEntityA);
+
+        testPlayerDtoA.setGameLobbyDto(null);
+        var expectedResponse = objectMapper.writeValueAsString(testPlayerDtoA);
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
     @Test
-    void testThatDeletePlayerReturnsSuccessfulDeleteResponse() throws Exception {
+    void testThatDeletePlayerSuccessfullyDeletesPlayer() throws Exception {
         StompSession session = initStompSession();
 
         PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
         playerEntityService.createPlayer(testPlayerEntityA);
 
-        session.send("/app/player-delete", testPlayerEntityA.getId()+"");
+        // assert that player currently exists in database
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get()).isEqualTo(testPlayerEntityA);
 
-        var expectedResponse = "response from broker: player no longer exists in database";
+        PlayerDto testPlayerDtoA = playerMapper.mapToDto(testPlayerEntityA);
+        session.send("/app/player-delete", objectMapper.writeValueAsString(testPlayerDtoA));
 
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
 
+        // assert that player no longer exists in database
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
+
+        var expectedResponse = "player no longer exists in database";
+        assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
     /////////start: von Demo-Projekt übernommen

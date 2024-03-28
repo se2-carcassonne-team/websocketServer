@@ -70,7 +70,7 @@ public class PlayerController {
         PlayerEntity updatedPlayerEntity = playerEntityService.joinLobby(gameLobbyEntity, playerEntity);
 
 
-        // TODO: fix up code here, the check if the game lobby exists should be done earlier, as the joinLobby will (probably) create a new LobbyEntity if the given one doesn't exist yet (due to cascading)
+        // TODO: refactor code here, the check if the game lobby exists should be done earlier, as the joinLobby will (probably) create a new LobbyEntity if the given one doesn't exist yet (due to cascading)
         Optional<GameLobbyEntity> updatedGameLobbyEntityOptional = gameLobbyEntityService.findById(gameLobbyEntity.getId());
         if (updatedGameLobbyEntityOptional.isPresent()){
             GameLobbyEntity updatedGameLobbyEntity = updatedGameLobbyEntityOptional.get();
@@ -118,7 +118,8 @@ public class PlayerController {
         // 3) player leaves lobby
         PlayerEntity updatedPlayerEntity = playerEntityService.leaveLobby(gameLobbyEntity, playerEntity);
 
-        return "response from broker: " + objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
+        // TODO: think into the future --> is this response message enough or should we also include the updated gameLobbyDto?
+        return objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
     }
 
     @MessageMapping("/player-delete")
@@ -129,9 +130,9 @@ public class PlayerController {
         playerEntityService.deletePlayer(playerDto.getId());
         Optional<PlayerEntity> shouldBeEmpty = playerEntityService.findPlayerById(playerDto.getId());
         if (shouldBeEmpty.isEmpty()){
-            return  "response from broker: player no longer exists in database";
+            return  "player no longer exists in database";
         } else {
-            return "response from broker: player still exists in database";
+            return "ERROR! player still exists in database";
         }
 
     }

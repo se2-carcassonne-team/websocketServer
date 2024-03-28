@@ -74,6 +74,9 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
 
     @Override
     public PlayerEntity leaveLobby(GameLobbyEntity gameLobbyEntity, PlayerEntity playerEntity) {
+
+        // TODO: exceptions?
+
         playerEntity.setGameLobbyEntity(null);
         gameLobbyEntity.setNumPlayers(gameLobbyEntity.getNumPlayers()-1);
         gameLobbyEntityRepository.save(gameLobbyEntity);
