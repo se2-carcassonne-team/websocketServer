@@ -34,6 +34,7 @@ import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+//@ActiveProfiles("test")
 @ExtendWith(SpringExtension.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class PlayerControllerIntegrationTest {
@@ -97,7 +98,6 @@ public class PlayerControllerIntegrationTest {
     }
 
     @Test
-    // Maybe use @SQL Annotation
     void testThatJoinLobbySuccessfullyMakesPlayerJoinLobby() throws Exception {
         //WEBSOCKET_TOPIC = "/topic/player-join-lobby-response";
         StompSession session = initStompSession();
@@ -105,6 +105,8 @@ public class PlayerControllerIntegrationTest {
         // Pre-populate the database
         GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
         PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
+        assertThat(gameLobbyEntityService.findById(testGameLobbyEntityA.getId())).isEmpty();
         gameLobbyEntityService.createLobby(testGameLobbyEntityA);
         playerEntityService.createPlayer(testPlayerEntityA);
 
@@ -150,6 +152,7 @@ public class PlayerControllerIntegrationTest {
 
         // Populate the database with testPlayerEntityA
         PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
         playerEntityService.createPlayer(testPlayerEntityA);
 
 
@@ -185,6 +188,8 @@ public class PlayerControllerIntegrationTest {
         GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
         testPlayerEntityA.setGameLobbyEntity(testGameLobbyEntityA);
         testGameLobbyEntityA.setNumPlayers(1);
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
+
         playerEntityService.createPlayer(testPlayerEntityA);
         // the referenced game lobby should automatically be created as well due to cascading (see entity definition)
 
