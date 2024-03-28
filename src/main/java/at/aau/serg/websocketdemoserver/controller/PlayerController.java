@@ -37,8 +37,7 @@ public class PlayerController {
     @MessageMapping("/create-user")
     //@SendTo("/topic/create-user-response")
     @SendTo("/topic/websocket-broker-response")
-    public String handleCreateUser(String playerDtoJson) throws JsonProcessingException {
-        // TODO handle the messages here
+    public String handleCreatePlayer(String playerDtoJson) throws JsonProcessingException {
         // read in the JSON String and convert to PlayerDTO Object
         PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
 
@@ -82,7 +81,7 @@ public class PlayerController {
         PlayerDto dto = playerMapper.mapToDto(updatedPlayerEntity);
 
         // return the dto equivalent of the updated player entity
-        return "response from broker: " + objectMapper.writeValueAsString(dto);
+        return objectMapper.writeValueAsString(dto);
     }
 
     @MessageMapping("/player-update-username")
