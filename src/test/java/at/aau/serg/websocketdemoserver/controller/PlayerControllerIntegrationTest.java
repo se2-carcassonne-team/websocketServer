@@ -152,17 +152,27 @@ public class PlayerControllerIntegrationTest {
         PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
         playerEntityService.createPlayer(testPlayerEntityA);
 
-        PlayerDto testPlayerDtoA = TestDataUtil.createTestPlayerDtoA(null);
+
+        PlayerDto testPlayerDtoA = playerMapper.mapToDto(testPlayerEntityA);
         testPlayerDtoA.setUsername("UPDATED");
 
-        String payload = testPlayerDtoA.getId() + "|" + objectMapper.writeValueAsString(testPlayerDtoA);
+        String payload = objectMapper.writeValueAsString(testPlayerDtoA);
+
+        // before controller method is called:
+        // assert that the player to update exists in the database and has the original name
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get().getUsername()).isEqualTo(testPlayerEntityA.getUsername());
 
         session.send("/app/player-update-username", payload);
 
-        var expectedResponse = "response from broker: " + objectMapper.writeValueAsString(testPlayerDtoA);
-
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
 
+        // after controller method is called:
+        // assert that the player in the database has the updated username and that nothing else changed
+        testPlayerEntityA.setUsername("UPDATED");
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get()).isEqualTo(testPlayerEntityA);
+
+        // expected response: the dto of the updated player
+        var expectedResponse = objectMapper.writeValueAsString(testPlayerDtoA);
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
