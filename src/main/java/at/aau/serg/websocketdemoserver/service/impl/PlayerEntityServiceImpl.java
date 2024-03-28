@@ -41,7 +41,7 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
     public PlayerEntity updateUsername(Long id, PlayerEntity playerEntity) {
         playerEntity.setId(id);
 
-        // retrieve player entity from database, then update the username
+        // retrieve player entity from database, then update only the username
         return playerEntityRepository.findById(id).map( playerEntityToUpdate -> {
             Optional.ofNullable(playerEntity.getUsername()).ifPresent(playerEntityToUpdate::setUsername);
             return playerEntityRepository.save(playerEntityToUpdate);
