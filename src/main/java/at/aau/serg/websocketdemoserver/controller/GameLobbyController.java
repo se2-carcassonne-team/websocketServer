@@ -2,6 +2,10 @@ package at.aau.serg.websocketdemoserver.controller;
 
 import at.aau.serg.websocketdemoserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketdemoserver.domain.dto.PlayerDto;
+import at.aau.serg.websocketdemoserver.domain.entity.GameLobbyEntity;
+import at.aau.serg.websocketdemoserver.domain.entity.PlayerEntity;
+import at.aau.serg.websocketdemoserver.mapper.GameLobbyMapper;
+import at.aau.serg.websocketdemoserver.mapper.PlayerMapper;
 import at.aau.serg.websocketdemoserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketdemoserver.service.PlayerEntityService;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -28,22 +32,24 @@ public class GameLobbyController {
     Service service = new Service();
     */
 
-    @Autowired
-    GameLobbyEntityService gameLobbyService;
-    @Autowired
-    PlayerEntityService playerService;
-    @Autowired
-    ObjectMapper objectMapper;
+    private GameLobbyEntityService gameLobbyService;
+    private PlayerEntityService playerService;
+    private final ObjectMapper objectMapper;
+    private final GameLobbyMapper gameLobbyMapper;
+    private final PlayerMapper playerMapper;
 
-    public GameLobbyController(GameLobbyEntityService gameLobbyService, PlayerEntityService playerService) {
+    public GameLobbyController(GameLobbyEntityService gameLobbyService, PlayerEntityService playerService, ObjectMapper objectMapper, GameLobbyMapper gameLobbyMapper, PlayerMapper playerMapper) {
         this.gameLobbyService = gameLobbyService;
         this.playerService = playerService;
+        this.objectMapper = objectMapper;
+        this.gameLobbyMapper = gameLobbyMapper;
+        this.playerMapper = playerMapper;
     }
 
     @MessageMapping("/create-lobby")
     @SendTo("/topic/create-lobby-response")
-    public String handleLobbyJoin(String gameLobbyDtoAndPlayerDtoJson) throws JsonProcessingException {
-        // TODO: Replace!
+    public String createLobby(String gameLobbyDtoAndPlayerDtoJson) throws JsonProcessingException {
+        // TODO: Error handling
 
         String[] splitJsonStrings = gameLobbyDtoAndPlayerDtoJson.split("\\|");
 
@@ -53,6 +59,12 @@ public class GameLobbyController {
         GameLobbyDto gameLobbyDto = objectMapper.readValue(gameLobbyDtoJson, GameLobbyDto.class);
         PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
 
-        return "echo from broker: " + objectMapper.writeValueAsString("");
+        GameLobbyEntity gameLobbyEntity = gameLobbyMapper.mapToEntity(gameLobbyDto);
+        PlayerEntity playerEntity = playerMapper.mapToEntity(playerDto);
+
+        GameLobbyEntity createdGameLobbyEntity = gameLobbyService.createLobby(gameLobbyEntity);
+        playerService.joinLobby(createdGameLobbyEntity, playerEntity);
+
+        return objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(createdGameLobbyEntity));
     }
 }
