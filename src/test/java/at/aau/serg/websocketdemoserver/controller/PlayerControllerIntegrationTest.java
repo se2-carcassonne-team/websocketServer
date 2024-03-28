@@ -30,6 +30,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
+import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -70,20 +71,29 @@ public class PlayerControllerIntegrationTest {
 
 
     @Test
-    public void testThatCreatePlayerSuccessfullyReturnsCreatedPlayerDto() throws Exception {
+    public void testThatCreatePlayerHandlerSuccessfullyCreatesPlayer() throws Exception {
         //WEBSOCKET_TOPIC = "/topic/create-user-response";
         StompSession session = initStompSession();
 
-        PlayerDto playerDto = TestDataUtil.createTestPlayerDtoA(null);
+        PlayerDto testPlayerDto = TestDataUtil.createTestPlayerDtoA(null);
+        PlayerEntity testPlayerEntity = playerMapper.mapToEntity(testPlayerDto);
 
-        // if we want to manually transform the PlayerDto object to a JSON-string:
-        String playerDtoJson = objectMapper.writeValueAsString(playerDto);
+        // assert that the test player doesn't exist in the database yet
+        assertThat(playerEntityService.findPlayerById(testPlayerEntity.getId())).isEmpty();
+
+        // manually transform the PlayerDto object to a JSON-string:
+        String playerDtoJson = objectMapper.writeValueAsString(testPlayerDto);
 
         session.send("/app/create-user", playerDtoJson);
 
-        var expectedResponse = "response from broker: " + playerDtoJson;
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
 
-        assertThat(messages.poll(1, TimeUnit.SECONDS)).isEqualTo(expectedResponse);
+        // assert that the player now exists in the database
+        assertThat(playerEntityService.findPlayerById(testPlayerEntity.getId())).isPresent();
+        assertThat(playerEntityService.findPlayerById(testPlayerEntity.getId()).get()).isEqualTo(testPlayerEntity);
+
+        // assert that the controller response is as we expect. The controller should return the DTO of the created player
+        assertThat(actualResponse).isEqualTo(playerDtoJson);
     }
 
     @Test
@@ -116,7 +126,7 @@ public class PlayerControllerIntegrationTest {
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
-    //@Test
+    @Test
     void testThatUpdatePlayerUsernameSuccessfullyReturnsUpdatedPlayerDto() throws Exception {
         //WEBSOCKET_TOPIC = "/topic/player-update-username-response";
         StompSession session = initStompSession();
