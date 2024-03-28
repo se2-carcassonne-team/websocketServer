@@ -42,10 +42,10 @@ public class PlayerController {
         // read in the JSON String and convert to PlayerDTO Object
         PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
 
-        PlayerEntity playerEntity = playerEntityService.createPlayer(playerMapper.mapToEntity(playerDto));
+        PlayerEntity createdPlayerEntity = playerEntityService.createPlayer(playerMapper.mapToEntity(playerDto));
 
-        //return "echo from broker: " + HtmlUtils.htmlEscape(playerDto);
-        return "response from broker: " + objectMapper.writeValueAsString(playerDto);
+        // return the DTO of the created player
+        return objectMapper.writeValueAsString(playerMapper.mapToDto(createdPlayerEntity));
     }
 
     @MessageMapping("/player-join-lobby")
