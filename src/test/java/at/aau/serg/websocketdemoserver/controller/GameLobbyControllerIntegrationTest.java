@@ -1,10 +1,16 @@
 package at.aau.serg.websocketdemoserver.controller;
 
+import at.aau.serg.websocketdemoserver.TestDataUtil;
 import at.aau.serg.websocketdemoserver.demo.websocket.StompFrameHandlerClientImpl;
+import at.aau.serg.websocketdemoserver.domain.dto.GameLobbyDto;
+import at.aau.serg.websocketdemoserver.domain.dto.PlayerDto;
+import at.aau.serg.websocketdemoserver.domain.entity.PlayerEntity;
 import at.aau.serg.websocketdemoserver.mapper.GameLobbyMapper;
+import at.aau.serg.websocketdemoserver.mapper.PlayerMapper;
 import at.aau.serg.websocketdemoserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketdemoserver.service.PlayerEntityService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -15,7 +21,10 @@ import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
@@ -29,17 +38,17 @@ public class GameLobbyControllerIntegrationTest {
 
     private GameLobbyEntityService gameLobbyEntityService;
     private PlayerEntityService playerEntityService;
+    private PlayerMapper playerMapper;
     private GameLobbyMapper gameLobbyMapper;
 
     @Autowired
-    public GameLobbyControllerIntegrationTest(ObjectMapper objectMapper, GameLobbyEntityService gameLobbyEntityService, PlayerEntityService playerEntityService, GameLobbyMapper gameLobbyMapper) {
+    public GameLobbyControllerIntegrationTest(ObjectMapper objectMapper, GameLobbyEntityService gameLobbyEntityService, PlayerEntityService playerEntityService, PlayerMapper playerMapper, GameLobbyMapper gameLobbyMapper) {
         this.objectMapper = objectMapper;
         this.gameLobbyEntityService = gameLobbyEntityService;
         this.playerEntityService = playerEntityService;
+        this.playerMapper = playerMapper;
         this.gameLobbyMapper = gameLobbyMapper;
     }
-
-
 
     /////////start: von Demo-Projekt übernommen & leicht geändert
     @LocalServerPort
@@ -53,43 +62,40 @@ public class GameLobbyControllerIntegrationTest {
     BlockingQueue<String> messages = new LinkedBlockingDeque<>();
     /////////end: von Demo-Projekt übernommen & leicht geändert
 
-// MOVED TO PLAYERCONTROLLERINTEGRATIONTEST!!!
-//    @Test
-//    public void testThatJoinLobbySuccessfullyReturnsUpdatedPlayerDto() throws Exception {
-//        StompSession session = initStompSession();
-//
-//        PlayerDto testPlayerDtoA = TestDataUtil.createTestPlayerDtoA(null);
-//
-//        GameLobbyDto testGameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
-//
-//
-//        // TODO: Fill Database
-//        GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
-//        gameLobbyEntityService.createLobby(testGameLobbyEntityA);
-//        playerEntityService.createPlayer(TestDataUtil.createTestPlayerEntityA(testGameLobbyEntityA));
-//
-//        // TODO: Figure out how to send multiple objects in one payload without causing too much work
-//
-//        // manually transform objects to JSON-strings:
-//        String playerDtoJson = objectMapper.writeValueAsString(testPlayerDtoA);
-//        String gameLobbyDtoJson = objectMapper.writeValueAsString(testGameLobbyDtoA);
-//
-//        String payload = gameLobbyDtoJson + "|" +  playerDtoJson;
-//
-//        // Old Controller signature: String handleLobbyJoin(String gameLobbyDtoJson, String playerDtoJson)
-//
-//        session.send("/app/join-lobby", payload);
-//
-////        ArrayList<PlayerDto> playerDtosInLobby = new ArrayList<>();
-////        playerDtosInLobby.add(testPlayerDtoA);
-////        testGameLobbyDtoA.setPlayers(playerDtosInLobby);
-//
-//        String expectedResultJson = objectMapper.writeValueAsString(testGameLobbyDtoA);
-//
-//        var expectedResponse = "echo from broker: " + expectedResultJson;
-//
-//        assertThat(messages.poll(1, TimeUnit.SECONDS)).isEqualTo(expectedResponse);
-//    }
+
+    @Test
+    void testCreateLobbyReturnsCreatedGameLobbyDto() throws Exception {
+        StompSession session = initStompSession("/topic/create-lobby-response");
+
+        PlayerEntity playerEntity = TestDataUtil.createTestPlayerEntityA(null);
+        playerEntityService.createPlayer(playerEntity);
+
+        PlayerDto playerDto = playerMapper.mapToDto(playerEntity);
+        GameLobbyDto gameLobbyDto = TestDataUtil.createTestGameLobbyDtoA();
+
+        String playerDtoJson = objectMapper.writeValueAsString(playerDto);
+        String gameLobbyDtoJson = objectMapper.writeValueAsString(gameLobbyDto);
+
+        String payload = gameLobbyDtoJson + "|" +  playerDtoJson;
+
+        assertThat(gameLobbyEntityService.findById(gameLobbyDto.getId())).isEqualTo(Optional.empty());
+        assertThat(playerEntityService.findPlayerById(playerDto.getId()).get().getGameLobbyEntity()).isEqualTo(null);
+        session.send("/app/create-lobby", payload);
+
+        gameLobbyDto.setNumPlayers(gameLobbyDto.getNumPlayers() + 1);
+        playerDto.setGameLobbyDto(gameLobbyDto);
+
+        String expectedResponse = objectMapper.writeValueAsString(gameLobbyDto);
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        Optional<PlayerEntity> updatedPlayerEntityOptional = playerEntityService.findPlayerById(playerDto.getId());
+        assertTrue(updatedPlayerEntityOptional.isPresent());
+        PlayerEntity updatedPlayerEntity = updatedPlayerEntityOptional.get();
+        assertThat(updatedPlayerEntity.getGameLobbyEntity()).isEqualTo(gameLobbyMapper.mapToEntity(gameLobbyDto));
+
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+    }
+
 
 
 
@@ -98,7 +104,7 @@ public class GameLobbyControllerIntegrationTest {
     /**
      * @return The Stomp session for the WebSocket connection (Stomp - WebSocket is comparable to HTTP - TCP).
      */
-    public StompSession initStompSession() throws Exception {
+    public StompSession initStompSession(String topic) throws Exception {
         WebSocketStompClient stompClient = new WebSocketStompClient(new StandardWebSocketClient());
         stompClient.setMessageConverter(new StringMessageConverter());
 
@@ -111,7 +117,7 @@ public class GameLobbyControllerIntegrationTest {
 
         // subscribes to the topic defined in WebSocketBrokerController
         // and adds received messages to WebSocketBrokerIntegrationTest#messages
-        session.subscribe(WEBSOCKET_TOPIC, new StompFrameHandlerClientImpl(messages));
+        session.subscribe(topic, new StompFrameHandlerClientImpl(messages));
 
         return session;
     }
