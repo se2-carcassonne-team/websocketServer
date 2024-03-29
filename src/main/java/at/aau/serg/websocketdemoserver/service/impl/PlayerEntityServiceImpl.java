@@ -105,10 +105,11 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
 
         if (gameLobbyEntity == null) {
             throw new EntityNotFoundException("Player is not in a game lobby.");
-        } else if (gameLobbyEntityRepository.findById(gameLobbyEntity.getId()).isEmpty()){
-            throw new EntityNotFoundException("The game lobby the player is in doesn't exist.");
-            // this case shouldn't really be possible due to the cascading rule, but we still include it here
         }
+//        else if (gameLobbyEntityRepository.findById(gameLobbyEntity.getId()).isEmpty()){
+//            throw new EntityNotFoundException("The game lobby the player is in doesn't exist.");
+//            // this case shouldn't be possible due to the cascading rule, but I still included it here in case we need it
+//        }
 
         playerEntity.setGameLobbyEntity(null);
         gameLobbyEntity.setNumPlayers(gameLobbyEntity.getNumPlayers()-1);

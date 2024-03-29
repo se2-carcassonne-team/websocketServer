@@ -506,6 +506,67 @@ public class PlayerControllerIntegrationTest {
     }
 
     @Test
+    void testThatNonExistentPlayerLeaveLobbyFails() throws Exception {
+        StompSession session = initStompSession();
+
+        PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
+        testPlayerEntityA.setGameLobbyEntity(testGameLobbyEntityA);
+
+        // create only the game lobby in the database
+        gameLobbyEntityService.createLobby(testGameLobbyEntityA);
+
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
+        assertThat(gameLobbyEntityService.findById(testGameLobbyEntityA.getId()).get()).isEqualTo(testGameLobbyEntityA);
+
+        // create payload string:
+        PlayerDto testPlayerDtoA = playerMapper.mapToDto(testPlayerEntityA);
+        String payload = objectMapper.writeValueAsString(testPlayerDtoA);
+
+        session.send("/app/player-leave-lobby", payload);
+
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        // after controller method call:
+        assertThat(gameLobbyEntityService.findById(testPlayerDtoA.getId()).get()).isEqualTo(testGameLobbyEntityA);
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
+
+        var expectedResponse = "Player doesn't exist.";
+
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+    }
+
+    @Test
+    void testThatPlayerLeaveLobbyWhenNotInAnyLobbyFails() throws Exception {
+        StompSession session = initStompSession();
+
+        // Populate the database with testPlayerEntityA who joins testGameLobbyEntityA:
+        PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
+
+        playerEntityService.createPlayer(testPlayerEntityA);
+        // the referenced game lobby should automatically be created as well due to cascading (see entity definition)
+
+        // before controller method call player with gameLobbyEntity=null should be in the database:
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get()).isEqualTo(testPlayerEntityA);
+
+        // create payload string:
+        PlayerDto testPlayerDtoA = playerMapper.mapToDto(testPlayerEntityA);
+        String payload = objectMapper.writeValueAsString(testPlayerDtoA);
+
+        session.send("/app/player-leave-lobby", payload);
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        // after controller method call nothing should have changed in the database:
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get()).isEqualTo(testPlayerEntityA);
+
+        var expectedResponse = "Player is not in a game lobby.";
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+    }
+
+    @Test
     void testThatDeletePlayerSuccessfullyDeletesPlayer() throws Exception {
         StompSession session = initStompSession();
 
