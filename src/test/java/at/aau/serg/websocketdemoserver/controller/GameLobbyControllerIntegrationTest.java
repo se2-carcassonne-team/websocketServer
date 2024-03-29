@@ -4,11 +4,13 @@ import at.aau.serg.websocketdemoserver.TestDataUtil;
 import at.aau.serg.websocketdemoserver.demo.websocket.StompFrameHandlerClientImpl;
 import at.aau.serg.websocketdemoserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketdemoserver.domain.dto.PlayerDto;
+import at.aau.serg.websocketdemoserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketdemoserver.domain.entity.PlayerEntity;
 import at.aau.serg.websocketdemoserver.mapper.GameLobbyMapper;
 import at.aau.serg.websocketdemoserver.mapper.PlayerMapper;
 import at.aau.serg.websocketdemoserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketdemoserver.service.PlayerEntityService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,7 +23,9 @@ import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Optional;
@@ -76,7 +80,7 @@ public class GameLobbyControllerIntegrationTest {
         String playerDtoJson = objectMapper.writeValueAsString(playerDto);
         String gameLobbyDtoJson = objectMapper.writeValueAsString(gameLobbyDto);
 
-        String payload = gameLobbyDtoJson + "|" +  playerDtoJson;
+        String payload = gameLobbyDtoJson + "|" + playerDtoJson;
 
         assertThat(gameLobbyEntityService.findById(gameLobbyDto.getId())).isEqualTo(Optional.empty());
         assertThat(playerEntityService.findPlayerById(playerDto.getId()).get().getGameLobbyEntity()).isEqualTo(null);
@@ -96,23 +100,66 @@ public class GameLobbyControllerIntegrationTest {
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
+    @Test
+    void testUpdateLobbyNameReturnsUpdatedGameLobbyDto() throws Exception {
+        StompSession session = initStompSession("/topic/update-lobby-name");
+
+        GameLobbyDto gameLobbyDto = TestDataUtil.createTestGameLobbyDtoA();
+        gameLobbyEntityService.createLobby(gameLobbyMapper.mapToEntity(gameLobbyDto));
+
+        gameLobbyDto.setName("lobbyB");
+        session.send("/app/update-lobby-name", objectMapper.writeValueAsString(gameLobbyDto));
+
+        String expectedResponse = objectMapper.writeValueAsString(gameLobbyDto);
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        Optional<GameLobbyEntity> updatedGameLobbyEntityOptional = gameLobbyEntityService.findById(gameLobbyDto.getId());
+        assertTrue(updatedGameLobbyEntityOptional.isPresent());
+
+        GameLobbyEntity updatedGameLobbyEntity = updatedGameLobbyEntityOptional.get();
+        assertThat(updatedGameLobbyEntity.getName()).isEqualTo(gameLobbyMapper.mapToEntity(gameLobbyDto).getName());
+
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+    }
+
+    @Test
+    void testUpdateLobbyNameReturnsErrorResponse() throws Exception {
+        StompSession session = initStompSession("/topic/update-lobby-name");
+
+        GameLobbyDto gameLobbyDto = TestDataUtil.createTestGameLobbyDtoA();
+        gameLobbyEntityService.createLobby(gameLobbyMapper.mapToEntity(gameLobbyDto));
+
+        gameLobbyDto.setId(10L);
+        gameLobbyDto.setName("lobbyB");
+        session.send("/app/update-lobby-name", objectMapper.writeValueAsString(gameLobbyDto));
+
+        String expectedResponse = "gameLobby name update failed";
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+    }
+
+    @Test
+    void deleteLobbyReturnsSuccessMessage() throws Exception {
+        StompSession session = initStompSession("/topic/delete-lobby-response");
+
+        GameLobbyDto gameLobbyDto = TestDataUtil.createTestGameLobbyDtoA();
+        session.send("/app/delete-lobby", objectMapper.writeValueAsString(gameLobbyDto));
+
+        String expectedResponse = "gameLobby no longer exists";
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+        assertFalse(gameLobbyEntityService.findById(gameLobbyDto.getId()).isPresent());
+    }
 
 
-
-
-    /////////start: von Demo-Projekt übernommen
-    /**
-     * @return The Stomp session for the WebSocket connection (Stomp - WebSocket is comparable to HTTP - TCP).
-     */
     public StompSession initStompSession(String topic) throws Exception {
         WebSocketStompClient stompClient = new WebSocketStompClient(new StandardWebSocketClient());
         stompClient.setMessageConverter(new StringMessageConverter());
 
-        // connect client to the websocket server
         StompSession session = stompClient.connectAsync(String.format(WEBSOCKET_URI, port),
                         new StompSessionHandlerAdapter() {
                         })
-                // wait 1 sec for the client to be connected
                 .get(1, TimeUnit.SECONDS);
 
         // subscribes to the topic defined in WebSocketBrokerController
@@ -121,6 +168,5 @@ public class GameLobbyControllerIntegrationTest {
 
         return session;
     }
-    /////////end: von Demo-Projekt übernommen
 
 }
