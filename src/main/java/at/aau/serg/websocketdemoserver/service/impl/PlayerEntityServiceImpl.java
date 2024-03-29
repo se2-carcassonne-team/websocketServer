@@ -95,9 +95,20 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
 
 
     @Override
-    public PlayerEntity leaveLobby(GameLobbyEntity gameLobbyEntity, PlayerEntity playerEntity) {
+    public PlayerEntity leaveLobby(PlayerEntity playerEntity) throws EntityNotFoundException {
 
-        // TODO: exceptions?
+        if (playerEntityRepository.findById(playerEntity.getId()).isEmpty()) {
+            throw new EntityNotFoundException("Player doesn't exist.");
+        }
+
+        GameLobbyEntity gameLobbyEntity = playerEntity.getGameLobbyEntity();
+
+        if (gameLobbyEntity == null) {
+            throw new EntityNotFoundException("Player is not in a game lobby.");
+        } else if (gameLobbyEntityRepository.findById(gameLobbyEntity.getId()).isEmpty()){
+            throw new EntityNotFoundException("The game lobby the player is in doesn't exist.");
+            // this case shouldn't really be possible due to the cascading rule, but we still include it here
+        }
 
         playerEntity.setGameLobbyEntity(null);
         gameLobbyEntity.setNumPlayers(gameLobbyEntity.getNumPlayers()-1);
