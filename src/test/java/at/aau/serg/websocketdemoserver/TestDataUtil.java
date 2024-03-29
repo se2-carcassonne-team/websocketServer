@@ -33,21 +33,21 @@ public class TestDataUtil {
     }
     public static PlayerEntity createTestPlayerEntityD(final GameLobbyEntity gameLobbyEntity){
         return PlayerEntity.builder()
-                .id(4L)
+                .id(null)
                 .username("usernameD")
                 .gameLobbyEntity(gameLobbyEntity)
                 .build();
     }
     public static PlayerEntity createTestPlayerEntityE(final GameLobbyEntity gameLobbyEntity){
         return PlayerEntity.builder()
-                .id(5L)
+                .id(null)
                 .username("usernameE")
                 .gameLobbyEntity(gameLobbyEntity)
                 .build();
     }
     public static PlayerEntity createTestPlayerEntityF(final GameLobbyEntity gameLobbyEntity){
         return PlayerEntity.builder()
-                .id(6L)
+                .id(null)
                 .username("usernameF")
                 .gameLobbyEntity(gameLobbyEntity)
                 .build();
@@ -55,7 +55,7 @@ public class TestDataUtil {
 
     public static PlayerEntity createTestPlayerEntityG(final GameLobbyEntity gameLobbyEntity){
         return PlayerEntity.builder()
-                .id(7L)
+                .id(null)
                 .username("usernameG")
                 .gameLobbyEntity(gameLobbyEntity)
                 .build();

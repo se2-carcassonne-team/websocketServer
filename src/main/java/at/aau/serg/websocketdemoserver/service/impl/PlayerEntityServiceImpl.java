@@ -38,12 +38,12 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
     public PlayerEntity createPlayer(PlayerEntity playerEntity) throws EntityExistsException {
 
         // check if player with id already exists
-        if(playerEntityRepository.findById(playerEntity.getId()).isPresent()) {
+        if(playerEntity.getId() != null && playerEntityRepository.findById(playerEntity.getId()).isPresent()) {
             throw new EntityExistsException("A player with the id:" + playerEntity.getId() + " already exists");
         }
 
         // check if player with username already exists --> extra method in repository: findPlayerEntitiesByUsername
-        if(!playerEntityRepository.findPlayerEntitiesByUsername(playerEntity.getUsername()).isEmpty()) {
+        if(playerEntity.getUsername() != null && !playerEntityRepository.findPlayerEntitiesByUsername(playerEntity.getUsername()).isEmpty()) {
             throw new EntityExistsException("A player with the username:" + playerEntity.getUsername() + " already exists");
         }
 
