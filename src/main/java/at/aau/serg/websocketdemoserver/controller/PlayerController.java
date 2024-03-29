@@ -116,16 +116,22 @@ public class PlayerController {
     @SendTo("/topic/websocket-broker-response")
     public String handlePlayerLeaveLobby(String playerDtoJson) throws JsonProcessingException {
 
-        PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
+        try {
+            PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
 
-        // 2) convert the DTO to Entity Object for Service:
-        PlayerEntity playerEntity = playerMapper.mapToEntity(playerDto);
+            // 2) convert the DTO to Entity Object for Service:
+            PlayerEntity playerEntity = playerMapper.mapToEntity(playerDto);
 
-        // 3) player leaves lobby
-        PlayerEntity updatedPlayerEntity = playerEntityService.leaveLobby(playerEntity);
+            // 3) player leaves lobby
+            PlayerEntity updatedPlayerEntity = playerEntityService.leaveLobby(playerEntity);
 
-        // TODO: think into the future --> is this response message enough or should we also include the updated gameLobbyDto?
-        return objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
+            // TODO: think into the future --> is this response message enough or should we also include the updated gameLobbyDto?
+            return objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
+        } catch (JsonProcessingException e) {
+            return e.getMessage();
+        } catch (EntityNotFoundException e) {
+            return e.getMessage();
+        }
     }
 
     @MessageMapping("/player-delete")

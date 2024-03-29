@@ -567,7 +567,7 @@ public class PlayerControllerIntegrationTest {
     }
 
     @Test
-    void testThatDeletePlayerSuccessfullyDeletesPlayer() throws Exception {
+    void testThatDeletePlayerSuccessfullyDeletesExistingPlayer() throws Exception {
         StompSession session = initStompSession();
 
         PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
