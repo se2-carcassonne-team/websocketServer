@@ -10,10 +10,12 @@ import at.aau.serg.websocketdemoserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketdemoserver.service.PlayerEntityService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Controller
 public class GameLobbyController {
@@ -48,23 +50,63 @@ public class GameLobbyController {
 
     @MessageMapping("/create-lobby")
     @SendTo("/topic/create-lobby-response")
-    public String createLobby(String gameLobbyDtoAndPlayerDtoJson) throws JsonProcessingException {
+    public String handleLobbyCreation(String gameLobbyDtoAndPlayerDtoJson) throws JsonProcessingException {
         // TODO: Error handling
 
         String[] splitJsonStrings = gameLobbyDtoAndPlayerDtoJson.split("\\|");
 
-        String gameLobbyDtoJson = splitJsonStrings[0];
-        String playerDtoJson = splitJsonStrings[1];
-
-        GameLobbyDto gameLobbyDto = objectMapper.readValue(gameLobbyDtoJson, GameLobbyDto.class);
-        PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
-
+        GameLobbyDto gameLobbyDto = objectMapper.readValue(splitJsonStrings[0], GameLobbyDto.class);
+        PlayerDto playerDto = objectMapper.readValue(splitJsonStrings[1], PlayerDto.class);
         GameLobbyEntity gameLobbyEntity = gameLobbyMapper.mapToEntity(gameLobbyDto);
         PlayerEntity playerEntity = playerMapper.mapToEntity(playerDto);
 
-        GameLobbyEntity createdGameLobbyEntity = gameLobbyService.createLobby(gameLobbyEntity);
-        playerService.joinLobby(createdGameLobbyEntity, playerEntity);
+        try {
+            GameLobbyEntity createdGameLobbyEntity = gameLobbyService.createLobby(gameLobbyEntity);
+            playerService.joinLobby(createdGameLobbyEntity, playerEntity);
+            return objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(createdGameLobbyEntity));
+        } catch (Exception e) {
+            return "gameLobby creation failed";
+        }
+    }
 
-        return objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(createdGameLobbyEntity));
+    @MessageMapping("/update-lobby-name")
+    @SendTo("/topic/update-lobby-name")
+    public String handleLobbyNameUpdate(String gameLobbyDtoJson) throws JsonProcessingException {
+        GameLobbyDto gameLobbyDto = objectMapper.readValue(gameLobbyDtoJson, GameLobbyDto.class);
+        try {
+            GameLobbyEntity updatedGameLobbyEntity = gameLobbyService.updateLobbyName(gameLobbyMapper.mapToEntity(gameLobbyDto));
+            return objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(updatedGameLobbyEntity));
+        } catch (RuntimeException e) {
+            return "gameLobby name update failed";
+        }
+
+    }
+
+    // TODO: Should send to one user only
+    @MessageMapping("/list-lobby")
+    @SendTo("/topic/list-lobby-response")
+    // Send to User
+    public String handleGetAllLobbies() throws JsonProcessingException {
+        List<GameLobbyEntity> gameLobbyEntities = gameLobbyService.getListOfLobbies();
+        List<GameLobbyDto> gameLobbyDtos = new ArrayList<>();
+
+        for(GameLobbyEntity gameLobbyEntity : gameLobbyEntities) {
+            gameLobbyDtos.add(gameLobbyMapper.mapToDto(gameLobbyEntity));
+        }
+
+        return objectMapper.writeValueAsString(gameLobbyDtos);
+    }
+
+    @MessageMapping("/delete-lobby")
+    @SendTo("/topic/delete-lobby-response")
+    public String handleDeleteLobby(String gameLobbyDtoJson) throws JsonProcessingException {
+        GameLobbyDto gameLobbyDto = objectMapper.readValue(gameLobbyDtoJson, GameLobbyDto.class);
+
+        gameLobbyService.deleteLobby(gameLobbyDto.getId());
+        if(gameLobbyService.findById(gameLobbyDto.getId()).isEmpty()) {
+            return "gameLobby no longer exists";
+        } else {
+            return "gameLobby still exists";
+        }
     }
 }
