@@ -20,6 +20,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.messaging.converter.StringMessageConverter;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
@@ -35,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ExtendWith(SpringExtension.class)
-//@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class GameLobbyControllerIntegrationTest {
 
     private ObjectMapper objectMapper;
@@ -54,18 +55,10 @@ public class GameLobbyControllerIntegrationTest {
         this.gameLobbyMapper = gameLobbyMapper;
     }
 
-    /////////start: von Demo-Projekt übernommen & leicht geändert
     @LocalServerPort
     private int port;
     private final String WEBSOCKET_URI = "ws://localhost:%d/websocket-broker";
-    private final String WEBSOCKET_TOPIC = "/topic/join-lobby-response";
-
-    /**
-     * Queue of messages from the server.
-     */
     BlockingQueue<String> messages = new LinkedBlockingDeque<>();
-    /////////end: von Demo-Projekt übernommen & leicht geändert
-
 
     @Test
     void testCreateLobbyReturnsCreatedGameLobbyDto() throws Exception {
@@ -143,13 +136,31 @@ public class GameLobbyControllerIntegrationTest {
         StompSession session = initStompSession("/topic/delete-lobby-response");
 
         GameLobbyDto gameLobbyDto = TestDataUtil.createTestGameLobbyDtoA();
+
+        gameLobbyEntityService.createLobby(gameLobbyMapper.mapToEntity(gameLobbyDto));
+        assertThat(gameLobbyEntityService.findById(gameLobbyDto.getId()).isPresent()).isTrue();
+
         session.send("/app/delete-lobby", objectMapper.writeValueAsString(gameLobbyDto));
 
         String expectedResponse = "gameLobby no longer exists";
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
 
+        assertThat(gameLobbyEntityService.findById(gameLobbyDto.getId()).isPresent()).isFalse();
         assertThat(actualResponse).isEqualTo(expectedResponse);
-        assertFalse(gameLobbyEntityService.findById(gameLobbyDto.getId()).isPresent());
+    }
+
+    @Test
+    void deleteLobbyReturnsErrorMessage() throws Exception {
+        StompSession session = initStompSession("/topic/delete-lobby-response");
+
+        GameLobbyDto gameLobbyDto = TestDataUtil.createTestGameLobbyDtoA();
+
+        session.send("/app/delete-lobby", objectMapper.writeValueAsString(gameLobbyDto));
+
+        String expectedResponse = "gameLobby does not exist and can not be deleted";
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
 
