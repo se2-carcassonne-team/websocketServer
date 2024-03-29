@@ -96,14 +96,20 @@ public class PlayerController {
     @SendTo("/topic/websocket-broker-response")
     public String handlePlayerUpdateUsername(String playerDtoJson) throws JsonProcessingException {
 
-        // convert the sent String content to the playerDto object we can work with:
-        PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
+        try {
+            // convert the sent String content to the playerDto object we can work with:
+            PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
 
-        PlayerEntity playerEntity = playerMapper.mapToEntity(playerDto);
+            PlayerEntity playerEntity = playerMapper.mapToEntity(playerDto);
 
-        PlayerEntity updatedPlayerEntity = playerEntityService.updateUsername(playerEntity.getId(), playerEntity);
-        return objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
+            PlayerEntity updatedPlayerEntity = playerEntityService.updateUsername(playerEntity);
+            return objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
 
+        } catch (JsonProcessingException e) {
+            return e.getMessage();
+        } catch (EntityNotFoundException e) {
+            return e.getMessage();
+        }
 }
 
     @MessageMapping("/player-leave-lobby")

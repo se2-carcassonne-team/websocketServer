@@ -10,7 +10,7 @@ import java.util.Optional;
 public interface PlayerEntityService {
 
     PlayerEntity createPlayer(PlayerEntity playerEntity) throws EntityExistsException;
-    PlayerEntity updateUsername(Long id, PlayerEntity playerEntity);
+    PlayerEntity updateUsername(PlayerEntity playerEntity) throws EntityNotFoundException;
     PlayerEntity joinLobby(GameLobbyEntity gameLobbyEntity, PlayerEntity playerEntity) throws EntityNotFoundException, RuntimeException;
     PlayerEntity leaveLobby(GameLobbyEntity gameLobbyEntity, PlayerEntity playerEntity);
     void deletePlayer(Long id);

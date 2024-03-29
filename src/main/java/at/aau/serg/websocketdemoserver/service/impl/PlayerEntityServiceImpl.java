@@ -51,14 +51,13 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
     }
 
     @Override
-    public PlayerEntity updateUsername(Long id, PlayerEntity playerEntity) {
-        playerEntity.setId(id);
+    public PlayerEntity updateUsername(PlayerEntity playerEntity) throws EntityNotFoundException {
 
         // retrieve player entity from database, then update only the username
-        return playerEntityRepository.findById(id).map( playerEntityToUpdate -> {
+        return playerEntityRepository.findById(playerEntity.getId()).map( playerEntityToUpdate -> {
             Optional.ofNullable(playerEntity.getUsername()).ifPresent(playerEntityToUpdate::setUsername);
             return playerEntityRepository.save(playerEntityToUpdate);
-        }).orElseThrow(()-> new RuntimeException("Player does not exist"));
+        }).orElseThrow(()-> new EntityNotFoundException("Player does not exist"));
 
     }
 
