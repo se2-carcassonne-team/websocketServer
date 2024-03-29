@@ -114,23 +114,15 @@ public class PlayerController {
 
     @MessageMapping("/player-leave-lobby")
     @SendTo("/topic/websocket-broker-response")
-    public String handlePlayerLeaveLobby(String gameLobbyDtoAndPlayerDtoJson) throws JsonProcessingException {
-        // TODO: error handling
+    public String handlePlayerLeaveLobby(String playerDtoJson) throws JsonProcessingException {
 
-        // 1) extract GameLobbyDto and PlayerDto objects from the string payload:
-        String[] splitJsonStrings = gameLobbyDtoAndPlayerDtoJson.split("\\|");
-        String gameLobbyDtoJson = splitJsonStrings[0];
-        String playerDtoJson = splitJsonStrings[1];
-
-        GameLobbyDto gameLobbyDto = objectMapper.readValue(gameLobbyDtoJson, GameLobbyDto.class);
         PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
 
-        // 2) convert the DTOs to Entity Objects for Service:
+        // 2) convert the DTO to Entity Object for Service:
         PlayerEntity playerEntity = playerMapper.mapToEntity(playerDto);
-        GameLobbyEntity gameLobbyEntity = gameLobbyMapper.mapToEntity(gameLobbyDto);
 
         // 3) player leaves lobby
-        PlayerEntity updatedPlayerEntity = playerEntityService.leaveLobby(gameLobbyEntity, playerEntity);
+        PlayerEntity updatedPlayerEntity = playerEntityService.leaveLobby(playerEntity);
 
         // TODO: think into the future --> is this response message enough or should we also include the updated gameLobbyDto?
         return objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
