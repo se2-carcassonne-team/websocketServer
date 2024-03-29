@@ -413,6 +413,58 @@ public class PlayerControllerIntegrationTest {
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
+    // TODO:
+
+
+    @Test
+    void testThatUpdateUsernameOfNonExistentPlayerFails() throws Exception {
+        StompSession session = initStompSession();
+
+        PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+
+        // assert that the player entity doesn't exist in the database:
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
+
+        PlayerDto testPlayerDtoA = playerMapper.mapToDto(testPlayerEntityA);
+        testPlayerDtoA.setUsername("UPDATED");
+
+        String payload = objectMapper.writeValueAsString(testPlayerDtoA);
+        session.send("/app/player-update-username", payload);
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        // assert that the player still doesn't exist
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
+
+        assertThat(actualResponse).isEqualTo("Player does not exist");
+    }
+
+    @Test
+    void testThatUpdatePlayerUsernameWithFaultyJsonFails() throws Exception {
+        StompSession session = initStompSession();
+
+        PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        playerEntityService.createPlayer(testPlayerEntityA);
+        // assert that the player entity exists in the database:
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isPresent();
+
+        PlayerDto testPlayerDtoA = playerMapper.mapToDto(testPlayerEntityA);
+        testPlayerDtoA.setUsername("UPDATED");
+
+        String payload = "not a JSON";
+
+        session.send("/app/player-update-username", payload);
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        // assert that the player still exists
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isPresent();
+        // assert that the username of the player hasn't changed to "UPDATED"
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get().getUsername()).isEqualTo(testPlayerEntityA.getUsername());
+
+        assertThat(actualResponse).contains("Unrecognized token");
+    }
+
 
 
     @Test
