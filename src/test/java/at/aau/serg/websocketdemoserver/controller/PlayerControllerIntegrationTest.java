@@ -413,8 +413,6 @@ public class PlayerControllerIntegrationTest {
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
-    // TODO:
-
 
     @Test
     void testThatUpdateUsernameOfNonExistentPlayerFails() throws Exception {
