@@ -31,6 +31,36 @@ public class TestDataUtil {
                 .gameLobbyEntity(gameLobbyEntity)
                 .build();
     }
+    public static PlayerEntity createTestPlayerEntityD(final GameLobbyEntity gameLobbyEntity){
+        return PlayerEntity.builder()
+                .id(4L)
+                .username("usernameD")
+                .gameLobbyEntity(gameLobbyEntity)
+                .build();
+    }
+    public static PlayerEntity createTestPlayerEntityE(final GameLobbyEntity gameLobbyEntity){
+        return PlayerEntity.builder()
+                .id(5L)
+                .username("usernameE")
+                .gameLobbyEntity(gameLobbyEntity)
+                .build();
+    }
+    public static PlayerEntity createTestPlayerEntityF(final GameLobbyEntity gameLobbyEntity){
+        return PlayerEntity.builder()
+                .id(6L)
+                .username("usernameF")
+                .gameLobbyEntity(gameLobbyEntity)
+                .build();
+    }
+
+    public static PlayerEntity createTestPlayerEntityG(final GameLobbyEntity gameLobbyEntity){
+        return PlayerEntity.builder()
+                .id(7L)
+                .username("usernameG")
+                .gameLobbyEntity(gameLobbyEntity)
+                .build();
+    }
+
 
     public static GameLobbyEntity createTestGameLobbyEntityA() {
         Timestamp timeStamp = Timestamp.valueOf("2024-03-26 15:00:00.000");

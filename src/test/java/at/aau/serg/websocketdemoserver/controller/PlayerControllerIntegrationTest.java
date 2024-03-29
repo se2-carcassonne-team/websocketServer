@@ -10,6 +10,7 @@ import at.aau.serg.websocketdemoserver.mapper.GameLobbyMapper;
 import at.aau.serg.websocketdemoserver.mapper.PlayerMapper;
 import at.aau.serg.websocketdemoserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketdemoserver.service.PlayerEntityService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
@@ -85,7 +86,7 @@ public class PlayerControllerIntegrationTest {
         // manually transform the PlayerDto object to a JSON-string:
         String playerDtoJson = objectMapper.writeValueAsString(testPlayerDto);
 
-        session.send("/app/create-user", playerDtoJson);
+        session.send("/app/player-create", playerDtoJson);
 
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
 
@@ -95,6 +96,69 @@ public class PlayerControllerIntegrationTest {
 
         // assert that the controller response is as we expect. The controller should return the DTO of the created player
         assertThat(actualResponse).isEqualTo(playerDtoJson);
+    }
+
+    @Test
+    void testThatCreatePlayerWithFaultyJsonInputReturnsExpectedResponse() throws Exception {
+        StompSession session = initStompSession();
+        String faultyInput = "Not a Json of a PlayerDto";
+        session.send("/app/player-create", faultyInput);
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        // JsonProcessingException for this particular input:
+        // Received message from server: Unrecognized token 'Not a Json of a PlayerDto': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false') at [Source: (String)"notADtoInJson"; line: 1, column: 14]
+
+        assertThat(actualResponse).contains("Unrecognized token");
+    }
+
+    @Test
+    void testThatCreatePlayerWithExistingIdFails() throws Exception {
+        StompSession session = initStompSession();
+
+        PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+
+        // create player with id=1L in database
+        playerEntityService.createPlayer(testPlayerEntityA);
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isPresent();
+
+        // new player with same id:
+        PlayerDto testPlayerDtoB = playerMapper.mapToDto(TestDataUtil.createTestPlayerEntityB(null));
+        testPlayerDtoB.setId(testPlayerEntityA.getId());
+
+        String playerDtoBJson = objectMapper.writeValueAsString(testPlayerDtoB);
+
+        session.send("/app/player-create", playerDtoBJson);
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+
+        assertThat(actualResponse).isEqualTo("A player with the id:" + testPlayerDtoB.getId() + " already exists");
+    }
+
+    @Test
+    void testThatCreatePlayerWithExistingUsernameFails() throws Exception {
+        StompSession session = initStompSession();
+
+        PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+
+        // create player with username="taken" in database
+        testPlayerEntityA.setUsername("taken");
+
+        playerEntityService.createPlayer(testPlayerEntityA);
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get()).isEqualTo(testPlayerEntityA);
+
+        // new player with same username:
+        PlayerDto testPlayerDtoB = playerMapper.mapToDto(TestDataUtil.createTestPlayerEntityB(null));
+        testPlayerDtoB.setUsername(testPlayerEntityA.getUsername());
+
+        String playerDtoBJson = objectMapper.writeValueAsString(testPlayerDtoB);
+
+        session.send("/app/player-create", playerDtoBJson);
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+
+        assertThat(actualResponse).isEqualTo("A player with the username:" + testPlayerDtoB.getUsername() + " already exists");
     }
 
     @Test
@@ -123,7 +187,7 @@ public class PlayerControllerIntegrationTest {
         // 1) assert that the test player doesn't reference a game lobby
         assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get().getGameLobbyEntity()).isEqualTo(null);
         // 2) assert the numPlayers of the test game lobby is 0
-        assertThat(gameLobbyEntityService.findById(testPlayerEntityA.getId()).get().getNumPlayers()).isEqualTo(0);
+        assertThat(gameLobbyEntityService.findById(testGameLobbyEntityA.getId()).get().getNumPlayers()).isEqualTo(0);
 
         session.send("/app/player-join-lobby", payload);
 
@@ -144,6 +208,176 @@ public class PlayerControllerIntegrationTest {
 
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
+
+    @Test
+    void testThatJoinLobbyWithFaultyGameLobbyDtoJsonReturnsExpectedResult() throws Exception {
+        // TODO: implement
+        StompSession session = initStompSession();
+
+        // Pre-populate the database
+        GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
+        PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
+        assertThat(gameLobbyEntityService.findById(testGameLobbyEntityA.getId())).isEmpty();
+        gameLobbyEntityService.createLobby(testGameLobbyEntityA);
+        playerEntityService.createPlayer(testPlayerEntityA);
+
+        // player will now try to join a lobby but some of the JSON is faulty
+        // manually transform objects to JSON-strings and combine them:
+        PlayerDto testPlayerDtoA = playerMapper.mapToDto(testPlayerEntityA);
+        GameLobbyDto testGameLobbyDtoA = gameLobbyMapper.mapToDto(testGameLobbyEntityA);
+
+        String playerDtoJson = objectMapper.writeValueAsString(testPlayerDtoA);
+        String gameLobbyDtoJson = "not a JSON";
+
+        String payload = gameLobbyDtoJson + "|" +  playerDtoJson;
+
+        session.send("/app/player-join-lobby", payload);
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get().getGameLobbyEntity()).isEqualTo(null);
+
+        // JsonProcessingException:   "Unrecognized token 'faulty': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false') at [Source: (String)"faulty JSON"; line: 1, column: 7]"
+        assertThat(actualResponse).contains("Unrecognized token");
+    }
+
+    @Test
+    void testThatJoinLobbyWithFaultyPlayerDtoJsonReturnsExpectedResult() throws Exception {
+        StompSession session = initStompSession();
+
+        // Pre-populate the database
+        GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
+        PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
+        assertThat(gameLobbyEntityService.findById(testGameLobbyEntityA.getId())).isEmpty();
+        gameLobbyEntityService.createLobby(testGameLobbyEntityA);
+        playerEntityService.createPlayer(testPlayerEntityA);
+
+        // player will now try to join a lobby but some of the JSON is faulty
+        // manually transform objects to JSON-strings and combine them:
+        PlayerDto testPlayerDtoA = playerMapper.mapToDto(testPlayerEntityA);
+        GameLobbyDto testGameLobbyDtoA = gameLobbyMapper.mapToDto(testGameLobbyEntityA);
+
+        String playerDtoJson = "not a JSON";
+        String gameLobbyDtoJson = objectMapper.writeValueAsString(testGameLobbyDtoA);
+
+        String payload = gameLobbyDtoJson + "|" +  playerDtoJson;
+
+
+        session.send("/app/player-join-lobby", payload);
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get().getGameLobbyEntity()).isEqualTo(null);
+
+        // JsonProcessingException:   "Unrecognized token 'faulty': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false') at [Source: (String)"faulty JSON"; line: 1, column: 7]"
+        assertThat(actualResponse).contains("Unrecognized token");
+    }
+
+    @Test
+    void testThatPlayerCannotJoinFullGameLobby() throws Exception {
+        //WEBSOCKET_TOPIC = "/topic/player-join-lobby-response";
+        StompSession session = initStompSession();
+
+        // Pre-populate the database
+        GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
+        assertThat(gameLobbyEntityService.findById(testGameLobbyEntityA.getId())).isEmpty();
+        gameLobbyEntityService.createLobby(testGameLobbyEntityA);
+
+        // 6 players already in the lobby:
+        PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        PlayerEntity testPlayerEntityB = TestDataUtil.createTestPlayerEntityB(null);
+        PlayerEntity testPlayerEntityC = TestDataUtil.createTestPlayerEntityC(null);
+        PlayerEntity testPlayerEntityD = TestDataUtil.createTestPlayerEntityD(null);
+        PlayerEntity testPlayerEntityE = TestDataUtil.createTestPlayerEntityE(null);
+        PlayerEntity testPlayerEntityF = TestDataUtil.createTestPlayerEntityF(null);
+
+        playerEntityService.createPlayer(testPlayerEntityA);
+        playerEntityService.createPlayer(testPlayerEntityB);
+        playerEntityService.createPlayer(testPlayerEntityC);
+        playerEntityService.createPlayer(testPlayerEntityD);
+        playerEntityService.createPlayer(testPlayerEntityE);
+        playerEntityService.createPlayer(testPlayerEntityF);
+
+        playerEntityService.joinLobby(testGameLobbyEntityA, testPlayerEntityA);
+        playerEntityService.joinLobby(testGameLobbyEntityA, testPlayerEntityB);
+        playerEntityService.joinLobby(testGameLobbyEntityA, testPlayerEntityC);
+        playerEntityService.joinLobby(testGameLobbyEntityA, testPlayerEntityD);
+        playerEntityService.joinLobby(testGameLobbyEntityA, testPlayerEntityE);
+        playerEntityService.joinLobby(testGameLobbyEntityA, testPlayerEntityF);
+        // lobby is now be full: 6/6 players
+
+        // seventh player should not be able to join the same lobby:
+        PlayerEntity testPlayerEntityG = TestDataUtil.createTestPlayerEntityG(null);
+        playerEntityService.createPlayer(testPlayerEntityG);
+
+        PlayerDto testPlayerDtoG = playerMapper.mapToDto(testPlayerEntityA);
+        GameLobbyDto testGameLobbyDtoA = gameLobbyMapper.mapToDto(testGameLobbyEntityA);
+
+        // manually transform objects to JSON-strings and combine them:
+        String playerDtoJson = objectMapper.writeValueAsString(testPlayerDtoG);
+        String gameLobbyDtoJson = objectMapper.writeValueAsString(testGameLobbyDtoA);
+
+        String payload = gameLobbyDtoJson + "|" +  playerDtoJson;
+
+        // before sending payload:
+        // 1) assert that the test player doesn't reference a game lobby
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityG.getId()).get().getGameLobbyEntity()).isEqualTo(null);
+        // 2) assert the numPlayers of the test game lobby is 6
+        assertThat(gameLobbyEntityService.findById(testGameLobbyEntityA.getId()).get().getNumPlayers()).isEqualTo(6);
+
+        session.send("/app/player-join-lobby", payload);
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        // after sending & controller processing payload:
+        // 1) assert that the test game lobby still has numPlayers = 6
+        assertThat(gameLobbyEntityService.findById(testGameLobbyEntityA.getId()).get().getNumPlayers()).isEqualTo(6);
+        // 2) assert that the seventh player still doesn't reference a lobby
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityG.getId()).get().getGameLobbyEntity()).isEqualTo(null);
+
+
+        // expected response: updated playerDto with the Lobby, which itself should also be updated to have incremented numPlayers
+        var expectedResponse = "The game lobby is already full";
+
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+    }
+
+    @Test
+    void tesThatJoinNonExistentLobbyReturnsExpectedResult() throws Exception {
+        StompSession session = initStompSession();
+
+        // Pre-populate the database: only save the testPlayerEntityA to the database!
+        GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
+        PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
+        playerEntityService.createPlayer(testPlayerEntityA);
+
+        // player will now try to join a lobby that doesn't exist:
+        // manually transform objects to JSON-strings and combine them:
+        PlayerDto testPlayerDtoA = playerMapper.mapToDto(testPlayerEntityA);
+        GameLobbyDto testGameLobbyDtoA = gameLobbyMapper.mapToDto(testGameLobbyEntityA);
+
+        String playerDtoJson = objectMapper.writeValueAsString(testPlayerDtoA);
+        String gameLobbyDtoJson = objectMapper.writeValueAsString(testGameLobbyDtoA);
+
+        String payload = gameLobbyDtoJson + "|" +  playerDtoJson;
+
+        // before sending payload:
+        // 1) assert that the test player doesn't reference a game lobby
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get().getGameLobbyEntity()).isEqualTo(null);
+        // 2) assert that no gameLobby exists in the database
+        assertThat(gameLobbyEntityService.getListOfLobbies()).isEmpty();
+
+        session.send("/app/player-join-lobby", payload);
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        assertThat(actualResponse).contains("GameLobbyEntity with the id:" + testGameLobbyEntityA.getId() + " doesn't exist");
+    }
+
+
 
     @Test
     void testThatUpdatePlayerUsernameSuccessfullyReturnsUpdatedPlayerDto() throws Exception {
@@ -178,6 +412,8 @@ public class PlayerControllerIntegrationTest {
         var expectedResponse = objectMapper.writeValueAsString(testPlayerDtoA);
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
+
+
 
     @Test
     void testThatLeaveLobbySuccessfullyRemovesPlayerFromGameLobby() throws Exception {
