@@ -7,6 +7,8 @@ import at.aau.serg.websocketdemoserver.domain.entity.repository.PlayerEntityRepo
 import at.aau.serg.websocketdemoserver.mapper.GameLobbyMapper;
 import at.aau.serg.websocketdemoserver.mapper.PlayerMapper;
 import at.aau.serg.websocketdemoserver.service.PlayerEntityService;
+import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -33,7 +35,18 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
 
     // @Dominik: slightly different approach: expose only entity objects to the service
     @Override
-    public PlayerEntity createPlayer(PlayerEntity playerEntity) {
+    public PlayerEntity createPlayer(PlayerEntity playerEntity) throws EntityExistsException {
+
+        // check if player with id already exists
+        if(playerEntityRepository.findById(playerEntity.getId()).isPresent()) {
+            throw new EntityExistsException("A player with the id:" + playerEntity.getId() + " already exists");
+        }
+
+        // check if player with username already exists --> extra method in repository: findPlayerEntitiesByUsername
+        if(!playerEntityRepository.findPlayerEntitiesByUsername(playerEntity.getUsername()).isEmpty()) {
+            throw new EntityExistsException("A player with the username:" + playerEntity.getUsername() + " already exists");
+        }
+
         return playerEntityRepository.save(playerEntity);
     }
 
@@ -58,9 +71,19 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
      * @return updated PlayerEntity from the database
      */
     @Override
-    public PlayerEntity joinLobby(GameLobbyEntity gameLobbyEntity, PlayerEntity playerEntity) {
+    public PlayerEntity joinLobby(GameLobbyEntity gameLobbyEntity, PlayerEntity playerEntity) throws EntityNotFoundException, RuntimeException {
 
-        // TODO: only allow lobby join if lobby is not full yet
+        // Check if lobby exists. Only if lobby exists can player join
+        Optional<GameLobbyEntity> gameLobbyEntityInDatabase = gameLobbyEntityRepository.findById(gameLobbyEntity.getId());
+        if (gameLobbyEntityInDatabase.isEmpty()) {
+            throw new EntityNotFoundException("GameLobbyEntity with the id:" + gameLobbyEntity.getId() + " doesn't exist");
+        }
+
+        // only allow lobby join if lobby is not full yet
+        if (gameLobbyEntityInDatabase.get().getNumPlayers() > 5) {
+            throw new RuntimeException("The game lobby is already full");
+        }
+
 
         // update the PlayerEntity's gameLobby property to reference the gameLobbyEntity which should be joined
         playerEntity.setGameLobbyEntity(gameLobbyEntity);
