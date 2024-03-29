@@ -51,8 +51,6 @@ public class GameLobbyController {
     @MessageMapping("/create-lobby")
     @SendTo("/topic/create-lobby-response")
     public String handleLobbyCreation(String gameLobbyDtoAndPlayerDtoJson) throws JsonProcessingException {
-        // TODO: Error handling
-
         String[] splitJsonStrings = gameLobbyDtoAndPlayerDtoJson.split("\\|");
 
         GameLobbyDto gameLobbyDto = objectMapper.readValue(splitJsonStrings[0], GameLobbyDto.class);
@@ -102,11 +100,15 @@ public class GameLobbyController {
     public String handleDeleteLobby(String gameLobbyDtoJson) throws JsonProcessingException {
         GameLobbyDto gameLobbyDto = objectMapper.readValue(gameLobbyDtoJson, GameLobbyDto.class);
 
-        gameLobbyService.deleteLobby(gameLobbyDto.getId());
-        if(gameLobbyService.findById(gameLobbyDto.getId()).isEmpty()) {
-            return "gameLobby no longer exists";
-        } else {
+        try {
+            gameLobbyService.deleteLobby(gameLobbyDto.getId());
+
+            if(gameLobbyService.findById(gameLobbyDto.getId()).isEmpty()) {
+                return "gameLobby no longer exists";
+            }
             return "gameLobby still exists";
+        } catch (RuntimeException e) {
+            return e.getMessage();
         }
     }
 }
