@@ -588,6 +588,27 @@ public class PlayerControllerIntegrationTest {
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
+    @Test
+    void testThatDeletePlayerSuccessfullyDeletesNonExistentPlayer() throws Exception {
+        StompSession session = initStompSession();
+
+        PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+
+        // assert that player currently doesn't exist in database
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
+
+        PlayerDto testPlayerDtoA = playerMapper.mapToDto(testPlayerEntityA);
+        session.send("/app/player-delete", objectMapper.writeValueAsString(testPlayerDtoA));
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        // assert that player no longer exists in database
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
+
+        var expectedResponse = "player no longer exists in database";
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+    }
+
     /////////start: von Demo-Projekt übernommen
     /**
      * @return The Stomp session for the WebSocket connection (Stomp - WebSocket is comparable to HTTP - TCP).
