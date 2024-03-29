@@ -140,4 +140,14 @@ public class PlayerEntityRepositoryTest {
                 .hasSize(1)
                 .containsExactly(playerEntityA);
     }
+
+    @Test
+    void testPlayerExistsById() {
+        PlayerEntity playerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        underTest.save(playerEntityA);
+
+        assertThat(underTest.existsById(playerEntityA.getId())).isTrue();
+
+        assertThat(underTest.existsById(playerEntityA.getId()+1)).isFalse();
+    }
 }
