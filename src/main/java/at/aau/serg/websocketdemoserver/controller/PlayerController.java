@@ -10,6 +10,8 @@ import at.aau.serg.websocketdemoserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketdemoserver.service.PlayerEntityService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.EntityExistsException;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
@@ -34,23 +36,30 @@ public class PlayerController {
     }
 
     // test value
-    @MessageMapping("/create-user")
+    @MessageMapping("/player-create")
     //@SendTo("/topic/create-user-response")
     @SendTo("/topic/websocket-broker-response")
-    public String handleCreatePlayer(String playerDtoJson) throws JsonProcessingException {
-        // read in the JSON String and convert to PlayerDTO Object
-        PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
+    public String handleCreatePlayer(String playerDtoJson) {
+        try {
+            // read in the JSON String and convert to PlayerDTO Object
+            PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
 
-        PlayerEntity createdPlayerEntity = playerEntityService.createPlayer(playerMapper.mapToEntity(playerDto));
+            PlayerEntity createdPlayerEntity = playerEntityService.createPlayer(playerMapper.mapToEntity(playerDto));
+            // return the DTO of the created player
+            return objectMapper.writeValueAsString(playerMapper.mapToDto(createdPlayerEntity));
 
-        // return the DTO of the created player
-        return objectMapper.writeValueAsString(playerMapper.mapToDto(createdPlayerEntity));
+        } catch (JsonProcessingException e) {
+            return e.getMessage();
+        } catch (EntityExistsException e) {
+            return e.getMessage();
+        }
+
     }
 
     @MessageMapping("/player-join-lobby")
     //@SendTo("/topic/player-join-lobby-response")
     @SendTo("/topic/websocket-broker-response")
-    public String handlePlayerJoinLobby(String gameLobbyDtoAndPlayerDtoJson) throws JsonProcessingException {
+    public String handlePlayerJoinLobby(String gameLobbyDtoAndPlayerDtoJson) {
 
         // TODO: error handling, e.g. when the lobby to join doesn't exist, etc.
 
@@ -59,29 +68,28 @@ public class PlayerController {
         String gameLobbyDtoJson = splitJsonStrings[0];
         String playerDtoJson = splitJsonStrings[1];
 
-        GameLobbyDto gameLobbyDto = objectMapper.readValue(gameLobbyDtoJson, GameLobbyDto.class);
-        PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
+        try {
+            GameLobbyDto gameLobbyDto = objectMapper.readValue(gameLobbyDtoJson, GameLobbyDto.class);
+            PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
+            // 2) convert the DTOs to Entity Objects for Service:
+            PlayerEntity playerEntity = playerMapper.mapToEntity(playerDto);
+            GameLobbyEntity gameLobbyEntity = gameLobbyMapper.mapToEntity(gameLobbyDto);
 
-        // 2) convert the DTOs to Entity Objects for Service:
-        PlayerEntity playerEntity = playerMapper.mapToEntity(playerDto);
-        GameLobbyEntity gameLobbyEntity = gameLobbyMapper.mapToEntity(gameLobbyDto);
+            // 3) player joins lobby:
+            PlayerEntity updatedPlayerEntity = playerEntityService.joinLobby(gameLobbyEntity, playerEntity);
 
-        // 3) player joins lobby:
-        PlayerEntity updatedPlayerEntity = playerEntityService.joinLobby(gameLobbyEntity, playerEntity);
+            PlayerDto dto = playerMapper.mapToDto(updatedPlayerEntity);
 
+            // return the dto equivalent of the updated player entity
+            return objectMapper.writeValueAsString(dto);
 
-        // TODO: refactor code here, the check if the game lobby exists should be done earlier, as the joinLobby will (probably) create a new LobbyEntity if the given one doesn't exist yet (due to cascading)
-        Optional<GameLobbyEntity> updatedGameLobbyEntityOptional = gameLobbyEntityService.findById(gameLobbyEntity.getId());
-        if (updatedGameLobbyEntityOptional.isPresent()){
-            GameLobbyEntity updatedGameLobbyEntity = updatedGameLobbyEntityOptional.get();
-        } else {
-            // lobby doesn't exist --> error handling
+        } catch (JsonProcessingException e) {
+            return e.getMessage();
+        } catch (EntityNotFoundException e) {
+            return e.getMessage();
+        } catch (RuntimeException e) {
+            return e.getMessage();
         }
-
-        PlayerDto dto = playerMapper.mapToDto(updatedPlayerEntity);
-
-        // return the dto equivalent of the updated player entity
-        return objectMapper.writeValueAsString(dto);
     }
 
     @MessageMapping("/player-update-username")
