@@ -20,8 +20,6 @@ public class GameLobbyEntityServiceImpl implements GameLobbyEntityService {
     @Override
     public GameLobbyEntity createLobby(GameLobbyEntity gameLobbyEntity) {
         gameLobbyEntity.setNumPlayers(0);
-        // set number of players to 0 on creation for now
-        // TODO: the gameLobby is automatically joined by the player who created it
         return gameLobbyEntityRepository.save(gameLobbyEntity);
     }
 
@@ -34,7 +32,7 @@ public class GameLobbyEntityServiceImpl implements GameLobbyEntityService {
             gameLobbyToUpdate.setName(gameLobbyEntity.getName());
             return gameLobbyEntityRepository.save(gameLobbyToUpdate);
         } else {
-            throw new RuntimeException("Game Lobby does not exist");
+            throw new RuntimeException("gameLobby does not exist");
         }
     }
 
