@@ -1,3 +1,4 @@
+/*
 package at.aau.serg.websocketdemoserver.messaging.dtos;
 
 import lombok.AllArgsConstructor;
@@ -14,3 +15,4 @@ public class StompMessage {
         // https://www.educative.io/answers/what-is-the-data-annotation-in-lombok
 
 }
+*/
