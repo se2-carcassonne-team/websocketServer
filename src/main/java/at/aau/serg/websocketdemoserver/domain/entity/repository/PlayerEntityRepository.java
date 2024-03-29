@@ -13,4 +13,5 @@ public interface PlayerEntityRepository extends JpaRepository<PlayerEntity, Long
     //@Query("SELECT p FROM PlayerEntity p WHERE p.gameLobbyEntity.id = ?1")
     List<PlayerEntity> findPlayerEntitiesByGameLobbyEntity_Id(Long id);
 
+    List<PlayerEntity> findPlayerEntitiesByUsername(String username);
 }

@@ -124,4 +124,20 @@ public class PlayerEntityRepositoryTest {
         List<PlayerEntity> resultC = underTest.findPlayerEntitiesByGameLobbyEntity_Id(gameLobbyEntityC.getId());
         assertThat(resultC).isEmpty();
     }
+
+    @Test
+    void testThatPlayersCanBeFoundByUsername() {
+        PlayerEntity playerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        PlayerEntity playerEntityB = TestDataUtil.createTestPlayerEntityB(null);
+        PlayerEntity playerEntityC = TestDataUtil.createTestPlayerEntityC(null);
+
+        underTest.save(playerEntityA);
+        underTest.save(playerEntityB);
+        underTest.save(playerEntityC);
+
+        List<PlayerEntity> result = underTest.findPlayerEntitiesByUsername(playerEntityA.getUsername());
+        assertThat(result)
+                .hasSize(1)
+                .containsExactly(playerEntityA);
+    }
 }
