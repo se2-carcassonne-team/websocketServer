@@ -486,10 +486,7 @@ public class PlayerControllerIntegrationTest {
 
         // create payload string:
         PlayerDto testPlayerDtoA = playerMapper.mapToDto(testPlayerEntityA);
-        GameLobbyDto testGameLobbyDtoA = gameLobbyMapper.mapToDto(testGameLobbyEntityA);
-        String payload = objectMapper.writeValueAsString(testGameLobbyDtoA)
-                + "|"
-                + objectMapper.writeValueAsString(testPlayerDtoA);
+        String payload = objectMapper.writeValueAsString(testPlayerDtoA);
 
         session.send("/app/player-leave-lobby", payload);
 
