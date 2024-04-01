@@ -43,12 +43,7 @@ public class GameLobbyEntityServiceImpl implements GameLobbyEntityService {
 
     @Override
     public void deleteLobby(Long id) {
-        if(gameLobbyEntityRepository.findById(id).isPresent()) {
-            gameLobbyEntityRepository.deleteById(id);
-        } else {
-            throw new RuntimeException("gameLobby does not exist and can not be deleted");
-        }
-
+        gameLobbyEntityRepository.deleteById(id);
     }
 
     @Override

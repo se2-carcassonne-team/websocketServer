@@ -10,6 +10,7 @@ import at.aau.serg.websocketdemoserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketdemoserver.service.PlayerEntityService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
@@ -88,7 +89,7 @@ public class GameLobbyController {
         List<GameLobbyEntity> gameLobbyEntities = gameLobbyService.getListOfLobbies();
         List<GameLobbyDto> gameLobbyDtos = new ArrayList<>();
 
-        for(GameLobbyEntity gameLobbyEntity : gameLobbyEntities) {
+        for (GameLobbyEntity gameLobbyEntity : gameLobbyEntities) {
             gameLobbyDtos.add(gameLobbyMapper.mapToDto(gameLobbyEntity));
         }
 
@@ -100,15 +101,17 @@ public class GameLobbyController {
     public String handleDeleteLobby(String gameLobbyDtoJson) throws JsonProcessingException {
         GameLobbyDto gameLobbyDto = objectMapper.readValue(gameLobbyDtoJson, GameLobbyDto.class);
 
-        try {
-            gameLobbyService.deleteLobby(gameLobbyDto.getId());
-
-            if(gameLobbyService.findById(gameLobbyDto.getId()).isEmpty()) {
-                return "gameLobby no longer exists";
-            }
-            return "gameLobby still exists";
-        } catch (RuntimeException e) {
-            return e.getMessage();
+        gameLobbyService.deleteLobby(gameLobbyDto.getId());
+        if (gameLobbyService.findById(gameLobbyDto.getId()).isEmpty()) {
+            return "gameLobby no longer exists";
         }
+
+        return "ERROR! gameLobby still exists in database";
+    }
+
+    @MessageExceptionHandler
+    @SendTo("/queue/errors")
+    public String handleException(Throwable exception) {
+        return "server exception: " + exception.getMessage();
     }
 }
