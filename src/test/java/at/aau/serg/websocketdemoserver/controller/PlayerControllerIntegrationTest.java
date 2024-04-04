@@ -13,6 +13,8 @@ import at.aau.serg.websocketdemoserver.service.PlayerEntityService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -55,27 +57,25 @@ public class PlayerControllerIntegrationTest {
         this.gameLobbyMapper = gameLobbyMapper;
     }
 
-
-
-
-
-    /////////start: von Demo-Projekt übernommen & leicht geändert
     @LocalServerPort
     private int port;
     private final String WEBSOCKET_URI = "ws://localhost:%d/websocket-broker";
-    private final String WEBSOCKET_TOPIC = "/topic/websocket-broker-response";
+    BlockingQueue<String> messages;
 
-    /**
-     * Queue of messages from the server.
-     */
-    BlockingQueue<String> messages = new LinkedBlockingDeque<>();
-    /////////end: von Demo-Projekt übernommen & leicht geändert
+    @BeforeEach
+    public void setUp() {
+        messages = new LinkedBlockingDeque<>();
+    }
 
+    @AfterEach
+    public void tearDown() {
+        messages = null;
+    }
 
     @Test
     public void testThatCreatePlayerHandlerSuccessfullyCreatesPlayer() throws Exception {
         //WEBSOCKET_TOPIC = "/topic/create-user-response";
-        StompSession session = initStompSession();
+        StompSession session = initStompSession("/user/queue/player-response", messages);
 
         PlayerDto testPlayerDto = TestDataUtil.createTestPlayerDtoA(null);
         PlayerEntity testPlayerEntity = playerMapper.mapToEntity(testPlayerDto);
@@ -100,7 +100,7 @@ public class PlayerControllerIntegrationTest {
 
     @Test
     void testThatCreatePlayerWithFaultyJsonInputReturnsExpectedResponse() throws Exception {
-        StompSession session = initStompSession();
+        StompSession session = initStompSession("/user/queue/errors", messages);
         String faultyInput = "Not a Json of a PlayerDto";
         session.send("/app/player-create", faultyInput);
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
@@ -113,7 +113,7 @@ public class PlayerControllerIntegrationTest {
 
     @Test
     void testThatCreatePlayerWithExistingIdFails() throws Exception {
-        StompSession session = initStompSession();
+        StompSession session = initStompSession("/user/queue/errors", messages);
 
         PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
 
@@ -132,12 +132,12 @@ public class PlayerControllerIntegrationTest {
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
 
 
-        assertThat(actualResponse).isEqualTo("A player with the id:" + testPlayerDtoB.getId() + " already exists");
+        assertThat(actualResponse).contains("A player with the id:" + testPlayerDtoB.getId() + " already exists");
     }
 
     @Test
     void testThatCreatePlayerWithExistingUsernameFails() throws Exception {
-        StompSession session = initStompSession();
+        StompSession session = initStompSession("/user/queue/errors", messages);
 
         PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
 
@@ -158,13 +158,13 @@ public class PlayerControllerIntegrationTest {
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
 
 
-        assertThat(actualResponse).isEqualTo("A player with the username:" + testPlayerDtoB.getUsername() + " already exists");
+        assertThat(actualResponse).contains("A player with the username:" + testPlayerDtoB.getUsername() + " already exists");
     }
 
     @Test
     void testThatJoinLobbySuccessfullyMakesPlayerJoinLobby() throws Exception {
         //WEBSOCKET_TOPIC = "/topic/player-join-lobby-response";
-        StompSession session = initStompSession();
+        StompSession session = initStompSession("/topic/player-lobby-response", messages);
 
         // Pre-populate the database
         GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
@@ -212,7 +212,7 @@ public class PlayerControllerIntegrationTest {
     @Test
     void testThatJoinLobbyWithFaultyGameLobbyDtoJsonReturnsExpectedResult() throws Exception {
         // TODO: implement
-        StompSession session = initStompSession();
+        StompSession session = initStompSession("/user/queue/errors", messages);
 
         // Pre-populate the database
         GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
@@ -244,7 +244,7 @@ public class PlayerControllerIntegrationTest {
 
     @Test
     void testThatJoinLobbyWithFaultyPlayerDtoJsonReturnsExpectedResult() throws Exception {
-        StompSession session = initStompSession();
+        StompSession session = initStompSession("/user/queue/errors", messages);
 
         // Pre-populate the database
         GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
@@ -278,7 +278,7 @@ public class PlayerControllerIntegrationTest {
     @Test
     void testThatPlayerCannotJoinFullGameLobby() throws Exception {
         //WEBSOCKET_TOPIC = "/topic/player-join-lobby-response";
-        StompSession session = initStompSession();
+        StompSession session = initStompSession("/user/queue/errors", messages);
 
         // Pre-populate the database
         GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
@@ -341,12 +341,12 @@ public class PlayerControllerIntegrationTest {
         // expected response: updated playerDto with the Lobby, which itself should also be updated to have incremented numPlayers
         var expectedResponse = "The game lobby is already full";
 
-        assertThat(actualResponse).isEqualTo(expectedResponse);
+        assertThat(actualResponse).contains(expectedResponse);
     }
 
     @Test
     void tesThatJoinNonExistentLobbyReturnsExpectedResult() throws Exception {
-        StompSession session = initStompSession();
+        StompSession session = initStompSession("/user/queue/errors", messages);
 
         // Pre-populate the database: only save the testPlayerEntityA to the database!
         GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
@@ -377,12 +377,10 @@ public class PlayerControllerIntegrationTest {
         assertThat(actualResponse).contains("GameLobbyEntity with the id:" + testGameLobbyEntityA.getId() + " doesn't exist");
     }
 
-
-
     @Test
     void testThatUpdatePlayerUsernameSuccessfullyReturnsUpdatedPlayerDto() throws Exception {
         //WEBSOCKET_TOPIC = "/topic/player-update-username-response";
-        StompSession session = initStompSession();
+        StompSession session = initStompSession("/user/queue/player-response", messages);
 
         // Populate the database with testPlayerEntityA
         PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
@@ -413,10 +411,9 @@ public class PlayerControllerIntegrationTest {
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
-
     @Test
     void testThatUpdateUsernameOfNonExistentPlayerFails() throws Exception {
-        StompSession session = initStompSession();
+        StompSession session = initStompSession("/user/queue/errors", messages);
 
         PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
 
@@ -434,12 +431,12 @@ public class PlayerControllerIntegrationTest {
         // assert that the player still doesn't exist
         assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
 
-        assertThat(actualResponse).isEqualTo("Player does not exist");
+        assertThat(actualResponse).contains("Player does not exist");
     }
 
     @Test
     void testThatUpdatePlayerUsernameWithFaultyJsonFails() throws Exception {
-        StompSession session = initStompSession();
+        StompSession session = initStompSession("/user/queue/errors", messages);
 
         PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
         playerEntityService.createPlayer(testPlayerEntityA);
@@ -463,11 +460,9 @@ public class PlayerControllerIntegrationTest {
         assertThat(actualResponse).contains("Unrecognized token");
     }
 
-
-
     @Test
     void testThatLeaveLobbySuccessfullyRemovesPlayerFromGameLobby() throws Exception {
-        StompSession session = initStompSession();
+        StompSession session = initStompSession("/topic/player-lobby-response", messages);
 
         // Populate the database with testPlayerEntityA who joins testGameLobbyEntityA:
         PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
@@ -507,7 +502,7 @@ public class PlayerControllerIntegrationTest {
 
     @Test
     void testThatNonExistentPlayerLeaveLobbyFails() throws Exception {
-        StompSession session = initStompSession();
+        StompSession session = initStompSession("/user/queue/errors", messages);
 
         PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
         GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
@@ -534,12 +529,12 @@ public class PlayerControllerIntegrationTest {
 
         var expectedResponse = "Player doesn't exist.";
 
-        assertThat(actualResponse).isEqualTo(expectedResponse);
+        assertThat(actualResponse).contains(expectedResponse);
     }
 
     @Test
     void testThatPlayerLeaveLobbyWhenNotInAnyLobbyFails() throws Exception {
-        StompSession session = initStompSession();
+        StompSession session = initStompSession("/user/queue/errors", messages);
 
         // Populate the database with testPlayerEntityA who joins testGameLobbyEntityA:
         PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
@@ -563,12 +558,12 @@ public class PlayerControllerIntegrationTest {
         assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get()).isEqualTo(testPlayerEntityA);
 
         var expectedResponse = "Player is not in a game lobby.";
-        assertThat(actualResponse).isEqualTo(expectedResponse);
+        assertThat(actualResponse).contains(expectedResponse);
     }
 
     @Test
     void testThatDeletePlayerSuccessfullyDeletesExistingPlayer() throws Exception {
-        StompSession session = initStompSession();
+        StompSession session = initStompSession("/user/queue/player-response", messages);
 
         PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
         playerEntityService.createPlayer(testPlayerEntityA);
@@ -584,13 +579,13 @@ public class PlayerControllerIntegrationTest {
         // assert that player no longer exists in database
         assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
 
-        var expectedResponse = "player no longer exists in database";
-        assertThat(actualResponse).isEqualTo(expectedResponse);
+        var expectedResponse = "DELETED";
+        assertThat(actualResponse).contains(expectedResponse);
     }
 
     @Test
     void testThatDeletePlayerSuccessfullyDeletesNonExistentPlayer() throws Exception {
-        StompSession session = initStompSession();
+        StompSession session = initStompSession("/user/queue/player-response", messages);
 
         PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
 
@@ -605,31 +600,23 @@ public class PlayerControllerIntegrationTest {
         // assert that player no longer exists in database
         assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
 
-        var expectedResponse = "player no longer exists in database";
-        assertThat(actualResponse).isEqualTo(expectedResponse);
+        var expectedResponse = "DELETED";
+        assertThat(actualResponse).contains(expectedResponse);
     }
 
-    /////////start: von Demo-Projekt übernommen
-    /**
-     * @return The Stomp session for the WebSocket connection (Stomp - WebSocket is comparable to HTTP - TCP).
-     */
-    public StompSession initStompSession() throws Exception {
+    public StompSession initStompSession(String topic, BlockingQueue<String> messages) throws Exception {
         WebSocketStompClient stompClient = new WebSocketStompClient(new StandardWebSocketClient());
         stompClient.setMessageConverter(new StringMessageConverter());
 
-        // connect client to the websocket server
         StompSession session = stompClient.connectAsync(String.format(WEBSOCKET_URI, port),
                         new StompSessionHandlerAdapter() {
                         })
-                // wait 1 sec for the client to be connected
                 .get(1, TimeUnit.SECONDS);
 
         // subscribes to the topic defined in WebSocketBrokerController
         // and adds received messages to WebSocketBrokerIntegrationTest#messages
-        session.subscribe(WEBSOCKET_TOPIC, new StompFrameHandlerClientImpl(messages));
+        session.subscribe(topic, new StompFrameHandlerClientImpl(messages));
 
         return session;
     }
-    /////////end: von Demo-Projekt übernommen
-
 }

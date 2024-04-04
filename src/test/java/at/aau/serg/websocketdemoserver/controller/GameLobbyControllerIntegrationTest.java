@@ -10,8 +10,9 @@ import at.aau.serg.websocketdemoserver.mapper.GameLobbyMapper;
 import at.aau.serg.websocketdemoserver.mapper.PlayerMapper;
 import at.aau.serg.websocketdemoserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketdemoserver.service.PlayerEntityService;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,9 +27,10 @@ import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -40,7 +42,6 @@ import java.util.concurrent.TimeUnit;
 public class GameLobbyControllerIntegrationTest {
 
     private ObjectMapper objectMapper;
-
     private GameLobbyEntityService gameLobbyEntityService;
     private PlayerEntityService playerEntityService;
     private PlayerMapper playerMapper;
@@ -58,11 +59,21 @@ public class GameLobbyControllerIntegrationTest {
     @LocalServerPort
     private int port;
     private final String WEBSOCKET_URI = "ws://localhost:%d/websocket-broker";
-    BlockingQueue<String> messages = new LinkedBlockingDeque<>();
+    BlockingQueue<String> messages;
+
+    @BeforeEach
+    public void setUp() {
+        messages = new LinkedBlockingDeque<>();
+    }
+
+    @AfterEach
+    public void tearDown() {
+        messages = null;
+    }
 
     @Test
     void testCreateLobbyReturnsCreatedGameLobbyDto() throws Exception {
-        StompSession session = initStompSession("/topic/create-lobby-response");
+        StompSession session = initStompSession("/user/queue/lobby-response", messages);
 
         PlayerEntity playerEntity = TestDataUtil.createTestPlayerEntityA(null);
         playerEntityService.createPlayer(playerEntity);
@@ -77,7 +88,7 @@ public class GameLobbyControllerIntegrationTest {
 
         assertThat(gameLobbyEntityService.findById(gameLobbyDto.getId())).isEqualTo(Optional.empty());
         assertThat(playerEntityService.findPlayerById(playerDto.getId()).get().getGameLobbyEntity()).isEqualTo(null);
-        session.send("/app/create-lobby", payload);
+        session.send("/app/lobby-create", payload);
 
         gameLobbyDto.setNumPlayers(gameLobbyDto.getNumPlayers() + 1);
         playerDto.setGameLobbyDto(gameLobbyDto);
@@ -95,13 +106,13 @@ public class GameLobbyControllerIntegrationTest {
 
     @Test
     void testUpdateLobbyNameReturnsUpdatedGameLobbyDto() throws Exception {
-        StompSession session = initStompSession("/topic/update-lobby-name");
+        StompSession session = initStompSession("/topic/game-lobby-response", messages);
 
         GameLobbyDto gameLobbyDto = TestDataUtil.createTestGameLobbyDtoA();
         gameLobbyEntityService.createLobby(gameLobbyMapper.mapToEntity(gameLobbyDto));
 
         gameLobbyDto.setName("lobbyB");
-        session.send("/app/update-lobby-name", objectMapper.writeValueAsString(gameLobbyDto));
+        session.send("/app/lobby-name-update", objectMapper.writeValueAsString(gameLobbyDto));
 
         String expectedResponse = objectMapper.writeValueAsString(gameLobbyDto);
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
@@ -117,54 +128,72 @@ public class GameLobbyControllerIntegrationTest {
 
     @Test
     void testUpdateLobbyNameReturnsErrorResponse() throws Exception {
-        StompSession session = initStompSession("/topic/update-lobby-name");
+        StompSession session = initStompSessionWithErrorTopic("/topic/game-lobby-response", "/user/queue/errors", messages);
 
         GameLobbyDto gameLobbyDto = TestDataUtil.createTestGameLobbyDtoA();
         gameLobbyEntityService.createLobby(gameLobbyMapper.mapToEntity(gameLobbyDto));
 
         gameLobbyDto.setId(10L);
         gameLobbyDto.setName("lobbyB");
-        session.send("/app/update-lobby-name", objectMapper.writeValueAsString(gameLobbyDto));
+        session.send("/app/lobby-name-update", objectMapper.writeValueAsString(gameLobbyDto));
 
-        String expectedResponse = "gameLobby name update failed";
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+        assertThat(actualResponse).startsWith("ERROR");
+    }
+
+    @Test
+    void getListOfLobbiesReturnsListOfGameLobbyDtos() throws Exception {
+        StompSession session = initStompSession("/user/queue/lobby-response", messages);
+
+        GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
+        GameLobbyDto gameLobbyDtoB = TestDataUtil.createTestGameLobbyDtoB();
+
+        gameLobbyEntityService.createLobby(gameLobbyMapper.mapToEntity(gameLobbyDtoA));
+        gameLobbyEntityService.createLobby(gameLobbyMapper.mapToEntity(gameLobbyDtoB));
+
+        List<GameLobbyDto> gameLobbyDtoList = new ArrayList<>();
+        gameLobbyDtoList.add(gameLobbyDtoA);
+        gameLobbyDtoList.add(gameLobbyDtoB);
+
+        session.send("/app/lobby-list", "");
+        String expectedResponse = objectMapper.writeValueAsString(gameLobbyDtoList);
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+    }
+
+    @Test
+    void getListOfLobbiesReturnsEmptyListOfGameLobbyDtos() throws Exception {
+        StompSession session = initStompSession("/user/queue/lobby-response", messages);
+
+        List<GameLobbyDto> gameLobbyDtoList = new ArrayList<>();
+
+        session.send("/app/lobby-list", "");
+        String expectedResponse = objectMapper.writeValueAsString(gameLobbyDtoList);
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
     @Test
     void deleteLobbyReturnsSuccessMessage() throws Exception {
-        StompSession session = initStompSession("/topic/delete-lobby-response");
+        StompSession session = initStompSession("/user/queue/lobby-response", messages);
 
         GameLobbyDto gameLobbyDto = TestDataUtil.createTestGameLobbyDtoA();
 
         gameLobbyEntityService.createLobby(gameLobbyMapper.mapToEntity(gameLobbyDto));
         assertThat(gameLobbyEntityService.findById(gameLobbyDto.getId()).isPresent()).isTrue();
 
-        session.send("/app/delete-lobby", objectMapper.writeValueAsString(gameLobbyDto));
+        session.send("/app/lobby-delete", objectMapper.writeValueAsString(gameLobbyDto));
 
-        String expectedResponse = "gameLobby no longer exists";
+        String expectedResponse = "deleted";
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
 
         assertThat(gameLobbyEntityService.findById(gameLobbyDto.getId()).isPresent()).isFalse();
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
-    //@Test
-    void deleteLobbyReturnsErrorMessage() throws Exception {
-        StompSession session = initStompSession("/topic/delete-lobby-response");
-
-        GameLobbyDto gameLobbyDto = TestDataUtil.createTestGameLobbyDtoA();
-
-        session.send("/app/delete-lobby", objectMapper.writeValueAsString(gameLobbyDto));
-
-        String expectedResponse = "gameLobby no longer exists";
-        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
-
-        assertThat(actualResponse).isEqualTo(expectedResponse);
-    }
-
-
-    public StompSession initStompSession(String topic) throws Exception {
+    public StompSession initStompSession(String topic, BlockingQueue<String> messages) throws Exception {
         WebSocketStompClient stompClient = new WebSocketStompClient(new StandardWebSocketClient());
         stompClient.setMessageConverter(new StringMessageConverter());
 
@@ -176,6 +205,13 @@ public class GameLobbyControllerIntegrationTest {
         // subscribes to the topic defined in WebSocketBrokerController
         // and adds received messages to WebSocketBrokerIntegrationTest#messages
         session.subscribe(topic, new StompFrameHandlerClientImpl(messages));
+
+        return session;
+    }
+
+    public StompSession initStompSessionWithErrorTopic(String topic, String errorTopic, BlockingQueue<String> messages) throws Exception {
+        StompSession session = initStompSession(topic, messages);
+        session.subscribe(errorTopic, new StompFrameHandlerClientImpl(messages));
 
         return session;
     }
