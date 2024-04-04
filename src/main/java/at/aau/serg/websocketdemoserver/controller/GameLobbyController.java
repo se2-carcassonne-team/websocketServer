@@ -13,8 +13,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.annotation.SendToUser;
+import org.springframework.messaging.simp.annotation.SubscribeMapping;
 import org.springframework.stereotype.Controller;
 
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,6 +36,10 @@ public class GameLobbyController {
     Without this annotation you would have to manually instantiate the class the old fashioned way:
 
     Service service = new Service();
+
+
+    @SubscribeMapping (could be useful, for example for initial loading of data):
+    @SubscribeMapping works only once every time the user (re)subscribes to the application controller under /app/...
     */
 
     private GameLobbyEntityService gameLobbyService;
@@ -49,8 +56,8 @@ public class GameLobbyController {
         this.playerMapper = playerMapper;
     }
 
-    @MessageMapping("/create-lobby")
-    @SendTo("/topic/create-lobby-response")
+    @MessageMapping("/lobby-create")
+    @SendToUser("/queue/lobby-response")
     public String handleLobbyCreation(String gameLobbyDtoAndPlayerDtoJson) throws JsonProcessingException {
         String[] splitJsonStrings = gameLobbyDtoAndPlayerDtoJson.split("\\|");
 
@@ -59,32 +66,21 @@ public class GameLobbyController {
         GameLobbyEntity gameLobbyEntity = gameLobbyMapper.mapToEntity(gameLobbyDto);
         PlayerEntity playerEntity = playerMapper.mapToEntity(playerDto);
 
-        try {
-            GameLobbyEntity createdGameLobbyEntity = gameLobbyService.createLobby(gameLobbyEntity);
-            playerService.joinLobby(createdGameLobbyEntity, playerEntity);
-            return objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(createdGameLobbyEntity));
-        } catch (Exception e) {
-            return "gameLobby creation failed";
-        }
+        GameLobbyEntity createdGameLobbyEntity = gameLobbyService.createLobby(gameLobbyEntity);
+        playerService.joinLobby(createdGameLobbyEntity, playerEntity);
+        return objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(createdGameLobbyEntity));
     }
 
-    @MessageMapping("/update-lobby-name")
-    @SendTo("/topic/update-lobby-name")
+    @MessageMapping("/lobby-name-update")
+    @SendTo("/topic/game-lobby-response")
     public String handleLobbyNameUpdate(String gameLobbyDtoJson) throws JsonProcessingException {
         GameLobbyDto gameLobbyDto = objectMapper.readValue(gameLobbyDtoJson, GameLobbyDto.class);
-        try {
-            GameLobbyEntity updatedGameLobbyEntity = gameLobbyService.updateLobbyName(gameLobbyMapper.mapToEntity(gameLobbyDto));
-            return objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(updatedGameLobbyEntity));
-        } catch (RuntimeException e) {
-            return "gameLobby name update failed";
-        }
-
+        GameLobbyEntity updatedGameLobbyEntity = gameLobbyService.updateLobbyName(gameLobbyMapper.mapToEntity(gameLobbyDto));
+        return objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(updatedGameLobbyEntity));
     }
 
-    // TODO: Should send to one user only
-    @MessageMapping("/list-lobby")
-    @SendTo("/topic/list-lobby-response")
-    // Send to User
+    @MessageMapping("/lobby-list")
+    @SendToUser("/queue/lobby-response")
     public String handleGetAllLobbies() throws JsonProcessingException {
         List<GameLobbyEntity> gameLobbyEntities = gameLobbyService.getListOfLobbies();
         List<GameLobbyDto> gameLobbyDtos = new ArrayList<>();
@@ -96,22 +92,21 @@ public class GameLobbyController {
         return objectMapper.writeValueAsString(gameLobbyDtos);
     }
 
-    @MessageMapping("/delete-lobby")
-    @SendTo("/topic/delete-lobby-response")
+    @MessageMapping("/lobby-delete")
+    @SendToUser("/queue/lobby-response")
     public String handleDeleteLobby(String gameLobbyDtoJson) throws JsonProcessingException {
         GameLobbyDto gameLobbyDto = objectMapper.readValue(gameLobbyDtoJson, GameLobbyDto.class);
 
         gameLobbyService.deleteLobby(gameLobbyDto.getId());
-        if (gameLobbyService.findById(gameLobbyDto.getId()).isEmpty()) {
-            return "gameLobby no longer exists";
+        if (gameLobbyService.findById(gameLobbyDto.getId()).isPresent()) {
+            throw new RuntimeException("gameLobby was not deleted");
         }
-
-        return "ERROR! gameLobby still exists in database";
+        return "deleted";
     }
 
     @MessageExceptionHandler
-    @SendTo("/queue/errors")
+    @SendToUser("/queue/errors")
     public String handleException(Throwable exception) {
-        return "server exception: " + exception.getMessage();
+        return "ERROR: " + exception.getMessage();
     }
 }

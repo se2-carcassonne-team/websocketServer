@@ -12,8 +12,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
 
 import java.util.Optional;
@@ -38,28 +40,20 @@ public class PlayerController {
     // test value
     @MessageMapping("/player-create")
     //@SendTo("/topic/create-user-response")
-    @SendTo("/topic/websocket-broker-response")
-    public String handleCreatePlayer(String playerDtoJson) {
-        try {
-            // read in the JSON String and convert to PlayerDTO Object
-            PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
+    @SendToUser("/queue/player-response")
+    public String handleCreatePlayer(String playerDtoJson) throws JsonProcessingException {
+        // read in the JSON String and convert to PlayerDTO Object
+        PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
 
-            PlayerEntity createdPlayerEntity = playerEntityService.createPlayer(playerMapper.mapToEntity(playerDto));
-            // return the DTO of the created player
-            return objectMapper.writeValueAsString(playerMapper.mapToDto(createdPlayerEntity));
-
-        } catch (JsonProcessingException e) {
-            return e.getMessage();
-        } catch (EntityExistsException e) {
-            return e.getMessage();
-        }
-
+        PlayerEntity createdPlayerEntity = playerEntityService.createPlayer(playerMapper.mapToEntity(playerDto));
+        // return the DTO of the created player
+        return objectMapper.writeValueAsString(playerMapper.mapToDto(createdPlayerEntity));
     }
 
     @MessageMapping("/player-join-lobby")
     //@SendTo("/topic/player-join-lobby-response")
-    @SendTo("/topic/websocket-broker-response")
-    public String handlePlayerJoinLobby(String gameLobbyDtoAndPlayerDtoJson) {
+    @SendTo("/topic/player-lobby-response")
+    public String handlePlayerJoinLobby(String gameLobbyDtoAndPlayerDtoJson) throws JsonProcessingException {
 
         // TODO: error handling, e.g. when the lobby to join doesn't exist, etc.
 
@@ -68,84 +62,66 @@ public class PlayerController {
         String gameLobbyDtoJson = splitJsonStrings[0];
         String playerDtoJson = splitJsonStrings[1];
 
-        try {
-            GameLobbyDto gameLobbyDto = objectMapper.readValue(gameLobbyDtoJson, GameLobbyDto.class);
-            PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
-            // 2) convert the DTOs to Entity Objects for Service:
-            PlayerEntity playerEntity = playerMapper.mapToEntity(playerDto);
-            GameLobbyEntity gameLobbyEntity = gameLobbyMapper.mapToEntity(gameLobbyDto);
+        GameLobbyDto gameLobbyDto = objectMapper.readValue(gameLobbyDtoJson, GameLobbyDto.class);
+        PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
+        // 2) convert the DTOs to Entity Objects for Service:
+        PlayerEntity playerEntity = playerMapper.mapToEntity(playerDto);
+        GameLobbyEntity gameLobbyEntity = gameLobbyMapper.mapToEntity(gameLobbyDto);
 
-            // 3) player joins lobby:
-            PlayerEntity updatedPlayerEntity = playerEntityService.joinLobby(gameLobbyEntity, playerEntity);
+        // 3) player joins lobby:
+        PlayerEntity updatedPlayerEntity = playerEntityService.joinLobby(gameLobbyEntity, playerEntity);
 
-            PlayerDto dto = playerMapper.mapToDto(updatedPlayerEntity);
+        PlayerDto dto = playerMapper.mapToDto(updatedPlayerEntity);
 
-            // return the dto equivalent of the updated player entity
-            return objectMapper.writeValueAsString(dto);
+        // return the dto equivalent of the updated player entity
+        return objectMapper.writeValueAsString(dto);
 
-        } catch (JsonProcessingException e) {
-            return e.getMessage();
-        } catch (EntityNotFoundException e) {
-            return e.getMessage();
-        } catch (RuntimeException e) {
-            return e.getMessage();
-        }
     }
 
     @MessageMapping("/player-update-username")
-    @SendTo("/topic/websocket-broker-response")
+    @SendToUser("/queue/player-response")
     public String handlePlayerUpdateUsername(String playerDtoJson) throws JsonProcessingException {
+        // convert the sent String content to the playerDto object we can work with:
+        PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
 
-        try {
-            // convert the sent String content to the playerDto object we can work with:
-            PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
+        PlayerEntity playerEntity = playerMapper.mapToEntity(playerDto);
 
-            PlayerEntity playerEntity = playerMapper.mapToEntity(playerDto);
-
-            PlayerEntity updatedPlayerEntity = playerEntityService.updateUsername(playerEntity);
-            return objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
-
-        } catch (JsonProcessingException e) {
-            return e.getMessage();
-        } catch (EntityNotFoundException e) {
-            return e.getMessage();
-        }
-}
+        PlayerEntity updatedPlayerEntity = playerEntityService.updateUsername(playerEntity);
+        return objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
+    }
 
     @MessageMapping("/player-leave-lobby")
-    @SendTo("/topic/websocket-broker-response")
+    @SendTo("/topic/player-lobby-response")
     public String handlePlayerLeaveLobby(String playerDtoJson) throws JsonProcessingException {
+        PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
 
-        try {
-            PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
+        // 2) convert the DTO to Entity Object for Service:
+        PlayerEntity playerEntity = playerMapper.mapToEntity(playerDto);
 
-            // 2) convert the DTO to Entity Object for Service:
-            PlayerEntity playerEntity = playerMapper.mapToEntity(playerDto);
+        // 3) player leaves lobby
+        PlayerEntity updatedPlayerEntity = playerEntityService.leaveLobby(playerEntity);
 
-            // 3) player leaves lobby
-            PlayerEntity updatedPlayerEntity = playerEntityService.leaveLobby(playerEntity);
-
-            // TODO: think into the future --> is this response message enough or should we also include the updated gameLobbyDto?
-            return objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
-        } catch (JsonProcessingException e) {
-            return e.getMessage();
-        } catch (EntityNotFoundException e) {
-            return e.getMessage();
-        }
+        // TODO: think into the future --> is this response message enough or should we also include the updated gameLobbyDto?
+        return objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
     }
 
     @MessageMapping("/player-delete")
-    @SendTo("/topic/websocket-broker-response")
+    @SendToUser("/queue/player-response")
     public String handleDeletePlayer(String playerDtoJson) throws JsonProcessingException {
         PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
 
         playerEntityService.deletePlayer(playerDto.getId());
         Optional<PlayerEntity> shouldBeEmpty = playerEntityService.findPlayerById(playerDto.getId());
-        if (shouldBeEmpty.isEmpty()){
-            return  "player no longer exists in database";
+        if (shouldBeEmpty.isEmpty()) {
+            return "DELETED";
         } else {
-            return "ERROR! player still exists in database";
+            throw new RuntimeException("player was not deleted");
         }
+    }
 
+    @MessageExceptionHandler
+    @SendToUser("/queue/errors")
+    public String handleException(Throwable exception) {
+        return "ERROR: " + exception.getMessage();
     }
 }
