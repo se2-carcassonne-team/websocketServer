@@ -114,4 +114,15 @@ public class TestDataUtil {
                 .numPlayers(0)
                 .build();
     }
+
+    public static GameLobbyDto createTestGameLobbyDtoB() {
+        Timestamp timeStamp = Timestamp.valueOf("2024-03-26 15:00:00.000");
+        return GameLobbyDto.builder()
+                .id(2L)
+                .name("lobbyA")
+                .gameStartTimestamp(timeStamp)
+                .gameState(GameState.LOBBY)
+                .numPlayers(0)
+                .build();
+    }
 }
