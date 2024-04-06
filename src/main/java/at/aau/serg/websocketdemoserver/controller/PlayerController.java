@@ -41,8 +41,6 @@ public class PlayerController {
     //@SendTo("/topic/create-user-response")
     @SendToUser("/queue/player-response")
     public String handleCreatePlayer(String playerDtoJson) throws JsonProcessingException {
-        // TODO: Set lobby creator
-
         // read in the JSON String and convert to PlayerDTO Object
         PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
 
@@ -108,6 +106,9 @@ public class PlayerController {
     @MessageMapping("/player-leave-lobby")
     @SendTo("/topic/player-lobby-response")
     public String handlePlayerLeaveLobby(String playerDtoJson) throws JsonProcessingException {
+
+        // TODO: Delete lobby when last player leaves
+
         PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
 
         // 2) convert the DTO to Entity Object for Service:
@@ -120,13 +121,9 @@ public class PlayerController {
         return objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
     }
 
-    // TODO: necessary?
     @MessageMapping("/player-delete")
     @SendToUser("/queue/player-response")
     public String handleDeletePlayer(String playerDtoJson) throws JsonProcessingException {
-
-        // TODO: Delete lobby when last player leaves
-
         PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
 
         playerEntityService.deletePlayer(playerDto.getId());

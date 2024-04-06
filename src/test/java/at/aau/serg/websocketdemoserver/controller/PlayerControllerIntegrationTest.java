@@ -519,13 +519,60 @@ public class PlayerControllerIntegrationTest {
     }
 
     @Test
-    void testThatLeaveLobbySuccessfullyRemovesPlayerFromGameLobby() throws Exception {
+    void testThatLeaveLobbySuccessfullyWithMoreThanOnePlayerRemovesPlayerFromGameLobby() throws Exception {
         StompSession session = initStompSession("/topic/player-lobby-response", messages);
 
         // Populate the database with testPlayerEntityA who joins testGameLobbyEntityA:
         PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
         GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
         testPlayerEntityA.setGameLobbyEntity(testGameLobbyEntityA);
+
+        PlayerEntity testPlayerEntityB = TestDataUtil.createTestPlayerEntityB(null);
+        testPlayerEntityB.setGameLobbyEntity(testGameLobbyEntityA);
+
+        testGameLobbyEntityA.setNumPlayers(2);
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityB.getId())).isEmpty();
+
+        playerEntityService.createPlayer(testPlayerEntityA);
+        playerEntityService.createPlayer(testPlayerEntityB);
+        // the referenced game lobby should automatically be created as well due to cascading (see entity definition)
+
+        // before controller method call:
+        // assert that the player and the game lobby (that player is in) exist in the database
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get()).isEqualTo(testPlayerEntityA);
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityB.getId()).get()).isEqualTo(testPlayerEntityB);
+        assertThat(gameLobbyEntityService.findById(testGameLobbyEntityA.getId()).get()).isEqualTo(testGameLobbyEntityA);
+
+        // create payload string:
+        PlayerDto testPlayerDtoA = playerMapper.mapToDto(testPlayerEntityA);
+        String payload = objectMapper.writeValueAsString(testPlayerDtoA);
+
+        session.send("/app/player-leave-lobby", payload);
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        // after controller method call:
+        // assert that the player and game lobby entities in the database have updated as expected
+        testGameLobbyEntityA.setNumPlayers(1);
+        assertThat(gameLobbyEntityService.findById(testPlayerDtoA.getId()).get()).isEqualTo(testGameLobbyEntityA);
+        testPlayerEntityA.setGameLobbyEntity(null);
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get()).isEqualTo(testPlayerEntityA);
+
+        testPlayerDtoA.setGameLobbyDto(null);
+        var expectedResponse = objectMapper.writeValueAsString(testPlayerDtoA);
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+    }
+
+    @Test
+    void testThatLeaveLobbySuccessfullyWithOnePlayerRemovesPlayerFromGameLobbyAndRemovesLobby() throws Exception {
+        StompSession session = initStompSession("/topic/player-lobby-response", messages);
+
+        // Populate the database with testPlayerEntityA who joins testGameLobbyEntityA:
+        PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
+        testPlayerEntityA.setGameLobbyEntity(testGameLobbyEntityA);
+
         testGameLobbyEntityA.setNumPlayers(1);
         assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
 
@@ -543,13 +590,9 @@ public class PlayerControllerIntegrationTest {
 
         session.send("/app/player-leave-lobby", payload);
 
-
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
 
-        // after controller method call:
-        // assert that the player and game lobby entities in the database have updated as expected
-        testGameLobbyEntityA.setNumPlayers(0);
-        assertThat(gameLobbyEntityService.findById(testPlayerDtoA.getId()).get()).isEqualTo(testGameLobbyEntityA);
+        assertThat(gameLobbyEntityService.findById(testGameLobbyEntityA.getId()).isEmpty()).isTrue();
         testPlayerEntityA.setGameLobbyEntity(null);
         assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get()).isEqualTo(testPlayerEntityA);
 

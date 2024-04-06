@@ -121,9 +121,16 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
 //        }
 
         playerEntity.setGameLobbyEntity(null);
-        gameLobbyEntity.setNumPlayers(gameLobbyEntity.getNumPlayers()-1);
-        gameLobbyEntityRepository.save(gameLobbyEntity);
         playerEntityRepository.save(playerEntity);
+
+        // Check if lobby can be deleted
+        int numberOfPlayers = gameLobbyEntity.getNumPlayers();
+        if(numberOfPlayers > 1) {
+            gameLobbyEntity.setNumPlayers(gameLobbyEntity.getNumPlayers()-1);
+            gameLobbyEntityRepository.save(gameLobbyEntity);
+        } else {
+            gameLobbyEntityRepository.deleteById(gameLobbyEntity.getId());
+        }
         return playerEntity;
     }
 
