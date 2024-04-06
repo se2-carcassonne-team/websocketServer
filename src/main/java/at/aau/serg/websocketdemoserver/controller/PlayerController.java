@@ -10,19 +10,18 @@ import at.aau.serg.websocketdemoserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketdemoserver.service.PlayerEntityService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.persistence.EntityExistsException;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 @Controller
 public class PlayerController {
-
     private PlayerEntityService playerEntityService;
     private GameLobbyEntityService gameLobbyEntityService;
     private ObjectMapper objectMapper;
@@ -42,6 +41,8 @@ public class PlayerController {
     //@SendTo("/topic/create-user-response")
     @SendToUser("/queue/player-response")
     public String handleCreatePlayer(String playerDtoJson) throws JsonProcessingException {
+        // TODO: Set lobby creator
+
         // read in the JSON String and convert to PlayerDTO Object
         PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
 
@@ -75,7 +76,21 @@ public class PlayerController {
 
         // return the dto equivalent of the updated player entity
         return objectMapper.writeValueAsString(dto);
+    }
 
+    @MessageMapping("/player-list")
+    @SendToUser("/queue/player-response")
+    public String getAllPlayersForLobby(String gameLobbyDtoJson) throws JsonProcessingException {
+        GameLobbyDto gameLobbyDto = objectMapper.readValue(gameLobbyDtoJson, GameLobbyDto.class);
+
+        List<PlayerEntity> playerEntityList = playerEntityService.getAllPlayersForLobby(gameLobbyMapper.mapToEntity(gameLobbyDto));
+        List<PlayerDto> playerDtoList = new ArrayList<>();
+
+        for (PlayerEntity playerEntity : playerEntityList) {
+            playerDtoList.add(playerMapper.mapToDto(playerEntity));
+        }
+
+        return objectMapper.writeValueAsString(playerDtoList);
     }
 
     @MessageMapping("/player-update-username")
@@ -105,9 +120,13 @@ public class PlayerController {
         return objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
     }
 
+    // TODO: necessary?
     @MessageMapping("/player-delete")
     @SendToUser("/queue/player-response")
     public String handleDeletePlayer(String playerDtoJson) throws JsonProcessingException {
+
+        // TODO: Delete lobby when last player leaves
+
         PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
 
         playerEntityService.deletePlayer(playerDto.getId());

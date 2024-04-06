@@ -11,6 +11,7 @@ import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -91,6 +92,14 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
         gameLobbyEntityRepository.save(gameLobbyEntity);
 
         return playerEntityRepository.save(playerEntity);
+    }
+
+    @Override
+    public List<PlayerEntity> getAllPlayersForLobby(GameLobbyEntity gameLobbyEntity) {
+        if(gameLobbyEntityRepository.findById(gameLobbyEntity.getId()).isEmpty()) {
+            throw new RuntimeException("gameLobby does not exist");
+        }
+        return playerEntityRepository.findPlayerEntitiesByGameLobbyEntity_Id(gameLobbyEntity.getId());
     }
 
 

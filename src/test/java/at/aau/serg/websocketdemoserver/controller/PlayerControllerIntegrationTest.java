@@ -10,9 +10,7 @@ import at.aau.serg.websocketdemoserver.mapper.GameLobbyMapper;
 import at.aau.serg.websocketdemoserver.mapper.PlayerMapper;
 import at.aau.serg.websocketdemoserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketdemoserver.service.PlayerEntityService;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,25 +22,23 @@ import org.springframework.messaging.converter.StringMessageConverter;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
-import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-//@ActiveProfiles("test")
 @ExtendWith(SpringExtension.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class PlayerControllerIntegrationTest {
     private ObjectMapper objectMapper;
-
     private PlayerEntityService playerEntityService;
     private GameLobbyEntityService gameLobbyEntityService;
     private PlayerMapper playerMapper;
@@ -375,6 +371,68 @@ public class PlayerControllerIntegrationTest {
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
 
         assertThat(actualResponse).contains("GameLobbyEntity with the id:" + testGameLobbyEntityA.getId() + " doesn't exist");
+    }
+
+    @Test
+    void testThatListAllPlayersForALobbyReturnsExpectedResult() throws Exception {
+        StompSession session = initStompSession("/user/queue/player-response", messages);
+
+        GameLobbyEntity gameLobbyEntity = TestDataUtil.createTestGameLobbyEntityA();
+        gameLobbyEntityService.createLobby(gameLobbyEntity);
+
+        assertThat(gameLobbyEntityService.findById(gameLobbyEntity.getId()).isPresent()).isTrue();
+
+        List<PlayerEntity> playerEntityList = new ArrayList<>();
+        List<PlayerDto> playerDtoList = new ArrayList<>();
+
+        playerEntityList.add(TestDataUtil.createTestPlayerEntityA(gameLobbyEntity));
+        playerEntityList.add(TestDataUtil.createTestPlayerEntityB(gameLobbyEntity));
+        playerEntityList.add(TestDataUtil.createTestPlayerEntityC(null));
+
+        for(PlayerEntity playerEntity : playerEntityList) {
+            playerEntityService.createPlayer(playerEntity);
+            assertThat(playerEntityService.findPlayerById(playerEntity.getId()).isPresent()).isTrue();
+
+            if(playerEntity.getGameLobbyEntity() != null) {
+                playerDtoList.add(playerMapper.mapToDto(playerEntity));
+            }
+        }
+
+        session.send("/app/player-list", objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(gameLobbyEntity)));
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+        String expectedResponse = objectMapper.writeValueAsString(playerDtoList);
+
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+    }
+
+    @Test
+    void testThatListAllPlayersForALobbyReturnsNoPlayers() throws Exception {
+        StompSession session = initStompSession("/user/queue/player-response", messages);
+
+        GameLobbyEntity gameLobbyEntity = TestDataUtil.createTestGameLobbyEntityA();
+        gameLobbyEntityService.createLobby(gameLobbyEntity);
+
+        assertThat(gameLobbyEntityService.findById(gameLobbyEntity.getId()).isPresent()).isTrue();
+        List<PlayerDto> playerDtoList = new ArrayList<>();
+
+        session.send("/app/player-list", objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(gameLobbyEntity)));
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+        String expectedResponse = objectMapper.writeValueAsString(playerDtoList);
+
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+    }
+
+    @Test
+    void testThatListAllPlayersOfNonExistentLobbyFails() throws Exception {
+        StompSession session = initStompSession("/user/queue/errors", messages);
+
+        GameLobbyEntity gameLobbyEntity = TestDataUtil.createTestGameLobbyEntityA();
+        assertThat(gameLobbyEntityService.findById(gameLobbyEntity.getId()).isPresent()).isFalse();
+
+        session.send("/app/player-list", objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(gameLobbyEntity)));
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        assertThat(actualResponse).contains("ERROR");
     }
 
     @Test
