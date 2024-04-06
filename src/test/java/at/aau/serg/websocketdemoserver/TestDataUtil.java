@@ -119,7 +119,7 @@ public class TestDataUtil {
         Timestamp timeStamp = Timestamp.valueOf("2024-03-26 15:00:00.000");
         return GameLobbyDto.builder()
                 .id(2L)
-                .name("lobbyA")
+                .name("lobbyB")
                 .gameStartTimestamp(timeStamp)
                 .gameState(GameState.LOBBY)
                 .numPlayers(0)

@@ -73,7 +73,7 @@ public class GameLobbyControllerIntegrationTest {
 
     @Test
     void testCreateLobbyReturnsCreatedGameLobbyDto() throws Exception {
-        StompSession session = initStompSession("/user/queue/lobby-response", messages);
+        StompSession session = initStompSession("/topic/game-lobby-response", messages);
 
         PlayerEntity playerEntity = TestDataUtil.createTestPlayerEntityA(null);
         playerEntityService.createPlayer(playerEntity);
@@ -86,8 +86,8 @@ public class GameLobbyControllerIntegrationTest {
 
         String payload = gameLobbyDtoJson + "|" + playerDtoJson;
 
-        assertThat(gameLobbyEntityService.findById(gameLobbyDto.getId())).isEqualTo(Optional.empty());
-        assertThat(playerEntityService.findPlayerById(playerDto.getId()).get().getGameLobbyEntity()).isEqualTo(null);
+        assertThat(gameLobbyEntityService.findById(gameLobbyDto.getId()).isEmpty()).isTrue();
+        assertThat(playerEntityService.findPlayerById(playerDto.getId()).isPresent()).isTrue();
         session.send("/app/lobby-create", payload);
 
         gameLobbyDto.setNumPlayers(gameLobbyDto.getNumPlayers() + 1);
@@ -102,6 +102,50 @@ public class GameLobbyControllerIntegrationTest {
         assertThat(updatedPlayerEntity.getGameLobbyEntity()).isEqualTo(gameLobbyMapper.mapToEntity(gameLobbyDto));
 
         assertThat(actualResponse).isEqualTo(expectedResponse);
+    }
+
+    @Test
+    void testCreateLobbyWhenLobbyWithIdIsDuplicateFails() throws Exception {
+        StompSession session = initStompSession("/user/queue/errors", messages);
+
+        PlayerEntity playerEntity = TestDataUtil.createTestPlayerEntityA(null);
+        PlayerDto playerDto = playerMapper.mapToDto(playerEntity);
+        GameLobbyDto gameLobbyDto = TestDataUtil.createTestGameLobbyDtoA();
+        gameLobbyEntityService.createLobby(gameLobbyMapper.mapToEntity(gameLobbyDto));
+        assertThat(gameLobbyEntityService.findById(gameLobbyDto.getId()).isPresent()).isTrue();
+
+        String playerDtoJson = objectMapper.writeValueAsString(playerDto);
+        String gameLobbyDtoJson = objectMapper.writeValueAsString(gameLobbyDto);
+
+        String payload = gameLobbyDtoJson + "|" + playerDtoJson;
+        session.send("/app/lobby-create", payload);
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+        assertThat(actualResponse).contains("ERROR");
+    }
+
+    @Test
+    void testCreateLobbyWhenLobbyWithNameIsDuplicateFails() throws Exception {
+        StompSession session = initStompSession("/user/queue/errors", messages);
+
+        PlayerEntity playerEntity = TestDataUtil.createTestPlayerEntityA(null);
+        PlayerDto playerDto = playerMapper.mapToDto(playerEntity);
+
+        GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
+        gameLobbyEntityService.createLobby(gameLobbyMapper.mapToEntity(gameLobbyDtoA));
+        assertThat(gameLobbyEntityService.findById(gameLobbyDtoA.getId()).isPresent()).isTrue();
+
+        GameLobbyDto gameLobbyDtoB = TestDataUtil.createTestGameLobbyDtoB();
+        gameLobbyDtoB.setName(gameLobbyDtoA.getName());
+
+        String playerDtoJson = objectMapper.writeValueAsString(playerDto);
+        String gameLobbyDtoJson = objectMapper.writeValueAsString(gameLobbyDtoB);
+
+        String payload = gameLobbyDtoJson + "|" + playerDtoJson;
+        session.send("/app/lobby-create", payload);
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+        assertThat(actualResponse).contains("ERROR");
     }
 
     @Test

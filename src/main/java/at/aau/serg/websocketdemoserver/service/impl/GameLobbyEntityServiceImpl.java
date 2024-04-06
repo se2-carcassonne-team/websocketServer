@@ -3,6 +3,7 @@ package at.aau.serg.websocketdemoserver.service.impl;
 import at.aau.serg.websocketdemoserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketdemoserver.domain.entity.repository.GameLobbyEntityRepository;
 import at.aau.serg.websocketdemoserver.service.GameLobbyEntityService;
+import jakarta.persistence.EntityExistsException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -19,6 +20,15 @@ public class GameLobbyEntityServiceImpl implements GameLobbyEntityService {
 
     @Override
     public GameLobbyEntity createLobby(GameLobbyEntity gameLobbyEntity) {
+
+        if(gameLobbyEntity.getId() != null && gameLobbyEntityRepository.findById(gameLobbyEntity.getId()).isPresent()) {
+            throw new EntityExistsException("gameLobby with id " + gameLobbyEntity.getId() + " already exists");
+        }
+
+        if(gameLobbyEntity.getName() != null && gameLobbyEntityRepository.findByName(gameLobbyEntity.getName()).isPresent()) {
+            throw new EntityExistsException("gameLobby with name " + gameLobbyEntity.getName() + " already exists");
+        }
+
         gameLobbyEntity.setNumPlayers(0);
         return gameLobbyEntityRepository.save(gameLobbyEntity);
     }
