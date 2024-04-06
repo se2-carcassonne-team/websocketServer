@@ -57,7 +57,7 @@ public class GameLobbyController {
     }
 
     @MessageMapping("/lobby-create")
-    @SendToUser("/queue/lobby-response")
+    @SendTo("/topic/game-lobby-response")
     public String handleLobbyCreation(String gameLobbyDtoAndPlayerDtoJson) throws JsonProcessingException {
         String[] splitJsonStrings = gameLobbyDtoAndPlayerDtoJson.split("\\|");
 
