@@ -51,6 +51,7 @@ public class PlayerController {
 
     @MessageMapping("/player-join-lobby")
     //@SendTo("/topic/player-join-lobby-response")
+    //Edited this line
     @SendTo("/topic/player-join-response")
     public String handlePlayerJoinLobby(String gameLobbyDtoAndPlayerDtoJson) throws JsonProcessingException {
 
