@@ -94,6 +94,7 @@ public class GameLobbyController {
         return objectMapper.writeValueAsString(gameLobbyDtos);
     }
 
+
     @MessageMapping("/lobby-delete")
     @SendToUser("/queue/lobby-response")
     public String handleDeleteLobby(String gameLobbyDtoJson) throws JsonProcessingException {

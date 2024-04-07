@@ -51,7 +51,8 @@ public class PlayerController {
 
     @MessageMapping("/player-join-lobby")
     //@SendTo("/topic/player-join-lobby-response")
-    @SendTo("/topic/player-lobby-response")
+    //Edited this line
+    @SendTo("/topic/player-join-response")
     public String handlePlayerJoinLobby(String gameLobbyDtoAndPlayerDtoJson) throws JsonProcessingException {
 
         // TODO: error handling, e.g. when the lobby to join doesn't exist, etc.
@@ -104,7 +105,7 @@ public class PlayerController {
     }
 
     @MessageMapping("/player-leave-lobby")
-    @SendTo("/topic/player-lobby-response")
+    @SendTo("/topic/player-leave-response")
     public String handlePlayerLeaveLobby(String playerDtoJson) throws JsonProcessingException {
 
         // TODO: Delete lobby when last player leaves
