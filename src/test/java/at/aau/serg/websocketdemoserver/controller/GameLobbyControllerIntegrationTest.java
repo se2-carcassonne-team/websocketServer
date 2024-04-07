@@ -72,7 +72,7 @@ public class GameLobbyControllerIntegrationTest {
     }
 
     @Test
-    void testCreateLobbyReturnsCreatedGameLobbyDto() throws Exception {
+    void testThatCreateLobbyReturnsCreatedGameLobbyDto() throws Exception {
         StompSession session = initStompSession("/topic/game-lobby-response", messages);
 
         PlayerEntity playerEntity = TestDataUtil.createTestPlayerEntityA(null);
@@ -80,6 +80,7 @@ public class GameLobbyControllerIntegrationTest {
 
         PlayerDto playerDto = playerMapper.mapToDto(playerEntity);
         GameLobbyDto gameLobbyDto = TestDataUtil.createTestGameLobbyDtoA();
+        gameLobbyDto.setLobbyCreatorId(playerEntity.getId());
 
         String playerDtoJson = objectMapper.writeValueAsString(playerDto);
         String gameLobbyDtoJson = objectMapper.writeValueAsString(gameLobbyDto);
@@ -105,7 +106,7 @@ public class GameLobbyControllerIntegrationTest {
     }
 
     @Test
-    void testCreateLobbyWhenLobbyWithIdIsDuplicateFails() throws Exception {
+    void testThatCreateLobbyWithDuplicateLobbyIdFails() throws Exception {
         StompSession session = initStompSession("/user/queue/errors", messages);
 
         PlayerEntity playerEntity = TestDataUtil.createTestPlayerEntityA(null);
@@ -125,7 +126,7 @@ public class GameLobbyControllerIntegrationTest {
     }
 
     @Test
-    void testCreateLobbyWhenLobbyWithNameIsDuplicateFails() throws Exception {
+    void testThatCreateLobbyWithDuplicateLobbyNameFails() throws Exception {
         StompSession session = initStompSession("/user/queue/errors", messages);
 
         PlayerEntity playerEntity = TestDataUtil.createTestPlayerEntityA(null);
@@ -149,7 +150,28 @@ public class GameLobbyControllerIntegrationTest {
     }
 
     @Test
-    void testUpdateLobbyNameReturnsUpdatedGameLobbyDto() throws Exception {
+    void testThatCreateLobbyWithInvalidPlayerIdFails() throws Exception {
+        StompSession session = initStompSession("/user/queue/errors", messages);
+
+        PlayerEntity playerEntity = TestDataUtil.createTestPlayerEntityA(null);
+        PlayerDto playerDto = playerMapper.mapToDto(playerEntity);
+
+        GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
+        gameLobbyDtoA.setLobbyCreatorId(playerEntity.getId());
+        assertThat(gameLobbyEntityService.findById(gameLobbyDtoA.getId()).isEmpty()).isTrue();
+
+        String playerDtoJson = objectMapper.writeValueAsString(playerDto);
+        String gameLobbyDtoJson = objectMapper.writeValueAsString(gameLobbyDtoA);
+
+        String payload = gameLobbyDtoJson + "|" + playerDtoJson;
+        session.send("/app/lobby-create", payload);
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+        assertThat(actualResponse).contains("does not exist");
+    }
+
+    @Test
+    void testThatUpdateLobbyNameReturnsUpdatedGameLobbyDto() throws Exception {
         StompSession session = initStompSession("/topic/game-lobby-response", messages);
 
         GameLobbyDto gameLobbyDto = TestDataUtil.createTestGameLobbyDtoA();
@@ -171,7 +193,7 @@ public class GameLobbyControllerIntegrationTest {
     }
 
     @Test
-    void testUpdateLobbyNameReturnsErrorResponse() throws Exception {
+    void testThatUpdateLobbyNameFails() throws Exception {
         StompSession session = initStompSessionWithErrorTopic("/topic/game-lobby-response", "/user/queue/errors", messages);
 
         GameLobbyDto gameLobbyDto = TestDataUtil.createTestGameLobbyDtoA();
@@ -186,7 +208,7 @@ public class GameLobbyControllerIntegrationTest {
     }
 
     @Test
-    void getListOfLobbiesReturnsListOfGameLobbyDtos() throws Exception {
+    void testThatGetListOfLobbiesReturnsListOfGameLobbyDtos() throws Exception {
         StompSession session = initStompSession("/user/queue/lobby-response", messages);
 
         GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
@@ -207,7 +229,7 @@ public class GameLobbyControllerIntegrationTest {
     }
 
     @Test
-    void getListOfLobbiesReturnsEmptyListOfGameLobbyDtos() throws Exception {
+    void testThatGetListOfLobbiesReturnsEmptyListOfGameLobbyDtos() throws Exception {
         StompSession session = initStompSession("/user/queue/lobby-response", messages);
 
         List<GameLobbyDto> gameLobbyDtoList = new ArrayList<>();
@@ -220,7 +242,7 @@ public class GameLobbyControllerIntegrationTest {
     }
 
     @Test
-    void deleteLobbyReturnsSuccessMessage() throws Exception {
+    void testThatDeleteLobbyReturnsSuccessMessage() throws Exception {
         StompSession session = initStompSession("/user/queue/lobby-response", messages);
 
         GameLobbyDto gameLobbyDto = TestDataUtil.createTestGameLobbyDtoA();

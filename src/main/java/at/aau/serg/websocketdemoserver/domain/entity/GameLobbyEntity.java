@@ -29,6 +29,5 @@ public class GameLobbyEntity {
     // counter for the number of players
     private Integer numPlayers;
 
-    // TODO: lobby owner reference
-
+    private Long lobbyCreatorId;
 }

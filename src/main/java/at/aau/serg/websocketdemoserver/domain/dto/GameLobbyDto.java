@@ -26,6 +26,6 @@ public class GameLobbyDto {
     // counter for the number of players
     private Integer numPlayers;
 
-    //private List<PlayerDto> players;
+    private Long lobbyCreatorId;
 }
 

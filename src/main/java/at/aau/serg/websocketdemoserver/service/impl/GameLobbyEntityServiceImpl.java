@@ -2,6 +2,7 @@ package at.aau.serg.websocketdemoserver.service.impl;
 
 import at.aau.serg.websocketdemoserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketdemoserver.domain.entity.repository.GameLobbyEntityRepository;
+import at.aau.serg.websocketdemoserver.domain.entity.repository.PlayerEntityRepository;
 import at.aau.serg.websocketdemoserver.service.GameLobbyEntityService;
 import jakarta.persistence.EntityExistsException;
 import org.springframework.stereotype.Service;
@@ -13,9 +14,12 @@ import java.util.Optional;
 public class GameLobbyEntityServiceImpl implements GameLobbyEntityService {
 
     private GameLobbyEntityRepository gameLobbyEntityRepository;
+    private final PlayerEntityRepository playerEntityRepository;
 
-    public GameLobbyEntityServiceImpl(GameLobbyEntityRepository gameLobbyEntityRepository) {
+    public GameLobbyEntityServiceImpl(GameLobbyEntityRepository gameLobbyEntityRepository,
+                                      PlayerEntityRepository playerEntityRepository) {
         this.gameLobbyEntityRepository = gameLobbyEntityRepository;
+        this.playerEntityRepository = playerEntityRepository;
     }
 
     @Override
@@ -27,6 +31,10 @@ public class GameLobbyEntityServiceImpl implements GameLobbyEntityService {
 
         if(gameLobbyEntity.getName() != null && gameLobbyEntityRepository.findByName(gameLobbyEntity.getName()).isPresent()) {
             throw new EntityExistsException("gameLobby with name " + gameLobbyEntity.getName() + " already exists");
+        }
+
+        if(gameLobbyEntity.getLobbyCreatorId() != null && playerEntityRepository.findById(gameLobbyEntity.getLobbyCreatorId()).isEmpty()) {
+            throw new RuntimeException("player with id " + gameLobbyEntity.getLobbyCreatorId() + " does not exist");
         }
 
         gameLobbyEntity.setNumPlayers(0);
