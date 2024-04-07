@@ -1,4 +1,4 @@
-package at.aau.serg.websocketdemoserver.messaging.dtos;
+/*package at.aau.serg.websocketdemoserver.messaging.dtos;
 
 
 public class OutputMessage {
@@ -25,4 +25,4 @@ public class OutputMessage {
     public String getFrom() {
         return from;
     }
-}
+}*/

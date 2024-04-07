@@ -1,6 +1,6 @@
 package at.aau.serg.websocketdemoserver.websocket.handler;
 
-import org.springframework.web.socket.*;
+/*import org.springframework.web.socket.*;
 
 public class WebSocketHandlerImpl implements WebSocketHandler {
 
@@ -30,4 +30,4 @@ public class WebSocketHandlerImpl implements WebSocketHandler {
     public boolean supportsPartialMessages() {
         return false;
     }
-}
+}*/
