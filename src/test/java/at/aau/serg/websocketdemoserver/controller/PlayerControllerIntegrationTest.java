@@ -160,7 +160,7 @@ public class PlayerControllerIntegrationTest {
     @Test
     void testThatJoinLobbySuccessfullyMakesPlayerJoinLobby() throws Exception {
         //WEBSOCKET_TOPIC = "/topic/player-join-lobby-response";
-        StompSession session = initStompSession("/topic/player-lobby-response", messages);
+        StompSession session = initStompSession("/topic/player-join-response", messages);
 
         // Pre-populate the database
         GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
@@ -520,7 +520,7 @@ public class PlayerControllerIntegrationTest {
 
     @Test
     void testThatLeaveLobbySuccessfullyWithMoreThanOnePlayerRemovesPlayerFromGameLobby() throws Exception {
-        StompSession session = initStompSession("/topic/player-lobby-response", messages);
+        StompSession session = initStompSession("/topic/player-leave-response", messages);
 
         // Populate the database with testPlayerEntityA who joins testGameLobbyEntityA:
         PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
@@ -566,7 +566,7 @@ public class PlayerControllerIntegrationTest {
 
     @Test
     void testThatLeaveLobbySuccessfullyWithOnePlayerRemovesPlayerFromGameLobbyAndRemovesLobby() throws Exception {
-        StompSession session = initStompSession("/topic/player-lobby-response", messages);
+        StompSession session = initStompSession("/topic/player-leave-response", messages);
 
         // Populate the database with testPlayerEntityA who joins testGameLobbyEntityA:
         PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
