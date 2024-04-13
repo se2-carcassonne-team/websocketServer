@@ -74,7 +74,7 @@ public class GameLobbyControllerIntegrationTest {
 
     @Test
     void testThatCreateLobbyReturnsCreatedGameLobbyDto() throws Exception {
-        StompSession session = initStompSession("/user/queue/lobby-create", messages);
+        StompSession session = initStompSession("/topic/game-lobby-response", messages);
 
         PlayerEntity playerEntity = TestDataUtil.createTestPlayerEntityA(null);
         playerEntityService.createPlayer(playerEntity);
