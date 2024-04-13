@@ -172,6 +172,36 @@ public class GameLobbyControllerIntegrationTest {
     }
 
     @Test
+    void testThatCreateLobbyWithFaultyGameLobbyDtoFails() throws Exception {
+        StompSession session = initStompSession("/user/queue/errors", messages);
+
+        String invalidGameLobbyDto = "not valid JSON";
+
+        PlayerDto playerDto = TestDataUtil.createTestPlayerDtoA(null);
+        String payload = invalidGameLobbyDto + "|" +  objectMapper.writeValueAsString(playerDto);
+
+        session.send("/app/lobby-create", payload);
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_1006.getErrorCode());
+    }
+
+    @Test
+    void testThatCreateLobbyWithFaultyPlayerDtoFails() throws Exception {
+        StompSession session = initStompSession("/user/queue/errors", messages);
+
+        GameLobbyDto gameLobbyDto = TestDataUtil.createTestGameLobbyDtoA();
+
+        String invalidPlayerDto = "not valid JSON";
+        String payload = objectMapper.writeValueAsString(gameLobbyDto) + "|" +  invalidPlayerDto;
+
+        session.send("/app/lobby-create", payload);
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_2004.getErrorCode());
+    }
+
+    @Test
     void testThatUpdateLobbyNameReturnsUpdatedGameLobbyDto() throws Exception {
         StompSession session = initStompSession("/topic/game-lobby-response", messages);
 

@@ -6,6 +6,7 @@ public enum ErrorCode {
     ERROR_1003("gameLobby with the id does not exist", "1003"),
     ERROR_1004("gameLobby is already full (5/5 players)", "1004"),
     ERROR_1005("gameLobby id NumberFormat is invalid", "1005"),
+    ERROR_1006("invalid gameLobbyDto JSON", "1006"),
     ERROR_2001("player with the id does not exist", "2001"),
     ERROR_2002("player with the id already exists", "2002"),
     ERROR_2003("player with the username already exists", "2003"),

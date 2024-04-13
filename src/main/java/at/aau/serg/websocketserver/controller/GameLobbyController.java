@@ -4,6 +4,7 @@ import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketserver.domain.dto.PlayerDto;
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
+import at.aau.serg.websocketserver.errorcode.ErrorCode;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
 import at.aau.serg.websocketserver.mapper.PlayerMapper;
 import at.aau.serg.websocketserver.service.GameLobbyEntityService;
@@ -38,19 +39,29 @@ public class GameLobbyController {
 
     @MessageMapping("/lobby-create")
     @SendTo("/topic/game-lobby-response")
-    public String handleLobbyCreation(String gameLobbyDtoAndPlayerDtoJson) throws JsonProcessingException {
-        String[] splitJsonStrings = gameLobbyDtoAndPlayerDtoJson.split("\\|");
+    public String handleLobbyCreation(String gameLobbyDtoAndPlayerDtoJson) {
 
-        GameLobbyDto gameLobbyDto = objectMapper.readValue(splitJsonStrings[0], GameLobbyDto.class);
-        PlayerDto playerDto = objectMapper.readValue(splitJsonStrings[1], PlayerDto.class);
-        gameLobbyDto.setLobbyCreatorId(playerDto.getId());
+        try {
+            String[] splitJsonStrings = gameLobbyDtoAndPlayerDtoJson.split("\\|");
 
-        GameLobbyEntity createdGameLobbyEntity = gameLobbyService.createLobby(gameLobbyMapper.mapToEntity(gameLobbyDto));
-        PlayerEntity playerEntity = playerService.joinLobby(createdGameLobbyEntity.getId(), playerMapper.mapToEntity(playerDto));
+            GameLobbyDto gameLobbyDto = objectMapper.readValue(splitJsonStrings[0], GameLobbyDto.class);
 
-        return objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(playerEntity.getGameLobbyEntity()));
+            try {
+                PlayerDto playerDto = objectMapper.readValue(splitJsonStrings[1], PlayerDto.class);
+                gameLobbyDto.setLobbyCreatorId(playerDto.getId());
 
-        // TODO: check if backend updates the gameLobbyDto Id to the one contained in the returned PlayerDto Object
+                GameLobbyEntity createdGameLobbyEntity = gameLobbyService.createLobby(gameLobbyMapper.mapToEntity(gameLobbyDto));
+                PlayerEntity playerEntity = playerService.joinLobby(createdGameLobbyEntity.getId(), playerMapper.mapToEntity(playerDto));
+
+                return objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(playerEntity.getGameLobbyEntity()));
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(ErrorCode.ERROR_2004.getErrorCode());
+            }
+
+            // TODO: check if backend updates the gameLobbyDto Id to the one contained in the returned PlayerDto Object
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(ErrorCode.ERROR_1006.getErrorCode());
+        }
     }
 
     @MessageMapping("/lobby-name-update")
