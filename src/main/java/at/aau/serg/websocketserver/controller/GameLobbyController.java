@@ -55,7 +55,7 @@ public class GameLobbyController {
     }
 
     @MessageMapping("/lobby-create")
-    @SendTo("/topic/game-lobby-response")
+    @SendToUser("/queue/lobby-create")
     public String handleLobbyCreation(String gameLobbyDtoAndPlayerDtoJson) throws JsonProcessingException {
         String[] splitJsonStrings = gameLobbyDtoAndPlayerDtoJson.split("\\|");
 
@@ -67,6 +67,8 @@ public class GameLobbyController {
         PlayerEntity playerEntity = playerService.joinLobby(createdGameLobbyEntity.getId(), playerMapper.mapToEntity(playerDto));
 
         return objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(playerEntity.getGameLobbyEntity()));
+
+        // TODO: check if backend updates the gameLobbyDto Id to the one contained in the returned PlayerDto Object
     }
 
     @MessageMapping("/lobby-name-update")
