@@ -42,7 +42,6 @@ public class PlayerController {
 
     // test value
     @MessageMapping("/player-create")
-    //@SendTo("/topic/create-user-response")
     @SendToUser("/queue/player-response")
     public String handleCreatePlayer(String playerDtoJson) throws JsonProcessingException {
         // read in the JSON String and convert to PlayerDTO Object
@@ -54,8 +53,6 @@ public class PlayerController {
     }
 
     @MessageMapping("/player-join-lobby")
-    //@SendTo("/topic/player-join-lobby-response")
-    //Edited this line
     //@SendTo("/topic/player-join-response")
     public void handlePlayerJoinLobby(String gameLobbyIdAndPlayerDtoJson) throws JsonProcessingException, NumberFormatException {
         // 1) extract GameLobbyDto and PlayerDto objects from the string payload:
@@ -73,9 +70,9 @@ public class PlayerController {
 
         PlayerDto dto = playerMapper.mapToDto(updatedPlayerEntity);
 
+        // return the dto equivalent of the updated player entity
         this.template.convertAndSend("/topic/player-join-lobby-"+gameLobbyId, objectMapper.writeValueAsString(dto));
 
-        // return the dto equivalent of the updated player entity
         //return objectMapper.writeValueAsString(dto);
     }
 
@@ -107,18 +104,24 @@ public class PlayerController {
     }
 
     @MessageMapping("/player-leave-lobby")
-    @SendTo("/topic/player-leave-response")
-    public String handlePlayerLeaveLobby(String playerDtoJson) throws JsonProcessingException {
+    //@SendTo("/topic/player-leave-response")
+    public void handlePlayerLeaveLobby(String playerDtoJson) throws JsonProcessingException {
         PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
 
         // 2) convert the DTO to Entity Object for Service:
         PlayerEntity playerEntity = playerMapper.mapToEntity(playerDto);
 
+        Long gameLobbyId = playerDto.getGameLobbyId();
+
         // 3) player leaves lobby
         PlayerEntity updatedPlayerEntity = playerEntityService.leaveLobby(playerEntity);
 
-        // TODO: think into the future --> is this response message enough or should we also include the updated gameLobbyDto?
-        return objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
+        this.template.convertAndSend(
+                "/topic/player-leave-lobby-"+gameLobbyId,
+                objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity))
+        );
+
+        //return objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
     }
 
     @MessageMapping("/player-delete")

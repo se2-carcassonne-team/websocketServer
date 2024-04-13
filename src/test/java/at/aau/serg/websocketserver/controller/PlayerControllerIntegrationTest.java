@@ -552,7 +552,6 @@ public class PlayerControllerIntegrationTest {
 
     @Test
     void testThatLeaveLobbySuccessfullyWithMoreThanOnePlayerRemovesPlayerFromGameLobby() throws Exception {
-        StompSession session = initStompSession("/topic/player-leave-response", messages);
 
         // Populate the database with testPlayerEntityA who joins testGameLobbyEntityA:
         PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
@@ -561,6 +560,9 @@ public class PlayerControllerIntegrationTest {
 
         PlayerEntity testPlayerEntityB = TestDataUtil.createTestPlayerEntityB(null);
         testPlayerEntityB.setGameLobbyEntity(testGameLobbyEntityA);
+
+        StompSession session = initStompSession("/topic/player-leave-lobby-" + testGameLobbyEntityA.getId(), messages);
+
 
         testGameLobbyEntityA.setNumPlayers(2);
         assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
@@ -597,13 +599,14 @@ public class PlayerControllerIntegrationTest {
     }
 
     @Test
-    void testThatLeaveLobbySuccessfullyWithOnePlayerRemovesPlayerFromGameLobbyAndRemovesLobby() throws Exception {
-        StompSession session = initStompSession("/topic/player-leave-response", messages);
+    void testThatLeaveLobbySuccessfullyWithOnePlayerRemovesPlayerFromGameLobbyAndDeletesLobby() throws Exception {
 
         // Populate the database with testPlayerEntityA who joins testGameLobbyEntityA:
         PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
         GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
         testPlayerEntityA.setGameLobbyEntity(testGameLobbyEntityA);
+
+        StompSession session = initStompSession("/topic/player-leave-lobby-" + testGameLobbyEntityA.getId(), messages);
 
         testGameLobbyEntityA.setNumPlayers(1);
         assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
