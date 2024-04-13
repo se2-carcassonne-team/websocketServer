@@ -160,10 +160,11 @@ public class PlayerControllerIntegrationTest {
     @Test
     void testThatJoinLobbySuccessfullyMakesPlayerJoinLobby() throws Exception {
         //WEBSOCKET_TOPIC = "/topic/player-join-lobby-response";
-        StompSession session = initStompSession("/topic/player-join-response", messages);
+        GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
+
+        StompSession session = initStompSession("/topic/player-join-lobby-"+testGameLobbyEntityA.getId(), messages);
 
         // Pre-populate the database
-        GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
         PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
         assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
         assertThat(gameLobbyEntityService.findById(testGameLobbyEntityA.getId())).isEmpty();

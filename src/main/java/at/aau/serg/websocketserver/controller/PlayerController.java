@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
 
@@ -22,13 +23,16 @@ import java.util.Optional;
 
 @Controller
 public class PlayerController {
+
+    private SimpMessagingTemplate template;
     private PlayerEntityService playerEntityService;
     private GameLobbyEntityService gameLobbyEntityService;
     private ObjectMapper objectMapper;
     private PlayerMapper playerMapper;
     private GameLobbyMapper gameLobbyMapper;
 
-    public PlayerController(PlayerEntityService playerEntityService, GameLobbyEntityService gameLobbyEntityService, ObjectMapper objectMapper, PlayerMapper playerMapper, GameLobbyMapper gameLobbyMapper) {
+    public PlayerController(SimpMessagingTemplate template, PlayerEntityService playerEntityService, GameLobbyEntityService gameLobbyEntityService, ObjectMapper objectMapper, PlayerMapper playerMapper, GameLobbyMapper gameLobbyMapper) {
+        this.template = template;
         this.playerEntityService = playerEntityService;
         this.gameLobbyEntityService = gameLobbyEntityService;
         this.objectMapper = objectMapper;
@@ -52,8 +56,8 @@ public class PlayerController {
     @MessageMapping("/player-join-lobby")
     //@SendTo("/topic/player-join-lobby-response")
     //Edited this line
-    @SendTo("/topic/player-join-response")
-    public String handlePlayerJoinLobby(String gameLobbyIdAndPlayerDtoJson) throws JsonProcessingException, NumberFormatException {
+    //@SendTo("/topic/player-join-response")
+    public void handlePlayerJoinLobby(String gameLobbyIdAndPlayerDtoJson) throws JsonProcessingException, NumberFormatException {
         // 1) extract GameLobbyDto and PlayerDto objects from the string payload:
         String[] splitJsonStrings = gameLobbyIdAndPlayerDtoJson.split("\\|");
 
@@ -69,8 +73,10 @@ public class PlayerController {
 
         PlayerDto dto = playerMapper.mapToDto(updatedPlayerEntity);
 
+        this.template.convertAndSend("/topic/player-join-lobby-"+gameLobbyId, objectMapper.writeValueAsString(dto));
+
         // return the dto equivalent of the updated player entity
-        return objectMapper.writeValueAsString(dto);
+        //return objectMapper.writeValueAsString(dto);
     }
 
     @MessageMapping("/player-list")
