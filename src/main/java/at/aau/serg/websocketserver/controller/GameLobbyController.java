@@ -22,24 +22,6 @@ import java.util.List;
 @Controller
 public class GameLobbyController {
 
-    /* Autowired explained:
-
-    Autowired automatically handles the injection of an object into our controller class
-
-    Example:
-
-    @Autowired:
-    Service service;
-
-    Without this annotation you would have to manually instantiate the class the old fashioned way:
-
-    Service service = new Service();
-
-
-    @SubscribeMapping (could be useful, for example for initial loading of data):
-    @SubscribeMapping works only once every time the user (re)subscribes to the application controller under /app/...
-    */
-
     private GameLobbyEntityService gameLobbyService;
     private PlayerEntityService playerService;
     private final ObjectMapper objectMapper;
@@ -54,6 +36,7 @@ public class GameLobbyController {
         this.playerMapper = playerMapper;
     }
 
+    // TODO: change back to topic!!!
     @MessageMapping("/lobby-create")
     @SendToUser("/queue/lobby-create")
     public String handleLobbyCreation(String gameLobbyDtoAndPlayerDtoJson) throws JsonProcessingException {

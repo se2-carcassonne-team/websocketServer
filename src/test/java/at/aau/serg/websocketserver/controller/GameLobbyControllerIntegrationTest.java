@@ -6,6 +6,7 @@ import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketserver.domain.dto.PlayerDto;
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
+import at.aau.serg.websocketserver.errorcode.ErrorCode;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
 import at.aau.serg.websocketserver.mapper.PlayerMapper;
 import at.aau.serg.websocketserver.service.GameLobbyEntityService;
@@ -122,7 +123,7 @@ public class GameLobbyControllerIntegrationTest {
         session.send("/app/lobby-create", payload);
 
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
-        assertThat(actualResponse).contains("ERROR");
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_1001.getErrorCode());
     }
 
     @Test
@@ -146,7 +147,7 @@ public class GameLobbyControllerIntegrationTest {
         session.send("/app/lobby-create", payload);
 
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
-        assertThat(actualResponse).contains("ERROR");
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_1002.getErrorCode());
     }
 
     @Test
@@ -167,7 +168,7 @@ public class GameLobbyControllerIntegrationTest {
         session.send("/app/lobby-create", payload);
 
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
-        assertThat(actualResponse).contains("does not exist");
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_2001.getErrorCode());
     }
 
     @Test
@@ -204,7 +205,7 @@ public class GameLobbyControllerIntegrationTest {
         session.send("/app/lobby-name-update", objectMapper.writeValueAsString(gameLobbyDto));
 
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
-        assertThat(actualResponse).startsWith("ERROR");
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_1003.getErrorCode());
     }
 
     @Test

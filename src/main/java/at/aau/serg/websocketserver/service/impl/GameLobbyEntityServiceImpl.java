@@ -3,6 +3,7 @@ package at.aau.serg.websocketserver.service.impl;
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketserver.domain.entity.repository.GameLobbyEntityRepository;
 import at.aau.serg.websocketserver.domain.entity.repository.PlayerEntityRepository;
+import at.aau.serg.websocketserver.errorcode.ErrorCode;
 import at.aau.serg.websocketserver.service.GameLobbyEntityService;
 import jakarta.persistence.EntityExistsException;
 import org.springframework.stereotype.Service;
@@ -26,15 +27,15 @@ public class GameLobbyEntityServiceImpl implements GameLobbyEntityService {
     public GameLobbyEntity createLobby(GameLobbyEntity gameLobbyEntity) {
 
         if(gameLobbyEntity.getId() != null && gameLobbyEntityRepository.findById(gameLobbyEntity.getId()).isPresent()) {
-            throw new EntityExistsException("gameLobby with id " + gameLobbyEntity.getId() + " already exists");
+            throw new EntityExistsException(ErrorCode.ERROR_1001.getErrorCode());
         }
 
         if(gameLobbyEntity.getName() != null && gameLobbyEntityRepository.findByName(gameLobbyEntity.getName()).isPresent()) {
-            throw new EntityExistsException("gameLobby with name " + gameLobbyEntity.getName() + " already exists");
+            throw new EntityExistsException(ErrorCode.ERROR_1002.getErrorCode());
         }
 
         if(gameLobbyEntity.getLobbyCreatorId() != null && playerEntityRepository.findById(gameLobbyEntity.getLobbyCreatorId()).isEmpty()) {
-            throw new RuntimeException("player with id " + gameLobbyEntity.getLobbyCreatorId() + " does not exist");
+            throw new RuntimeException(ErrorCode.ERROR_2001.getErrorCode());
         }
 
         gameLobbyEntity.setNumPlayers(0);
@@ -50,7 +51,7 @@ public class GameLobbyEntityServiceImpl implements GameLobbyEntityService {
             gameLobbyToUpdate.setName(gameLobbyEntity.getName());
             return gameLobbyEntityRepository.save(gameLobbyToUpdate);
         } else {
-            throw new RuntimeException("gameLobby does not exist");
+            throw new RuntimeException(ErrorCode.ERROR_1003.getErrorCode());
         }
     }
 

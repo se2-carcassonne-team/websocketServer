@@ -4,6 +4,7 @@ import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketserver.domain.dto.PlayerDto;
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
+import at.aau.serg.websocketserver.errorcode.ErrorCode;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
 import at.aau.serg.websocketserver.mapper.PlayerMapper;
 import at.aau.serg.websocketserver.service.GameLobbyEntityService;
@@ -54,72 +55,95 @@ public class PlayerController {
 
     @MessageMapping("/player-join-lobby")
     //@SendTo("/topic/player-join-response")
-    public void handlePlayerJoinLobby(String gameLobbyIdAndPlayerDtoJson) throws JsonProcessingException, NumberFormatException {
-        // 1) extract GameLobbyDto and PlayerDto objects from the string payload:
-        String[] splitJsonStrings = gameLobbyIdAndPlayerDtoJson.split("\\|");
+    public void handlePlayerJoinLobby(String gameLobbyIdAndPlayerDtoJson) throws RuntimeException {
 
-        Long gameLobbyId = Long.parseLong(splitJsonStrings[0]);
-        String playerDtoJson = splitJsonStrings[1];
+        try {
+            // 1) extract GameLobbyDto and PlayerDto objects from the string payload:
+            String[] splitJsonStrings = gameLobbyIdAndPlayerDtoJson.split("\\|");
 
-        PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
-        // 2) convert the DTOs to Entity Objects for Service:
-        PlayerEntity playerEntity = playerMapper.mapToEntity(playerDto);
+            Long gameLobbyId = Long.parseLong(splitJsonStrings[0]);
+            String playerDtoJson = splitJsonStrings[1];
 
-        // 3) player joins lobby:
-        PlayerEntity updatedPlayerEntity = playerEntityService.joinLobby(gameLobbyId, playerEntity);
+            PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
+            // 2) convert the DTOs to Entity Objects for Service:
+            PlayerEntity playerEntity = playerMapper.mapToEntity(playerDto);
 
-        PlayerDto dto = playerMapper.mapToDto(updatedPlayerEntity);
+            // 3) player joins lobby:
+            PlayerEntity updatedPlayerEntity = playerEntityService.joinLobby(gameLobbyId, playerEntity);
 
-        // return the dto equivalent of the updated player entity
-        this.template.convertAndSend("/topic/player-join-lobby-"+gameLobbyId, objectMapper.writeValueAsString(dto));
+            PlayerDto dto = playerMapper.mapToDto(updatedPlayerEntity);
+
+            // return the dto equivalent of the updated player entity
+            this.template.convertAndSend("/topic/player-join-lobby-"+gameLobbyId, objectMapper.writeValueAsString(dto));
+
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(ErrorCode.ERROR_2004.getErrorCode());
+        } catch (NumberFormatException e) {
+            throw new RuntimeException(ErrorCode.ERROR_1005.getErrorCode());
+        }
+
 
         //return objectMapper.writeValueAsString(dto);
     }
 
     @MessageMapping("/player-list")
     @SendToUser("/queue/player-response")
-    public String getAllPlayersForLobby(String gameLobbyIdString) throws JsonProcessingException {
-        Long gameLobbyId = Long.parseLong(gameLobbyIdString);
+    public String getAllPlayersForLobby(String gameLobbyIdString) throws RuntimeException, JsonProcessingException {
+        try {
+            Long gameLobbyId = Long.parseLong(gameLobbyIdString);
 
-        List<PlayerEntity> playerEntityList = playerEntityService.getAllPlayersForLobby(gameLobbyId);
-        List<PlayerDto> playerDtoList = new ArrayList<>();
+            List<PlayerEntity> playerEntityList = playerEntityService.getAllPlayersForLobby(gameLobbyId);
+            List<PlayerDto> playerDtoList = new ArrayList<>();
 
-        for (PlayerEntity playerEntity : playerEntityList) {
-            playerDtoList.add(playerMapper.mapToDto(playerEntity));
+            for (PlayerEntity playerEntity : playerEntityList) {
+                playerDtoList.add(playerMapper.mapToDto(playerEntity));
+            }
+
+            return objectMapper.writeValueAsString(playerDtoList);
+        } catch (NumberFormatException e) {
+            throw new RuntimeException(ErrorCode.ERROR_1005.getErrorCode());
         }
-
-        return objectMapper.writeValueAsString(playerDtoList);
     }
 
     @MessageMapping("/player-update-username")
     @SendToUser("/queue/player-response")
     public String handlePlayerUpdateUsername(String playerDtoJson) throws JsonProcessingException {
-        // convert the sent String content to the playerDto object we can work with:
-        PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
+        try{
+            // convert the sent String content to the playerDto object we can work with:
+            PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
 
-        PlayerEntity playerEntity = playerMapper.mapToEntity(playerDto);
+            PlayerEntity playerEntity = playerMapper.mapToEntity(playerDto);
 
-        PlayerEntity updatedPlayerEntity = playerEntityService.updateUsername(playerEntity);
-        return objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
+            PlayerEntity updatedPlayerEntity = playerEntityService.updateUsername(playerEntity);
+            return objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(ErrorCode.ERROR_2004.getErrorCode());
+        }
+
     }
 
     @MessageMapping("/player-leave-lobby")
     //@SendTo("/topic/player-leave-response")
-    public void handlePlayerLeaveLobby(String playerDtoJson) throws JsonProcessingException {
-        PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
+    public void handlePlayerLeaveLobby(String playerDtoJson) throws RuntimeException {
+        try {
+            PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
 
-        // 2) convert the DTO to Entity Object for Service:
-        PlayerEntity playerEntity = playerMapper.mapToEntity(playerDto);
+            // 2) convert the DTO to Entity Object for Service:
+            PlayerEntity playerEntity = playerMapper.mapToEntity(playerDto);
 
-        Long gameLobbyId = playerDto.getGameLobbyId();
+            Long gameLobbyId = playerDto.getGameLobbyId();
 
-        // 3) player leaves lobby
-        PlayerEntity updatedPlayerEntity = playerEntityService.leaveLobby(playerEntity);
+            // 3) player leaves lobby
+            PlayerEntity updatedPlayerEntity = playerEntityService.leaveLobby(playerEntity);
 
-        this.template.convertAndSend(
-                "/topic/player-leave-lobby-"+gameLobbyId,
-                objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity))
-        );
+            this.template.convertAndSend(
+                    "/topic/player-leave-lobby-"+gameLobbyId,
+                    objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity))
+            );
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(ErrorCode.ERROR_2004.getErrorCode());
+        }
+
 
         //return objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
     }
