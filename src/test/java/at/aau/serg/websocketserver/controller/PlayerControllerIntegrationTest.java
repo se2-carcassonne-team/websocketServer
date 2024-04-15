@@ -218,6 +218,10 @@ public class PlayerControllerIntegrationTest {
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
+    // TODO: test multiple sessions in parallel (with subscriptions to the same topic)
+    // TODO: test 3 sessions in parallel (queue, topic/lobby-list, topic/lobby-$id)
+
+
     @Test
     void testThatJoinLobbySuccessfullySendsUpdatedLobbyListToTopic() throws Exception {
         //WEBSOCKET_TOPIC = "/topic/player-join-lobby-response";

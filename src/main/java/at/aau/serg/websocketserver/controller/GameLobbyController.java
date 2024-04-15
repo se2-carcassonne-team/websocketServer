@@ -37,6 +37,7 @@ public class GameLobbyController {
         this.playerMapper = playerMapper;
     }
 
+    // TODO: adapt + test
     /**
      * Ideas for the endpoint: /app/lobby-create
      * <p>sends responses to:</p>
@@ -76,6 +77,8 @@ public class GameLobbyController {
         }
     }
 
+
+    // TODO: adapt + test
     /**
      * Ideas for the endpoint: /app/lobby-name-update
      * <p>sends responses to:</p>
@@ -93,6 +96,8 @@ public class GameLobbyController {
         return objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(updatedGameLobbyEntity));
     }
 
+
+    // TODO: adapt + test
     /**
      * Ideas for the endpoint: /app/lobby-list
      * <p>sends responses to:</p>
@@ -113,6 +118,8 @@ public class GameLobbyController {
         return objectMapper.writeValueAsString(gameLobbyDtos);
     }
 
+
+    // TODO: adapt + test
     /**
      * Ideas for the endpoint: /app/lobby-delete
      * <p>sends responses to:</p>

@@ -251,7 +251,6 @@ public class PlayerController {
                     objectMapper.writeValueAsString(getPlayerDtosInLobbyList(gameLobbyId))
             );
 
-
             // send response to: /user/queue/response --> updated playerDto (later with response code: 101)
             return objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
 
