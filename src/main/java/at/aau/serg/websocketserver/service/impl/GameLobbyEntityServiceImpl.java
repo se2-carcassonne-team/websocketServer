@@ -3,7 +3,7 @@ package at.aau.serg.websocketserver.service.impl;
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketserver.domain.entity.repository.GameLobbyEntityRepository;
 import at.aau.serg.websocketserver.domain.entity.repository.PlayerEntityRepository;
-import at.aau.serg.websocketserver.errorcode.ErrorCode;
+import at.aau.serg.websocketserver.statuscode.ErrorCode;
 import at.aau.serg.websocketserver.service.GameLobbyEntityService;
 import jakarta.persistence.EntityExistsException;
 import org.springframework.stereotype.Service;

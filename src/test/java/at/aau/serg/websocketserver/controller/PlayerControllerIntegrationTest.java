@@ -6,7 +6,7 @@ import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketserver.domain.dto.PlayerDto;
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
-import at.aau.serg.websocketserver.errorcode.ErrorCode;
+import at.aau.serg.websocketserver.statuscode.ErrorCode;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
 import at.aau.serg.websocketserver.mapper.PlayerMapper;
 import at.aau.serg.websocketserver.service.GameLobbyEntityService;
