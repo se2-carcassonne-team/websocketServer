@@ -1,6 +1,8 @@
 package at.aau.serg.websocketserver.controller;
 
+import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketserver.domain.dto.PlayerDto;
+import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
 import at.aau.serg.websocketserver.statuscode.ErrorCode;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
@@ -41,6 +43,24 @@ public class PlayerController {
         this.gameLobbyMapper = gameLobbyMapper;
     }
 
+    private List<GameLobbyDto> getGameLobbyDtoList() {
+        List<GameLobbyEntity> gameLobbyEntities = gameLobbyEntityService.getListOfLobbies();
+        List<GameLobbyDto> gameLobbyDtos = new ArrayList<>();
+        for (GameLobbyEntity gameLobbyEntity : gameLobbyEntities) {
+            gameLobbyDtos.add(gameLobbyMapper.mapToDto(gameLobbyEntity));
+        }
+        return gameLobbyDtos;
+    }
+
+    private List<PlayerDto> getPlayerDtosInLobbyList(Long gameLobbyId) {
+        List<PlayerEntity> playerEntityList = playerEntityService.getAllPlayersForLobby(gameLobbyId);
+        List<PlayerDto> playerDtos = new ArrayList<>();
+        for (PlayerEntity playerEntity : playerEntityList) {
+            playerDtos.add(playerMapper.mapToDto(playerEntity));
+        }
+        return playerDtos;
+    }
+
     @MessageMapping("/player-create")
     @SendToUser("/queue/response")
     public String handleCreatePlayer(String playerDtoJson, @Header("simpSessionId") String sessionId) throws JsonProcessingException {
@@ -76,7 +96,7 @@ public class PlayerController {
     /**
      * Ideas for the endpoint: /app/player-join-lobby
      * <p>sends responses to:</p>
-     * <p> 1) /user/queue/player-response --> updated playerDto (id of the joined lobby now set)</p>
+     * <p> 1) /user/queue/response --> updated playerDto (id of the joined lobby now set)</p>
      * <p> 2) /topic/lobby-list --> updated list of lobbies (numPlayers of the joined lobby incremented) (might be a lot of data to be sent when there are a lot of lobbies, but it's just Strings, so not really that much data when you think about it) </p>
      * <p> 3) /topic/lobby-$id --> updated list of players in lobby (response code: 201)</p>
      * @param gameLobbyIdAndPlayerDtoJson String with id of the lobby to join and the playerDto, concatenated with |
@@ -102,16 +122,31 @@ public class PlayerController {
 
             PlayerDto dto = playerMapper.mapToDto(updatedPlayerEntity);
 
-            // return the dto equivalent of the updated player entity
-            this.template.convertAndSend("/topic/player-join-lobby-"+gameLobbyId, objectMapper.writeValueAsString(dto));
+            // send response to /topic/lobby-$id --> updated list of players in lobby (response code: 201)
+            List<PlayerDto> updatedPlayerEntitiesInLobby = getPlayerDtosInLobbyList(gameLobbyId);
+            this.template.convertAndSend(
+                    "/topic/lobby-"+gameLobbyId,
+                    objectMapper.writeValueAsString(updatedPlayerEntitiesInLobby)
+            );
 
+            // send response to /topic/lobby-list --> updated list of lobbies (numPlayers of the joined lobby incremented) (response code: 301)
+            List<GameLobbyDto> gameLobbyDtos = getGameLobbyDtoList();
+            this.template.convertAndSend(
+                    "/topic/lobby-list",
+                    objectMapper.writeValueAsString(gameLobbyDtos)
+            );
+
+            // send response to /user/queue/response --> updated playerDto (id of the joined lobby now set)
             return objectMapper.writeValueAsString(dto);
+
         } catch (JsonProcessingException e) {
             throw new RuntimeException(ErrorCode.ERROR_2004.getErrorCode());
         } catch (NumberFormatException e) {
             throw new RuntimeException(ErrorCode.ERROR_1005.getErrorCode());
         }
     }
+
+
 
     @MessageMapping("/player-list")
     @SendToUser("/queue/player-response")
