@@ -4,7 +4,7 @@ import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketserver.domain.dto.PlayerDto;
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
-import at.aau.serg.websocketserver.errorcode.ErrorCode;
+import at.aau.serg.websocketserver.statuscode.ErrorCode;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
 import at.aau.serg.websocketserver.mapper.PlayerMapper;
 import at.aau.serg.websocketserver.service.GameLobbyEntityService;
@@ -37,6 +37,18 @@ public class GameLobbyController {
         this.playerMapper = playerMapper;
     }
 
+    /**
+     * Ideas for the endpoint: /app/lobby-create
+     * <p>sends responses to:</p>
+     * <p> 1) /user/queue/response --> updated playerDto (with lobbyId set to id of the created lobby) (response code: 101)</p>
+     * <p> 2) /topic/lobby-list --> updated list of lobbies (now includes the newly created lobby) (response code: 301)</p>
+     * <p> 3) /topic/lobby-$id !!! NOT POSSIBLE !!!
+     * lobby creator himself doesn't know the lobby id yet!
+     * Do some trickery on frontend to get around this?
+     * Or separate lobby joining from lobby creation and then make two subsequent calls on the frontend (1. create lobby, 2. join lobby)? </p>
+     * @param gameLobbyDtoAndPlayerDtoJson
+     * @return
+     */
     @MessageMapping("/lobby-create")
     @SendTo("/topic/game-lobby-response")
     public String handleLobbyCreation(String gameLobbyDtoAndPlayerDtoJson) {
@@ -64,6 +76,15 @@ public class GameLobbyController {
         }
     }
 
+    /**
+     * Ideas for the endpoint: /app/lobby-name-update
+     * <p>sends responses to:</p>
+     * <p> 1) /topic/lobby-$id --> updated lobby name (response code: 202)</p>
+     * <p> 2) /topic/lobby-list --> updated list of lobbies (with updated lobby-name) (response code: 301)</p>
+     * @param gameLobbyDtoJson
+     * @return
+     * @throws JsonProcessingException
+     */
     @MessageMapping("/lobby-name-update")
     @SendTo("/topic/game-lobby-response")
     public String handleLobbyNameUpdate(String gameLobbyDtoJson) throws JsonProcessingException {
@@ -72,6 +93,13 @@ public class GameLobbyController {
         return objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(updatedGameLobbyEntity));
     }
 
+    /**
+     * Ideas for the endpoint: /app/lobby-list
+     * <p>sends responses to:</p>
+     * <p> 1) /user/queue/response --> current list of lobbies (response code: 301)</p>
+     * @return
+     * @throws JsonProcessingException
+     */
     @MessageMapping("/lobby-list")
     @SendToUser("/queue/lobby-response")
     public String handleGetAllLobbies() throws JsonProcessingException {
@@ -85,7 +113,15 @@ public class GameLobbyController {
         return objectMapper.writeValueAsString(gameLobbyDtos);
     }
 
-
+    /**
+     * Ideas for the endpoint: /app/lobby-delete
+     * <p>sends responses to:</p>
+     * <p> 1) /topic/lobby-list --> updated list of lobbies (301)</p>
+     * <p> 2) /topic/lobby-$id --> some kind of exit code that the lobby was deleted (response-code: 203) TODO frontend: handle this exit code (e.g. by leaving the lobby activity & setting lobbyId of playerDto to null)</p>
+     * <p> 3) /user/queue/response ?not really needed? </p>
+     * @param gameLobbyIdString
+     * @return
+     */
     @MessageMapping("/lobby-delete")
     @SendToUser("/queue/lobby-response")
     public String handleDeleteLobby(String gameLobbyIdString) {

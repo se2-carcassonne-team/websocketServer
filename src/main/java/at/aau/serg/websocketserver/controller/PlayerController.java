@@ -1,10 +1,8 @@
 package at.aau.serg.websocketserver.controller;
 
-import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketserver.domain.dto.PlayerDto;
-import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
-import at.aau.serg.websocketserver.errorcode.ErrorCode;
+import at.aau.serg.websocketserver.statuscode.ErrorCode;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
 import at.aau.serg.websocketserver.mapper.PlayerMapper;
 import at.aau.serg.websocketserver.service.GameLobbyEntityService;
@@ -13,7 +11,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
@@ -53,6 +50,16 @@ public class PlayerController {
         return objectMapper.writeValueAsString(playerMapper.mapToDto(createdPlayerEntity));
     }
 
+
+    /**
+     * Ideas for the endpoint: /app/player-join-lobby
+     * <p>sends responses to:</p>
+     * <p> 1) /user/queue/player-response --> updated playerDto (id of the joined lobby now set)</p>
+     * <p> 2) /topic/lobby-list --> updated list of lobbies (numPlayers of the joined lobby incremented) (might be a lot of data to be sent when there are a lot of lobbies, but it's just Strings, so not really that much data when you think about it) </p>
+     * <p> 3) /topic/lobby-$id --> updated list of players in lobby (response code: 201)</p>
+     * @param gameLobbyIdAndPlayerDtoJson String with id of the lobby to join and the playerDto, concatenated with |
+     * @throws RuntimeException
+     */
     @MessageMapping("/player-join-lobby")
     //@SendTo("/topic/player-join-response")
     public void handlePlayerJoinLobby(String gameLobbyIdAndPlayerDtoJson) throws RuntimeException {
@@ -81,13 +88,11 @@ public class PlayerController {
         } catch (NumberFormatException e) {
             throw new RuntimeException(ErrorCode.ERROR_1005.getErrorCode());
         }
-
-
         //return objectMapper.writeValueAsString(dto);
     }
 
     @MessageMapping("/player-list")
-    @SendToUser("/queue/player-response")
+    @SendToUser("/topic/player-response")
     public String getAllPlayersForLobby(String gameLobbyIdString) throws RuntimeException, JsonProcessingException {
         try {
             Long gameLobbyId = Long.parseLong(gameLobbyIdString);
@@ -105,6 +110,15 @@ public class PlayerController {
         }
     }
 
+    /**
+     * Ideas for the endpoint /app/player-update-username
+     * <p>sends responses to: </p>
+     * <p> 1) /user/queue/response --> updated playerDto (updated username) (response code: 101)</p>
+     * <p> 2) /topic/lobby-$id --> updated list of players in lobby (response code: 201)</p>
+     * @param playerDtoJson
+     * @return
+     * @throws JsonProcessingException
+     */
     @MessageMapping("/player-update-username")
     @SendToUser("/queue/player-response")
     public String handlePlayerUpdateUsername(String playerDtoJson) throws JsonProcessingException {
@@ -122,6 +136,17 @@ public class PlayerController {
 
     }
 
+    /**
+     * Ideas for the endpoint /app/player-leave-lobby
+     * <p>sends responses to:</p>
+     * <p> 1) /user/queue/response --> updated playerDto (response code: 101)</p>
+     * <p> 2) /topic/lobby-list --> updated list of lobbies (numPlayers of the left lobby decremented)
+     * - (might be a lot of data to be sent when there are a lot of lobbies, but it's just Strings, so not really that much data when you think about it)
+     * (response code: 301) </p>
+     * <p> 3) /topic/lobby-$id --> updated list of players in lobby (response code: 201)</p>
+     * @param playerDtoJson playerDto that wants to leave the lobby he is currently in
+     * @throws RuntimeException
+     */
     @MessageMapping("/player-leave-lobby")
     //@SendTo("/topic/player-leave-response")
     public void handlePlayerLeaveLobby(String playerDtoJson) throws RuntimeException {
@@ -148,6 +173,7 @@ public class PlayerController {
         //return objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
     }
 
+    // TODO: handle deletion of player inside a lobby properly?
     @MessageMapping("/player-delete")
     @SendToUser("/queue/player-response")
     public String handleDeletePlayer(String playerDtoJson) throws JsonProcessingException {
