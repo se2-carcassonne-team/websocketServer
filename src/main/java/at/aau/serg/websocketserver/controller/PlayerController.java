@@ -46,6 +46,10 @@ public class PlayerController {
     private List<GameLobbyDto> getGameLobbyDtoList() {
         List<GameLobbyEntity> gameLobbyEntities = gameLobbyEntityService.getListOfLobbies();
         List<GameLobbyDto> gameLobbyDtos = new ArrayList<>();
+        if(gameLobbyEntities.isEmpty()){
+            return gameLobbyDtos;
+        }
+
         for (GameLobbyEntity gameLobbyEntity : gameLobbyEntities) {
             gameLobbyDtos.add(gameLobbyMapper.mapToDto(gameLobbyEntity));
         }
@@ -53,8 +57,13 @@ public class PlayerController {
     }
 
     private List<PlayerDto> getPlayerDtosInLobbyList(Long gameLobbyId) {
-        List<PlayerEntity> playerEntityList = playerEntityService.getAllPlayersForLobby(gameLobbyId);
         List<PlayerDto> playerDtos = new ArrayList<>();
+        if (gameLobbyEntityService.findById(gameLobbyId).isEmpty()){
+            return playerDtos;
+        }
+
+        List<PlayerEntity> playerEntityList = playerEntityService.getAllPlayersForLobby(gameLobbyId);
+
         for (PlayerEntity playerEntity : playerEntityList) {
             playerDtos.add(playerMapper.mapToDto(playerEntity));
         }
@@ -122,21 +131,21 @@ public class PlayerController {
 
             PlayerDto dto = playerMapper.mapToDto(updatedPlayerEntity);
 
-            // send response to /topic/lobby-$id --> updated list of players in lobby (response code: 201)
+            // send response to /topic/lobby-$id --> updated list of players in lobby (later with response code: 201)
             List<PlayerDto> updatedPlayerEntitiesInLobby = getPlayerDtosInLobbyList(gameLobbyId);
             this.template.convertAndSend(
                     "/topic/lobby-"+gameLobbyId,
                     objectMapper.writeValueAsString(updatedPlayerEntitiesInLobby)
             );
 
-            // send response to /topic/lobby-list --> updated list of lobbies (numPlayers of the joined lobby incremented) (response code: 301)
+            // send response to /topic/lobby-list --> updated list of lobbies (numPlayers of the joined lobby incremented) (later with response code: 301)
             List<GameLobbyDto> gameLobbyDtos = getGameLobbyDtoList();
             this.template.convertAndSend(
                     "/topic/lobby-list",
                     objectMapper.writeValueAsString(gameLobbyDtos)
             );
 
-            // send response to /user/queue/response --> updated playerDto (id of the joined lobby now set)
+            // send response to /user/queue/response --> updated playerDto (id of the joined lobby now set) (later with response code)
             return objectMapper.writeValueAsString(dto);
 
         } catch (JsonProcessingException e) {
@@ -147,9 +156,18 @@ public class PlayerController {
     }
 
 
-
+    /**
+     * Ideas for the endpoint /app/player-list
+     * <p>sends responses to: </p>
+     * <p> 1) /user/queue/response --> list of players in the lobby</p>
+     * <p>Relevant when first joining a lobby and getting the list of players!</p>
+     * @param gameLobbyIdString
+     * @return
+     * @throws RuntimeException
+     * @throws JsonProcessingException
+     */
     @MessageMapping("/player-list")
-    @SendToUser("/queue/player-response")
+    @SendToUser("/queue/response")
     public String getAllPlayersForLobby(String gameLobbyIdString) throws RuntimeException, JsonProcessingException {
         try {
             Long gameLobbyId = Long.parseLong(gameLobbyIdString);
@@ -161,12 +179,14 @@ public class PlayerController {
                 playerDtoList.add(playerMapper.mapToDto(playerEntity));
             }
 
+            // later with response code
             return objectMapper.writeValueAsString(playerDtoList);
         } catch (NumberFormatException e) {
             throw new RuntimeException(ErrorCode.ERROR_1005.getErrorCode());
         }
     }
 
+    // TODO: adapt
     /**
      * Ideas for the endpoint /app/player-update-username
      * <p>sends responses to: </p>
@@ -205,8 +225,8 @@ public class PlayerController {
      * @throws RuntimeException
      */
     @MessageMapping("/player-leave-lobby")
-    //@SendTo("/topic/player-leave-response")
-    public void handlePlayerLeaveLobby(String playerDtoJson) throws RuntimeException {
+    @SendToUser("/queue/response")
+    public String handlePlayerLeaveLobby(String playerDtoJson) throws RuntimeException {
         try {
             PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
 
@@ -218,16 +238,28 @@ public class PlayerController {
             // 3) player leaves lobby
             PlayerEntity updatedPlayerEntity = playerEntityService.leaveLobby(playerEntity);
 
+
+            // send response to: /topic/lobby-list --> updated list of lobbies (later with response code 301)
             this.template.convertAndSend(
-                    "/topic/player-leave-lobby-"+gameLobbyId,
-                    objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity))
+                    "/topic/lobby-list",
+                    objectMapper.writeValueAsString(getGameLobbyDtoList())
             );
+
+            // send response to: /topic/lobby-$id --> updated list of players in lobby (later with response code: 201)
+            this.template.convertAndSend(
+                    "/topic/lobby-" + gameLobbyId,
+                    objectMapper.writeValueAsString(getPlayerDtosInLobbyList(gameLobbyId))
+            );
+
+
+            // send response to: /user/queue/response --> updated playerDto (later with response code: 101)
+            return objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
+
         } catch (JsonProcessingException e) {
             throw new RuntimeException(ErrorCode.ERROR_2004.getErrorCode());
         }
 
 
-        //return objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
     }
 
     // TODO: handle deletion of player inside a lobby properly?
