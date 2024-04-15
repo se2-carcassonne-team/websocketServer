@@ -9,10 +9,13 @@ import at.aau.serg.websocketserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketserver.service.PlayerEntityService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SendToUser;
+import org.springframework.messaging.simp.user.SimpUserRegistry;
 import org.springframework.stereotype.Controller;
 
 import java.util.ArrayList;
@@ -22,7 +25,7 @@ import java.util.Optional;
 @Controller
 public class PlayerController {
 
-    private SimpMessagingTemplate template;
+    private final SimpMessagingTemplate template;
     private PlayerEntityService playerEntityService;
     private GameLobbyEntityService gameLobbyEntityService;
     private ObjectMapper objectMapper;
@@ -38,10 +41,9 @@ public class PlayerController {
         this.gameLobbyMapper = gameLobbyMapper;
     }
 
-    // test value
     @MessageMapping("/player-create")
-    @SendToUser("/queue/player-response")
-    public String handleCreatePlayer(String playerDtoJson) throws JsonProcessingException {
+    @SendToUser("/queue/response")
+    public String handleCreatePlayer(String playerDtoJson, @Header("simpSessionId") String sessionId) throws JsonProcessingException {
         // read in the JSON String and convert to PlayerDTO Object
         PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
 
@@ -49,6 +51,26 @@ public class PlayerController {
         // return the DTO of the created player
         return objectMapper.writeValueAsString(playerMapper.mapToDto(createdPlayerEntity));
     }
+
+    // some testing stuff - ignore
+//    @MessageMapping("/player-create")
+//    //@SendToUser("/queue/player-response")
+//    public void handleCreatePlayer2(String playerDtoJson, @Header("simpSessionId") String sessionId) throws JsonProcessingException {
+//        // read in the JSON String and convert to PlayerDTO Object
+//        PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
+//
+//        PlayerEntity createdPlayerEntity = playerEntityService.createPlayer(playerMapper.mapToEntity(playerDto));
+//
+//        this.template.convertAndSend(
+//                "/queue/player-response",
+//                objectMapper.writeValueAsString(playerMapper.mapToDto(createdPlayerEntity)),
+//                message -> {
+//                    message.getHeaders().put("sessonId", sessionId);
+//                    return message;
+//                });
+//
+//        this.template.convertAndSendToUser(principal.getName(),"/queue/player-response");
+//    }
 
 
     /**
@@ -61,8 +83,8 @@ public class PlayerController {
      * @throws RuntimeException
      */
     @MessageMapping("/player-join-lobby")
-    //@SendTo("/topic/player-join-response")
-    public void handlePlayerJoinLobby(String gameLobbyIdAndPlayerDtoJson) throws RuntimeException {
+    @SendToUser("/queue/response")
+    public String handlePlayerJoinLobby(String gameLobbyIdAndPlayerDtoJson) throws RuntimeException {
 
         try {
             // 1) extract GameLobbyDto and PlayerDto objects from the string payload:
@@ -83,16 +105,16 @@ public class PlayerController {
             // return the dto equivalent of the updated player entity
             this.template.convertAndSend("/topic/player-join-lobby-"+gameLobbyId, objectMapper.writeValueAsString(dto));
 
+            return objectMapper.writeValueAsString(dto);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(ErrorCode.ERROR_2004.getErrorCode());
         } catch (NumberFormatException e) {
             throw new RuntimeException(ErrorCode.ERROR_1005.getErrorCode());
         }
-        //return objectMapper.writeValueAsString(dto);
     }
 
     @MessageMapping("/player-list")
-    @SendToUser("/topic/player-response")
+    @SendToUser("/queue/player-response")
     public String getAllPlayersForLobby(String gameLobbyIdString) throws RuntimeException, JsonProcessingException {
         try {
             Long gameLobbyId = Long.parseLong(gameLobbyIdString);

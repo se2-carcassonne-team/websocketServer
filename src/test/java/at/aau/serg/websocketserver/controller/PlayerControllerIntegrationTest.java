@@ -72,7 +72,7 @@ public class PlayerControllerIntegrationTest {
     @Test
     public void testThatCreatePlayerHandlerSuccessfullyCreatesPlayer() throws Exception {
         //WEBSOCKET_TOPIC = "/topic/create-user-response";
-        StompSession session = initStompSession("/user/queue/player-response", messages);
+        StompSession session = initStompSession("/user/queue/response", messages);
 
         PlayerDto testPlayerDto = TestDataUtil.createTestPlayerDtoA(null);
         PlayerEntity testPlayerEntity = playerMapper.mapToEntity(testPlayerDto);
