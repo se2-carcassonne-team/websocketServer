@@ -218,8 +218,6 @@ public class PlayerControllerIntegrationTest {
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
-    // TODO: test multiple sessions in parallel (with subscriptions to the same topic)
-    // TODO: test 3 sessions in parallel (queue, topic/lobby-list, topic/lobby-$id)
 
 
     @Test
@@ -315,6 +313,151 @@ public class PlayerControllerIntegrationTest {
 
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
+
+
+    // DONE: test 3 sessions in parallel (queue, topic/lobby-list, topic/lobby-$id)
+    /**
+     * Test if 3 sessions at the same time all receive their respective responses:
+     * <ol>
+     *     <li>/user/queue/response expects updated playerDtp</li>
+     *     <li>/topic/lobby-list expects updated list of lobbies</li>
+     *     <li>/topic/lobby-$id expects updated list of players in lobby</li>
+     * </ol>
+     * @throws Exception
+     */
+    @Test
+    void testThatJoinLobbySuccessfullyReturnsCorrectResponsesToAllThreeTopicsInParallel() throws Exception {
+        //WEBSOCKET_TOPIC = "/topic/player-join-lobby-response";
+        GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
+
+        StompSession session = initStompSession("/user/queue/response", messages);
+        StompSession session2 = initStompSession("/topic/lobby-list", messages2);
+        StompSession session3 = initStompSession("/topic/lobby-" + testGameLobbyEntityA.getId(), messages3);
+
+        // Pre-populate the database
+        PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
+        assertThat(gameLobbyEntityService.findById(testGameLobbyEntityA.getId())).isEmpty();
+        gameLobbyEntityService.createLobby(testGameLobbyEntityA);
+        playerEntityService.createPlayer(testPlayerEntityA);
+
+        PlayerDto testPlayerDtoA = playerMapper.mapToDto(testPlayerEntityA);
+        GameLobbyDto testGameLobbyDtoA = gameLobbyMapper.mapToDto(testGameLobbyEntityA);
+
+        // manually transform objects to JSON-strings and combine them:
+        String playerDtoJson = objectMapper.writeValueAsString(testPlayerDtoA);
+
+        String payload = testGameLobbyDtoA.getId() + "|" +  playerDtoJson;
+
+        // before sending payload:
+        // 1) assert that the test player doesn't reference a game lobby
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get().getGameLobbyEntity()).isEqualTo(null);
+        // 2) assert the numPlayers of the test game lobby is 0
+        assertThat(gameLobbyEntityService.findById(testGameLobbyEntityA.getId()).get().getNumPlayers()).isEqualTo(0);
+
+        session.send("/app/player-join-lobby", payload);
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+        String actualResponse2 = messages2.poll(1, TimeUnit.SECONDS);
+        String actualResponse3 = messages3.poll(1, TimeUnit.SECONDS);
+
+        // after sending & controller processing payload:
+        // 1) assert that the test game lobby now has numPlayers = 1
+        assertThat(gameLobbyEntityService.findById(testGameLobbyEntityA.getId()).get().getNumPlayers()).isEqualTo(1);
+        // 2) assert that the test player references the test game lobby
+        testGameLobbyEntityA.setNumPlayers(testGameLobbyEntityA.getNumPlayers()+1);
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get().getGameLobbyEntity()).isEqualTo(testGameLobbyEntityA);
+
+
+        // expected response: updated playerDto with the Lobby, which itself should also be updated to have incremented numPlayers
+        testGameLobbyDtoA.setNumPlayers(testGameLobbyDtoA.getNumPlayers()+1);
+        testPlayerDtoA.setGameLobbyId(testGameLobbyDtoA.getId());
+        var expectedResponse = objectMapper.writeValueAsString(testPlayerDtoA);
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+
+        // expected response: updated list of lobbies
+        List<GameLobbyDto> listOfGameLobbyDtos = getGameLobbyDtoList();
+        var expectedResponse2 = objectMapper.writeValueAsString(listOfGameLobbyDtos);
+        assertThat(actualResponse2).isEqualTo(expectedResponse2);
+
+        // expected response3: updated list of players in lobby
+        List<PlayerDto> updatedListOfPlayersInLobby = getPlayerDtosInLobbyList(testPlayerEntityA.getId());
+        var expectedResponse3 = objectMapper.writeValueAsString(updatedListOfPlayersInLobby);
+        assertThat(actualResponse3).isEqualTo(expectedResponse3);
+    }
+
+    // DONE: test multiple sessions in parallel (with subscriptions to the same topic)
+    /**
+     * Test if 4 sessions at the same time all receive their respecive responses:
+     * <ol>
+     *     <li>/user/queue/response expects updated playerDtp</li>
+     *     <li>session2: /topic/lobby-list expects updated list of lobbies</li>
+     *     <li>session3: /topic/lobby-list expects updated list of lobbies</li>
+     *     <li>session4: /topic/lobby-list expects updated list of lobbies</li>
+     * </ol>
+     * @throws Exception
+     */
+    @Test
+    void testThatJoinLobbySuccessfullyReturnsCorrectResponsesToMultipleClientsOnSameTopic() throws Exception {
+        //WEBSOCKET_TOPIC = "/topic/player-join-lobby-response";
+        GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
+
+        StompSession session = initStompSession("/user/queue/response", messages);
+        StompSession session2 = initStompSession("/topic/lobby-list", messages2);
+        StompSession session3 = initStompSession("/topic/lobby-list", messages3);
+        StompSession session4 = initStompSession("/topic/lobby-list", messages4);
+
+
+        // Pre-populate the database
+        PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
+        assertThat(gameLobbyEntityService.findById(testGameLobbyEntityA.getId())).isEmpty();
+        gameLobbyEntityService.createLobby(testGameLobbyEntityA);
+        playerEntityService.createPlayer(testPlayerEntityA);
+
+        PlayerDto testPlayerDtoA = playerMapper.mapToDto(testPlayerEntityA);
+        GameLobbyDto testGameLobbyDtoA = gameLobbyMapper.mapToDto(testGameLobbyEntityA);
+
+        // manually transform objects to JSON-strings and combine them:
+        String playerDtoJson = objectMapper.writeValueAsString(testPlayerDtoA);
+
+        String payload = testGameLobbyDtoA.getId() + "|" +  playerDtoJson;
+
+        // before sending payload:
+        // 1) assert that the test player doesn't reference a game lobby
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get().getGameLobbyEntity()).isEqualTo(null);
+        // 2) assert the numPlayers of the test game lobby is 0
+        assertThat(gameLobbyEntityService.findById(testGameLobbyEntityA.getId()).get().getNumPlayers()).isEqualTo(0);
+
+        session.send("/app/player-join-lobby", payload);
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+        String actualResponse2 = messages2.poll(1, TimeUnit.SECONDS);
+        String actualResponse3 = messages3.poll(1, TimeUnit.SECONDS);
+        String actualResponse4 = messages4.poll(1, TimeUnit.SECONDS);
+
+        // after sending & controller processing payload:
+        // 1) assert that the test game lobby now has numPlayers = 1
+        assertThat(gameLobbyEntityService.findById(testGameLobbyEntityA.getId()).get().getNumPlayers()).isEqualTo(1);
+        // 2) assert that the test player references the test game lobby
+        testGameLobbyEntityA.setNumPlayers(testGameLobbyEntityA.getNumPlayers()+1);
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get().getGameLobbyEntity()).isEqualTo(testGameLobbyEntityA);
+
+
+        // expected response: updated playerDto with the Lobby, which itself should also be updated to have incremented numPlayers
+        testGameLobbyDtoA.setNumPlayers(testGameLobbyDtoA.getNumPlayers()+1);
+        testPlayerDtoA.setGameLobbyId(testGameLobbyDtoA.getId());
+        var expectedResponse = objectMapper.writeValueAsString(testPlayerDtoA);
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+
+        // expected responses for sessions 2-4: updated list of lobbies
+        List<GameLobbyDto> listOfGameLobbyDtos = getGameLobbyDtoList();
+        var expectedResponseListOfLobbies = objectMapper.writeValueAsString(listOfGameLobbyDtos);
+        assertThat(actualResponse2).isEqualTo(expectedResponseListOfLobbies);
+        assertThat(actualResponse3).isEqualTo(expectedResponseListOfLobbies);
+        assertThat(actualResponse4).isEqualTo(expectedResponseListOfLobbies);
+    }
+
     @Test
     void testThatJoinLobbyWithFaultyGameLobbyIdReturnsExpectedResult() throws Exception {
         // TODO: implement

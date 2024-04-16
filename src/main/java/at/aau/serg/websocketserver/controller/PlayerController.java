@@ -102,6 +102,7 @@ public class PlayerController {
 //    }
 
 
+    // DONE
     /**
      * Ideas for the endpoint: /app/player-join-lobby
      * <p>sends responses to:</p>
@@ -156,6 +157,7 @@ public class PlayerController {
     }
 
 
+    // DONE
     /**
      * Ideas for the endpoint /app/player-list
      * <p>sends responses to: </p>
@@ -213,6 +215,8 @@ public class PlayerController {
 
     }
 
+
+    // DONE
     /**
      * Ideas for the endpoint /app/player-leave-lobby
      * <p>sends responses to:</p>
@@ -257,8 +261,6 @@ public class PlayerController {
         } catch (JsonProcessingException e) {
             throw new RuntimeException(ErrorCode.ERROR_2004.getErrorCode());
         }
-
-
     }
 
     // TODO: handle deletion of player inside a lobby properly?
