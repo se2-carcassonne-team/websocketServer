@@ -144,9 +144,9 @@ public class GameLobbyController {
      * @throws JsonProcessingException
      */
     @MessageMapping("/lobby-list")
-    @SendToUser("/queue/lobby-response")
+    @SendToUser("/queue/lobby-list-response")
     public String handleGetAllLobbies() throws JsonProcessingException {
-        List<GameLobbyEntity> gameLobbyEntities = gameLobbyService.getListOfLobbies();
+        List<GameLobbyEntity> gameLobbyEntities = gameLobbyEntityService.getListOfLobbies();
         List<GameLobbyDto> gameLobbyDtos = new ArrayList<>();
 
         for (GameLobbyEntity gameLobbyEntity : gameLobbyEntities) {
