@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
 
@@ -23,18 +24,47 @@ import java.util.List;
 @Controller
 public class GameLobbyController {
 
-    private GameLobbyEntityService gameLobbyService;
-    private PlayerEntityService playerService;
+    private GameLobbyEntityService gameLobbyEntityService;
+    private PlayerEntityService playerEntityService;
     private final ObjectMapper objectMapper;
     private final GameLobbyMapper gameLobbyMapper;
     private final PlayerMapper playerMapper;
+    private final SimpMessagingTemplate template;
 
-    public GameLobbyController(GameLobbyEntityService gameLobbyService, PlayerEntityService playerService, ObjectMapper objectMapper, GameLobbyMapper gameLobbyMapper, PlayerMapper playerMapper) {
-        this.gameLobbyService = gameLobbyService;
-        this.playerService = playerService;
+    public GameLobbyController(GameLobbyEntityService gameLobbyEntityService, PlayerEntityService playerEntityService, ObjectMapper objectMapper, GameLobbyMapper gameLobbyMapper, PlayerMapper playerMapper, SimpMessagingTemplate template) {
+        this.gameLobbyEntityService = gameLobbyEntityService;
+        this.playerEntityService = playerEntityService;
         this.objectMapper = objectMapper;
         this.gameLobbyMapper = gameLobbyMapper;
         this.playerMapper = playerMapper;
+        this.template = template;
+    }
+
+    private List<GameLobbyDto> getGameLobbyDtoList() {
+        List<GameLobbyEntity> gameLobbyEntities = gameLobbyEntityService.getListOfLobbies();
+        List<GameLobbyDto> gameLobbyDtos = new ArrayList<>();
+        if(gameLobbyEntities.isEmpty()){
+            return gameLobbyDtos;
+        }
+
+        for (GameLobbyEntity gameLobbyEntity : gameLobbyEntities) {
+            gameLobbyDtos.add(gameLobbyMapper.mapToDto(gameLobbyEntity));
+        }
+        return gameLobbyDtos;
+    }
+
+    private List<PlayerDto> getPlayerDtosInLobbyList(Long gameLobbyId) {
+        List<PlayerDto> playerDtos = new ArrayList<>();
+        if (gameLobbyEntityService.findById(gameLobbyId).isEmpty()){
+            return playerDtos;
+        }
+
+        List<PlayerEntity> playerEntityList = playerEntityService.getAllPlayersForLobby(gameLobbyId);
+
+        for (PlayerEntity playerEntity : playerEntityList) {
+            playerDtos.add(playerMapper.mapToDto(playerEntity));
+        }
+        return playerDtos;
     }
 
     // TODO: adapt + test
@@ -51,7 +81,7 @@ public class GameLobbyController {
      * @return
      */
     @MessageMapping("/lobby-create")
-    @SendTo("/topic/game-lobby-response")
+    @SendToUser("/queue/response")
     public String handleLobbyCreation(String gameLobbyDtoAndPlayerDtoJson) {
 
         try {
@@ -63,9 +93,17 @@ public class GameLobbyController {
                 PlayerDto playerDto = objectMapper.readValue(splitJsonStrings[1], PlayerDto.class);
                 gameLobbyDto.setLobbyCreatorId(playerDto.getId());
 
-                GameLobbyEntity createdGameLobbyEntity = gameLobbyService.createLobby(gameLobbyMapper.mapToEntity(gameLobbyDto));
-                PlayerEntity playerEntity = playerService.joinLobby(createdGameLobbyEntity.getId(), playerMapper.mapToEntity(playerDto));
+                GameLobbyEntity createdGameLobbyEntity = gameLobbyEntityService.createLobby(gameLobbyMapper.mapToEntity(gameLobbyDto));
+                PlayerEntity playerEntity = playerEntityService.joinLobby(createdGameLobbyEntity.getId(), playerMapper.mapToEntity(playerDto));
 
+                // send updated list of lobbies to /topic/lobby-list
+                this.template.convertAndSend("/topic/lobby-list", getGameLobbyDtoList());
+
+                // send updated list of players in lobby to /topic/lobby-$id
+                // IMPORTANT: not relevant, as player does not know the lobby id when calling lobby-create
+                this.template.convertAndSend("/topic/lobby-"+createdGameLobbyEntity.getId(), getPlayerDtosInLobbyList(createdGameLobbyEntity.getId()));
+
+                // return updated playerDto to queue
                 return objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(playerEntity.getGameLobbyEntity()));
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(ErrorCode.ERROR_2004.getErrorCode());
@@ -92,7 +130,7 @@ public class GameLobbyController {
     @SendTo("/topic/game-lobby-response")
     public String handleLobbyNameUpdate(String gameLobbyDtoJson) throws JsonProcessingException {
         GameLobbyDto gameLobbyDto = objectMapper.readValue(gameLobbyDtoJson, GameLobbyDto.class);
-        GameLobbyEntity updatedGameLobbyEntity = gameLobbyService.updateLobbyName(gameLobbyMapper.mapToEntity(gameLobbyDto));
+        GameLobbyEntity updatedGameLobbyEntity = gameLobbyEntityService.updateLobbyName(gameLobbyMapper.mapToEntity(gameLobbyDto));
         return objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(updatedGameLobbyEntity));
     }
 
@@ -135,8 +173,8 @@ public class GameLobbyController {
 
         Long gameLobbyId = Long.parseLong(gameLobbyIdString);
 
-        gameLobbyService.deleteLobby(gameLobbyId);
-        if (gameLobbyService.findById(gameLobbyId).isPresent()) {
+        gameLobbyEntityService.deleteLobby(gameLobbyId);
+        if (gameLobbyEntityService.findById(gameLobbyId).isPresent()) {
             throw new RuntimeException("gameLobby was not deleted");
         }
         return "deleted";

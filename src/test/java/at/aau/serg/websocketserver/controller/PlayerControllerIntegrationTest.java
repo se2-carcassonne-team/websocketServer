@@ -388,7 +388,7 @@ public class PlayerControllerIntegrationTest {
 
     // DONE: test multiple sessions in parallel (with subscriptions to the same topic)
     /**
-     * Test if 4 sessions at the same time all receive their respecive responses:
+     * Test if 4 sessions at the same time all receive their respective responses:
      * <ol>
      *     <li>/user/queue/response expects updated playerDtp</li>
      *     <li>session2: /topic/lobby-list expects updated list of lobbies</li>
