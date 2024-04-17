@@ -11,12 +11,15 @@ import at.aau.serg.websocketserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketserver.service.PlayerEntityService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SendToUser;
+import org.springframework.messaging.simp.annotation.SubscribeMapping;
 import org.springframework.messaging.simp.user.SimpUserRegistry;
 import org.springframework.stereotype.Controller;
 
@@ -72,7 +75,11 @@ public class PlayerController {
 
     @MessageMapping("/player-create")
     @SendToUser("/queue/response")
-    public String handleCreatePlayer(String playerDtoJson, @Header("simpSessionId") String sessionId) throws JsonProcessingException {
+    public String handleCreatePlayer(String playerDtoJson, @Header("simpSessionId") String sessionId, Message message) throws JsonProcessingException {
+
+//        // for testing purposes:
+//        MessageHeaders messageHeader = message.getHeaders();
+
         // read in the JSON String and convert to PlayerDTO Object
         PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
 
@@ -80,6 +87,11 @@ public class PlayerController {
         // return the DTO of the created player
         return objectMapper.writeValueAsString(playerMapper.mapToDto(createdPlayerEntity));
     }
+
+    // manual subscription handler - however subscription is automatically handled by the websocket broker so no reason to use it
+    //@SubscribeMapping("/subscribe/{topic}")
+    //public void subscriptionHandler(Message message){
+    //}
 
     // some testing stuff - ignore
 //    @MessageMapping("/player-create")
@@ -114,7 +126,10 @@ public class PlayerController {
      */
     @MessageMapping("/player-join-lobby")
     @SendToUser("/queue/response")
-    public String handlePlayerJoinLobby(String gameLobbyIdAndPlayerDtoJson) throws RuntimeException {
+    public String handlePlayerJoinLobby(Message message, String gameLobbyIdAndPlayerDtoJson) throws RuntimeException {
+
+        // testing only:
+//        message.getHeaders();
 
         try {
             // 1) extract GameLobbyDto and PlayerDto objects from the string payload:
