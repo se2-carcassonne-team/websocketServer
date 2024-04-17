@@ -39,11 +39,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ExtendWith(SpringExtension.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class PlayerControllerIntegrationTest {
-    private ObjectMapper objectMapper;
-    private PlayerEntityService playerEntityService;
-    private GameLobbyEntityService gameLobbyEntityService;
-    private PlayerMapper playerMapper;
-    private GameLobbyMapper gameLobbyMapper;
+    private final ObjectMapper objectMapper;
+    private final PlayerEntityService playerEntityService;
+    private final GameLobbyEntityService gameLobbyEntityService;
+    private final PlayerMapper playerMapper;
+    private final GameLobbyMapper gameLobbyMapper;
 
     @Autowired
     public PlayerControllerIntegrationTest(ObjectMapper objectMapper, PlayerEntityService playerEntityService, GameLobbyEntityService gameLobbyEntityService, PlayerMapper playerMapper, GameLobbyMapper gameLobbyMapper) {

@@ -19,7 +19,7 @@ import java.util.Optional;
 @ExtendWith(SpringExtension.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)    // clean context changes after each test to avoid test pollution in database
 public class GameLobbyEntityRepositoryTest {
-    private GameLobbyEntityRepository underTest;
+    private final GameLobbyEntityRepository underTest;
 
     @Autowired
     public GameLobbyEntityRepositoryTest(GameLobbyEntityRepository underTest) {

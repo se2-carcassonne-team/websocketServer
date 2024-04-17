@@ -72,7 +72,7 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
      * @return updated PlayerEntity from the database
      */
     @Override
-    public PlayerEntity joinLobby(Long gameLobbyId, PlayerEntity playerEntity) throws EntityNotFoundException, RuntimeException {
+    public PlayerEntity joinLobby(Long gameLobbyId, PlayerEntity playerEntity) throws RuntimeException {
 
         // Check if lobby exists. Only if lobby exists can player join
         Optional<GameLobbyEntity> gameLobbyEntityInDatabase = gameLobbyEntityRepository.findById(gameLobbyId);

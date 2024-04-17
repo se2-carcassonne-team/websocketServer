@@ -13,7 +13,7 @@ import java.util.Optional;
 @Component
 public class PlayerMapper {
 
-    private ModelMapper modelMapper;
+    private final ModelMapper modelMapper;
     GameLobbyEntityRepository gameLobbyEntityRepository;
 
     public PlayerMapper(ModelMapper modelMapper, GameLobbyEntityRepository gameLobbyEntityRepository) {

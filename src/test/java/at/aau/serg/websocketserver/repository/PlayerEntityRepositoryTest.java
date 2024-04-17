@@ -21,7 +21,7 @@ import java.util.Optional;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)    // clean context changes after each test to avoid test pollution in database
 public class PlayerEntityRepositoryTest {
 
-    private PlayerEntityRepository underTest;
+    private final PlayerEntityRepository underTest;
    @Autowired
     public PlayerEntityRepositoryTest(PlayerEntityRepository underTest) {
         this.underTest = underTest;

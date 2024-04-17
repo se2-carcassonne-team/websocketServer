@@ -14,7 +14,7 @@ import java.util.Optional;
 @Service
 public class GameLobbyEntityServiceImpl implements GameLobbyEntityService {
 
-    private GameLobbyEntityRepository gameLobbyEntityRepository;
+    private final GameLobbyEntityRepository gameLobbyEntityRepository;
     private final PlayerEntityRepository playerEntityRepository;
 
     public GameLobbyEntityServiceImpl(GameLobbyEntityRepository gameLobbyEntityRepository,

@@ -4,11 +4,11 @@ import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketserver.domain.dto.PlayerDto;
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
-import at.aau.serg.websocketserver.statuscode.ErrorCode;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
 import at.aau.serg.websocketserver.mapper.PlayerMapper;
 import at.aau.serg.websocketserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketserver.service.PlayerEntityService;
+import at.aau.serg.websocketserver.statuscode.ErrorCode;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
@@ -24,8 +24,8 @@ import java.util.List;
 @Controller
 public class GameLobbyController {
 
-    private GameLobbyEntityService gameLobbyEntityService;
-    private PlayerEntityService playerEntityService;
+    private final GameLobbyEntityService gameLobbyEntityService;
+    private final PlayerEntityService playerEntityService;
     private final ObjectMapper objectMapper;
     private final GameLobbyMapper gameLobbyMapper;
     private final PlayerMapper playerMapper;
@@ -67,7 +67,6 @@ public class GameLobbyController {
         return playerDtos;
     }
 
-    // TODO: adapt + test
     /**
      * Ideas for the endpoint: /app/lobby-create
      * <p>sends responses to:</p>
@@ -137,7 +136,6 @@ public class GameLobbyController {
     }
 
 
-    // TODO: adapt + test
     /**
      * Ideas for the endpoint: /app/lobby-list
      * <p>sends responses to:</p>

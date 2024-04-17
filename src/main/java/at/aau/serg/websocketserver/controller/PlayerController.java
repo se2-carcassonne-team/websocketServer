@@ -4,23 +4,19 @@ import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketserver.domain.dto.PlayerDto;
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
-import at.aau.serg.websocketserver.statuscode.ErrorCode;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
 import at.aau.serg.websocketserver.mapper.PlayerMapper;
 import at.aau.serg.websocketserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketserver.service.PlayerEntityService;
+import at.aau.serg.websocketserver.statuscode.ErrorCode;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SendToUser;
-import org.springframework.messaging.simp.annotation.SubscribeMapping;
-import org.springframework.messaging.simp.user.SimpUserRegistry;
 import org.springframework.stereotype.Controller;
 
 import java.util.ArrayList;
@@ -31,11 +27,11 @@ import java.util.Optional;
 public class PlayerController {
 
     private final SimpMessagingTemplate template;
-    private PlayerEntityService playerEntityService;
-    private GameLobbyEntityService gameLobbyEntityService;
-    private ObjectMapper objectMapper;
-    private PlayerMapper playerMapper;
-    private GameLobbyMapper gameLobbyMapper;
+    private final PlayerEntityService playerEntityService;
+    private final GameLobbyEntityService gameLobbyEntityService;
+    private final ObjectMapper objectMapper;
+    private final PlayerMapper playerMapper;
+    private final GameLobbyMapper gameLobbyMapper;
 
     public PlayerController(SimpMessagingTemplate template, PlayerEntityService playerEntityService, GameLobbyEntityService gameLobbyEntityService, ObjectMapper objectMapper, PlayerMapper playerMapper, GameLobbyMapper gameLobbyMapper) {
         this.template = template;
@@ -77,7 +73,7 @@ public class PlayerController {
     @SendToUser("/queue/response")
     public String handleCreatePlayer(String playerDtoJson, @Header("simpSessionId") String sessionId, Message message) throws JsonProcessingException {
 
-//        // for testing purposes:
+        // for testing only:
 //        MessageHeaders messageHeader = message.getHeaders();
 
         // read in the JSON String and convert to PlayerDTO Object
@@ -88,30 +84,6 @@ public class PlayerController {
         return objectMapper.writeValueAsString(playerMapper.mapToDto(createdPlayerEntity));
     }
 
-    // manual subscription handler - however subscription is automatically handled by the websocket broker so no reason to use it
-    //@SubscribeMapping("/subscribe/{topic}")
-    //public void subscriptionHandler(Message message){
-    //}
-
-    // some testing stuff - ignore
-//    @MessageMapping("/player-create")
-//    //@SendToUser("/queue/player-response")
-//    public void handleCreatePlayer2(String playerDtoJson, @Header("simpSessionId") String sessionId) throws JsonProcessingException {
-//        // read in the JSON String and convert to PlayerDTO Object
-//        PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
-//
-//        PlayerEntity createdPlayerEntity = playerEntityService.createPlayer(playerMapper.mapToEntity(playerDto));
-//
-//        this.template.convertAndSend(
-//                "/queue/player-response",
-//                objectMapper.writeValueAsString(playerMapper.mapToDto(createdPlayerEntity)),
-//                message -> {
-//                    message.getHeaders().put("sessonId", sessionId);
-//                    return message;
-//                });
-//
-//        this.template.convertAndSendToUser(principal.getName(),"/queue/player-response");
-//    }
 
 
     // DONE
