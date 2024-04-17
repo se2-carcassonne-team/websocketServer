@@ -339,7 +339,7 @@ public class GameLobbyControllerIntegrationTest {
 
     @Test
     void testThatGetListOfLobbiesReturnsListOfGameLobbyDtos() throws Exception {
-        StompSession session = initStompSession("/user/queue/lobby-response", messages);
+        StompSession session = initStompSession("/user/queue/lobby-list-response", messages);
 
         GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
         GameLobbyDto gameLobbyDtoB = TestDataUtil.createTestGameLobbyDtoB();
@@ -360,7 +360,7 @@ public class GameLobbyControllerIntegrationTest {
 
     @Test
     void testThatGetListOfLobbiesReturnsEmptyListOfGameLobbyDtos() throws Exception {
-        StompSession session = initStompSession("/user/queue/lobby-response", messages);
+        StompSession session = initStompSession("/user/queue/lobby-list-response", messages);
 
         List<GameLobbyDto> gameLobbyDtoList = new ArrayList<>();
 
