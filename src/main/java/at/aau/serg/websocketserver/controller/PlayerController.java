@@ -23,6 +23,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static at.aau.serg.websocketserver.controller.helper.HelperMethods.getGameLobbyDtoList;
+import static at.aau.serg.websocketserver.controller.helper.HelperMethods.getPlayerDtosInLobbyList;
+
 @Controller
 public class PlayerController {
 
@@ -40,33 +43,6 @@ public class PlayerController {
         this.objectMapper = objectMapper;
         this.playerMapper = playerMapper;
         this.gameLobbyMapper = gameLobbyMapper;
-    }
-
-    private List<GameLobbyDto> getGameLobbyDtoList() {
-        List<GameLobbyEntity> gameLobbyEntities = gameLobbyEntityService.getListOfLobbies();
-        List<GameLobbyDto> gameLobbyDtos = new ArrayList<>();
-        if(gameLobbyEntities.isEmpty()){
-            return gameLobbyDtos;
-        }
-
-        for (GameLobbyEntity gameLobbyEntity : gameLobbyEntities) {
-            gameLobbyDtos.add(gameLobbyMapper.mapToDto(gameLobbyEntity));
-        }
-        return gameLobbyDtos;
-    }
-
-    private List<PlayerDto> getPlayerDtosInLobbyList(Long gameLobbyId) {
-        List<PlayerDto> playerDtos = new ArrayList<>();
-        if (gameLobbyEntityService.findById(gameLobbyId).isEmpty()){
-            return playerDtos;
-        }
-
-        List<PlayerEntity> playerEntityList = playerEntityService.getAllPlayersForLobby(gameLobbyId);
-
-        for (PlayerEntity playerEntity : playerEntityList) {
-            playerDtos.add(playerMapper.mapToDto(playerEntity));
-        }
-        return playerDtos;
     }
 
     @MessageMapping("/player-create")
@@ -120,14 +96,14 @@ public class PlayerController {
             PlayerDto dto = playerMapper.mapToDto(updatedPlayerEntity);
 
             // send response to /topic/lobby-$id --> updated list of players in lobby (later with response code: 201)
-            List<PlayerDto> updatedPlayerEntitiesInLobby = getPlayerDtosInLobbyList(gameLobbyId);
+            List<PlayerDto> updatedPlayerEntitiesInLobby = getPlayerDtosInLobbyList(gameLobbyId, gameLobbyEntityService, playerEntityService, playerMapper);
             this.template.convertAndSend(
                     "/topic/lobby-"+gameLobbyId,
                     objectMapper.writeValueAsString(updatedPlayerEntitiesInLobby)
             );
 
             // send response to /topic/lobby-list --> updated list of lobbies (numPlayers of the joined lobby incremented) (later with response code: 301)
-            List<GameLobbyDto> gameLobbyDtos = getGameLobbyDtoList();
+            List<GameLobbyDto> gameLobbyDtos = getGameLobbyDtoList(gameLobbyEntityService, gameLobbyMapper);
             this.template.convertAndSend(
                     "/topic/lobby-list",
                     objectMapper.writeValueAsString(gameLobbyDtos)
@@ -233,13 +209,13 @@ public class PlayerController {
             // send response to: /topic/lobby-list --> updated list of lobbies (later with response code 301)
             this.template.convertAndSend(
                     "/topic/lobby-list",
-                    objectMapper.writeValueAsString(getGameLobbyDtoList())
+                    objectMapper.writeValueAsString(getGameLobbyDtoList(gameLobbyEntityService, gameLobbyMapper))
             );
 
             // send response to: /topic/lobby-$id --> updated list of players in lobby (later with response code: 201)
             this.template.convertAndSend(
                     "/topic/lobby-" + gameLobbyId,
-                    objectMapper.writeValueAsString(getPlayerDtosInLobbyList(gameLobbyId))
+                    objectMapper.writeValueAsString(getPlayerDtosInLobbyList(gameLobbyId, gameLobbyEntityService, playerEntityService, playerMapper))
             );
 
             // send response to: /user/queue/response --> updated playerDto (later with response code: 101)

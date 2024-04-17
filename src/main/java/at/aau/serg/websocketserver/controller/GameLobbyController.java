@@ -21,6 +21,9 @@ import org.springframework.stereotype.Controller;
 import java.util.ArrayList;
 import java.util.List;
 
+import static at.aau.serg.websocketserver.controller.helper.HelperMethods.getGameLobbyDtoList;
+import static at.aau.serg.websocketserver.controller.helper.HelperMethods.getPlayerDtosInLobbyList;
+
 @Controller
 public class GameLobbyController {
 
@@ -40,32 +43,6 @@ public class GameLobbyController {
         this.template = template;
     }
 
-    private List<GameLobbyDto> getGameLobbyDtoList() {
-        List<GameLobbyEntity> gameLobbyEntities = gameLobbyEntityService.getListOfLobbies();
-        List<GameLobbyDto> gameLobbyDtos = new ArrayList<>();
-        if(gameLobbyEntities.isEmpty()){
-            return gameLobbyDtos;
-        }
-
-        for (GameLobbyEntity gameLobbyEntity : gameLobbyEntities) {
-            gameLobbyDtos.add(gameLobbyMapper.mapToDto(gameLobbyEntity));
-        }
-        return gameLobbyDtos;
-    }
-
-    private List<PlayerDto> getPlayerDtosInLobbyList(Long gameLobbyId) {
-        List<PlayerDto> playerDtos = new ArrayList<>();
-        if (gameLobbyEntityService.findById(gameLobbyId).isEmpty()){
-            return playerDtos;
-        }
-
-        List<PlayerEntity> playerEntityList = playerEntityService.getAllPlayersForLobby(gameLobbyId);
-
-        for (PlayerEntity playerEntity : playerEntityList) {
-            playerDtos.add(playerMapper.mapToDto(playerEntity));
-        }
-        return playerDtos;
-    }
 
     /**
      * Ideas for the endpoint: /app/lobby-create
@@ -96,12 +73,12 @@ public class GameLobbyController {
                 PlayerEntity playerEntity = playerEntityService.joinLobby(createdGameLobbyEntity.getId(), playerMapper.mapToEntity(playerDto));
 
                 // send updated list of lobbies to /topic/lobby-list
-                String updatedLobbyList = objectMapper.writeValueAsString(getGameLobbyDtoList());
+                String updatedLobbyList = objectMapper.writeValueAsString(getGameLobbyDtoList(gameLobbyEntityService, gameLobbyMapper));
                 this.template.convertAndSend("/topic/lobby-list", updatedLobbyList);
 
                 // send updated list of players in lobby to /topic/lobby-$id
                 // IMPORTANT: not relevant, as player does not know the lobby id when calling lobby-create
-                String updatedPlayerList = objectMapper.writeValueAsString(getPlayerDtosInLobbyList(createdGameLobbyEntity.getId()));
+                String updatedPlayerList = objectMapper.writeValueAsString(getPlayerDtosInLobbyList(createdGameLobbyEntity.getId(), gameLobbyEntityService, playerEntityService, playerMapper));
                 this.template.convertAndSend("/topic/lobby-"+createdGameLobbyEntity.getId(), updatedPlayerList);
 
                 // return updated playerDto to queue
