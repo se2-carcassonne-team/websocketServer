@@ -72,9 +72,36 @@ public class GameLobbyControllerIntegrationTest {
         messages = null;
     }
 
+    private List<GameLobbyDto> getGameLobbyDtoList() {
+        List<GameLobbyEntity> gameLobbyEntities = gameLobbyEntityService.getListOfLobbies();
+        List<GameLobbyDto> gameLobbyDtos = new ArrayList<>();
+        if(gameLobbyEntities.isEmpty()){
+            return gameLobbyDtos;
+        }
+
+        for (GameLobbyEntity gameLobbyEntity : gameLobbyEntities) {
+            gameLobbyDtos.add(gameLobbyMapper.mapToDto(gameLobbyEntity));
+        }
+        return gameLobbyDtos;
+    }
+
+    private List<PlayerDto> getPlayerDtosInLobbyList(Long gameLobbyId) {
+        List<PlayerDto> playerDtos = new ArrayList<>();
+        if (gameLobbyEntityService.findById(gameLobbyId).isEmpty()){
+            return playerDtos;
+        }
+
+        List<PlayerEntity> playerEntityList = playerEntityService.getAllPlayersForLobby(gameLobbyId);
+
+        for (PlayerEntity playerEntity : playerEntityList) {
+            playerDtos.add(playerMapper.mapToDto(playerEntity));
+        }
+        return playerDtos;
+    }
+
     @Test
-    void testThatCreateLobbyReturnsCreatedGameLobbyDto() throws Exception {
-        StompSession session = initStompSession("/topic/game-lobby-response", messages);
+    void testThatCreateLobbyReturnsCreatedGameLobbyDtoToQueue() throws Exception {
+        StompSession session = initStompSession("/user/queue/response", messages);
 
         PlayerEntity playerEntity = TestDataUtil.createTestPlayerEntityA(null);
         playerEntityService.createPlayer(playerEntity);
@@ -105,6 +132,78 @@ public class GameLobbyControllerIntegrationTest {
 
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
+
+    @Test
+    void testThatCreateLobbyReturnsUpdatedLobbyListToTopic() throws Exception {
+        StompSession session = initStompSession("/topic/lobby-list", messages);
+
+        PlayerEntity playerEntity = TestDataUtil.createTestPlayerEntityA(null);
+        playerEntityService.createPlayer(playerEntity);
+
+        PlayerDto playerDto = playerMapper.mapToDto(playerEntity);
+        GameLobbyDto gameLobbyDto = TestDataUtil.createTestGameLobbyDtoA();
+        gameLobbyDto.setLobbyCreatorId(playerEntity.getId());
+
+        String playerDtoJson = objectMapper.writeValueAsString(playerDto);
+        String gameLobbyDtoJson = objectMapper.writeValueAsString(gameLobbyDto);
+
+        String payload = gameLobbyDtoJson + "|" + playerDtoJson;
+
+        assertThat(gameLobbyEntityService.findById(gameLobbyDto.getId()).isEmpty()).isTrue();
+        assertThat(playerEntityService.findPlayerById(playerDto.getId()).isPresent()).isTrue();
+        session.send("/app/lobby-create", payload);
+
+        gameLobbyDto.setNumPlayers(gameLobbyDto.getNumPlayers() + 1);
+        playerDto.setGameLobbyId(gameLobbyDto.getId());
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        Optional<PlayerEntity> updatedPlayerEntityOptional = playerEntityService.findPlayerById(playerDto.getId());
+        assertTrue(updatedPlayerEntityOptional.isPresent());
+        PlayerEntity updatedPlayerEntity = updatedPlayerEntityOptional.get();
+        assertThat(updatedPlayerEntity.getGameLobbyEntity()).isEqualTo(gameLobbyMapper.mapToEntity(gameLobbyDto));
+
+        String expectedResponse = objectMapper.writeValueAsString(getGameLobbyDtoList());
+
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+    }
+
+    @Test
+    void testThatCreateLobbyReturnsUpdatedPlayerListToTopic() throws Exception {
+
+        PlayerEntity playerEntity = TestDataUtil.createTestPlayerEntityA(null);
+        playerEntityService.createPlayer(playerEntity);
+
+        PlayerDto playerDto = playerMapper.mapToDto(playerEntity);
+        GameLobbyDto gameLobbyDto = TestDataUtil.createTestGameLobbyDtoA();
+        gameLobbyDto.setLobbyCreatorId(playerEntity.getId());
+
+        StompSession session = initStompSession("/topic/lobby-" + gameLobbyDto.getId(), messages);
+
+        String playerDtoJson = objectMapper.writeValueAsString(playerDto);
+        String gameLobbyDtoJson = objectMapper.writeValueAsString(gameLobbyDto);
+
+        String payload = gameLobbyDtoJson + "|" + playerDtoJson;
+
+        assertThat(gameLobbyEntityService.findById(gameLobbyDto.getId()).isEmpty()).isTrue();
+        assertThat(playerEntityService.findPlayerById(playerDto.getId()).isPresent()).isTrue();
+        session.send("/app/lobby-create", payload);
+
+        gameLobbyDto.setNumPlayers(gameLobbyDto.getNumPlayers() + 1);
+        playerDto.setGameLobbyId(gameLobbyDto.getId());
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        Optional<PlayerEntity> updatedPlayerEntityOptional = playerEntityService.findPlayerById(playerDto.getId());
+        assertTrue(updatedPlayerEntityOptional.isPresent());
+        PlayerEntity updatedPlayerEntity = updatedPlayerEntityOptional.get();
+        assertThat(updatedPlayerEntity.getGameLobbyEntity()).isEqualTo(gameLobbyMapper.mapToEntity(gameLobbyDto));
+
+        String expectedResponse = objectMapper.writeValueAsString(getPlayerDtosInLobbyList(gameLobbyDto.getId()));
+
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+    }
+
 
     @Test
     void testThatCreateLobbyWithDuplicateLobbyIdFails() throws Exception {

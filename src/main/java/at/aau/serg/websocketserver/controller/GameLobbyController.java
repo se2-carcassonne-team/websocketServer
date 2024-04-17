@@ -97,11 +97,13 @@ public class GameLobbyController {
                 PlayerEntity playerEntity = playerEntityService.joinLobby(createdGameLobbyEntity.getId(), playerMapper.mapToEntity(playerDto));
 
                 // send updated list of lobbies to /topic/lobby-list
-                this.template.convertAndSend("/topic/lobby-list", getGameLobbyDtoList());
+                String updatedLobbyList = objectMapper.writeValueAsString(getGameLobbyDtoList());
+                this.template.convertAndSend("/topic/lobby-list", updatedLobbyList);
 
                 // send updated list of players in lobby to /topic/lobby-$id
                 // IMPORTANT: not relevant, as player does not know the lobby id when calling lobby-create
-                this.template.convertAndSend("/topic/lobby-"+createdGameLobbyEntity.getId(), getPlayerDtosInLobbyList(createdGameLobbyEntity.getId()));
+                String updatedPlayerList = objectMapper.writeValueAsString(getPlayerDtosInLobbyList(createdGameLobbyEntity.getId()));
+                this.template.convertAndSend("/topic/lobby-"+createdGameLobbyEntity.getId(), updatedPlayerList);
 
                 // return updated playerDto to queue
                 return objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(playerEntity.getGameLobbyEntity()));
