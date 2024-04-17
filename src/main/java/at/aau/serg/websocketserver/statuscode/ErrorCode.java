@@ -1,4 +1,4 @@
-package at.aau.serg.websocketserver.errorcode;
+package at.aau.serg.websocketserver.statuscode;
 
 public enum ErrorCode {
     ERROR_1001("gameLobby with the id already exists", "1001"),
@@ -16,6 +16,11 @@ public enum ErrorCode {
     private final String errorCode;
 
 
+    /**
+     * Enum of standardized custom response codes.
+     * @param errorDescription short description of the error associated with the error code
+     * @param errorCode error codes: 100X for gameLobby errors, 200X for PlayerDto errors
+     */
     ErrorCode(String errorDescription, String errorCode) {
         this.errorDescription = errorDescription;
         this.errorCode = errorCode;

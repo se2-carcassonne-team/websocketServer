@@ -4,7 +4,7 @@ import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
 import at.aau.serg.websocketserver.domain.entity.repository.GameLobbyEntityRepository;
 import at.aau.serg.websocketserver.domain.entity.repository.PlayerEntityRepository;
-import at.aau.serg.websocketserver.errorcode.ErrorCode;
+import at.aau.serg.websocketserver.statuscode.ErrorCode;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
 import at.aau.serg.websocketserver.mapper.PlayerMapper;
 import at.aau.serg.websocketserver.service.PlayerEntityService;
@@ -72,7 +72,7 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
      * @return updated PlayerEntity from the database
      */
     @Override
-    public PlayerEntity joinLobby(Long gameLobbyId, PlayerEntity playerEntity) throws EntityNotFoundException, RuntimeException {
+    public PlayerEntity joinLobby(Long gameLobbyId, PlayerEntity playerEntity) throws RuntimeException {
 
         // Check if lobby exists. Only if lobby exists can player join
         Optional<GameLobbyEntity> gameLobbyEntityInDatabase = gameLobbyEntityRepository.findById(gameLobbyId);

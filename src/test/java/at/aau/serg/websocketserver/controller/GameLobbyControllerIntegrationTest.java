@@ -6,7 +6,7 @@ import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketserver.domain.dto.PlayerDto;
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
-import at.aau.serg.websocketserver.errorcode.ErrorCode;
+import at.aau.serg.websocketserver.statuscode.ErrorCode;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
 import at.aau.serg.websocketserver.mapper.PlayerMapper;
 import at.aau.serg.websocketserver.service.GameLobbyEntityService;
@@ -42,11 +42,11 @@ import java.util.concurrent.TimeUnit;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class GameLobbyControllerIntegrationTest {
 
-    private ObjectMapper objectMapper;
-    private GameLobbyEntityService gameLobbyEntityService;
-    private PlayerEntityService playerEntityService;
-    private PlayerMapper playerMapper;
-    private GameLobbyMapper gameLobbyMapper;
+    private final ObjectMapper objectMapper;
+    private final GameLobbyEntityService gameLobbyEntityService;
+    private final PlayerEntityService playerEntityService;
+    private final PlayerMapper playerMapper;
+    private final GameLobbyMapper gameLobbyMapper;
 
     @Autowired
     public GameLobbyControllerIntegrationTest(ObjectMapper objectMapper, GameLobbyEntityService gameLobbyEntityService, PlayerEntityService playerEntityService, PlayerMapper playerMapper, GameLobbyMapper gameLobbyMapper) {
@@ -72,9 +72,36 @@ public class GameLobbyControllerIntegrationTest {
         messages = null;
     }
 
+    private List<GameLobbyDto> getGameLobbyDtoList() {
+        List<GameLobbyEntity> gameLobbyEntities = gameLobbyEntityService.getListOfLobbies();
+        List<GameLobbyDto> gameLobbyDtos = new ArrayList<>();
+        if(gameLobbyEntities.isEmpty()){
+            return gameLobbyDtos;
+        }
+
+        for (GameLobbyEntity gameLobbyEntity : gameLobbyEntities) {
+            gameLobbyDtos.add(gameLobbyMapper.mapToDto(gameLobbyEntity));
+        }
+        return gameLobbyDtos;
+    }
+
+    private List<PlayerDto> getPlayerDtosInLobbyList(Long gameLobbyId) {
+        List<PlayerDto> playerDtos = new ArrayList<>();
+        if (gameLobbyEntityService.findById(gameLobbyId).isEmpty()){
+            return playerDtos;
+        }
+
+        List<PlayerEntity> playerEntityList = playerEntityService.getAllPlayersForLobby(gameLobbyId);
+
+        for (PlayerEntity playerEntity : playerEntityList) {
+            playerDtos.add(playerMapper.mapToDto(playerEntity));
+        }
+        return playerDtos;
+    }
+
     @Test
-    void testThatCreateLobbyReturnsCreatedGameLobbyDto() throws Exception {
-        StompSession session = initStompSession("/topic/game-lobby-response", messages);
+    void testThatCreateLobbyReturnsCreatedGameLobbyDtoToQueue() throws Exception {
+        StompSession session = initStompSession("/user/queue/response", messages);
 
         PlayerEntity playerEntity = TestDataUtil.createTestPlayerEntityA(null);
         playerEntityService.createPlayer(playerEntity);
@@ -105,6 +132,78 @@ public class GameLobbyControllerIntegrationTest {
 
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
+
+    @Test
+    void testThatCreateLobbyReturnsUpdatedLobbyListToTopic() throws Exception {
+        StompSession session = initStompSession("/topic/lobby-list", messages);
+
+        PlayerEntity playerEntity = TestDataUtil.createTestPlayerEntityA(null);
+        playerEntityService.createPlayer(playerEntity);
+
+        PlayerDto playerDto = playerMapper.mapToDto(playerEntity);
+        GameLobbyDto gameLobbyDto = TestDataUtil.createTestGameLobbyDtoA();
+        gameLobbyDto.setLobbyCreatorId(playerEntity.getId());
+
+        String playerDtoJson = objectMapper.writeValueAsString(playerDto);
+        String gameLobbyDtoJson = objectMapper.writeValueAsString(gameLobbyDto);
+
+        String payload = gameLobbyDtoJson + "|" + playerDtoJson;
+
+        assertThat(gameLobbyEntityService.findById(gameLobbyDto.getId()).isEmpty()).isTrue();
+        assertThat(playerEntityService.findPlayerById(playerDto.getId()).isPresent()).isTrue();
+        session.send("/app/lobby-create", payload);
+
+        gameLobbyDto.setNumPlayers(gameLobbyDto.getNumPlayers() + 1);
+        playerDto.setGameLobbyId(gameLobbyDto.getId());
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        Optional<PlayerEntity> updatedPlayerEntityOptional = playerEntityService.findPlayerById(playerDto.getId());
+        assertTrue(updatedPlayerEntityOptional.isPresent());
+        PlayerEntity updatedPlayerEntity = updatedPlayerEntityOptional.get();
+        assertThat(updatedPlayerEntity.getGameLobbyEntity()).isEqualTo(gameLobbyMapper.mapToEntity(gameLobbyDto));
+
+        String expectedResponse = objectMapper.writeValueAsString(getGameLobbyDtoList());
+
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+    }
+
+    @Test
+    void testThatCreateLobbyReturnsUpdatedPlayerListToTopic() throws Exception {
+
+        PlayerEntity playerEntity = TestDataUtil.createTestPlayerEntityA(null);
+        playerEntityService.createPlayer(playerEntity);
+
+        PlayerDto playerDto = playerMapper.mapToDto(playerEntity);
+        GameLobbyDto gameLobbyDto = TestDataUtil.createTestGameLobbyDtoA();
+        gameLobbyDto.setLobbyCreatorId(playerEntity.getId());
+
+        StompSession session = initStompSession("/topic/lobby-" + gameLobbyDto.getId(), messages);
+
+        String playerDtoJson = objectMapper.writeValueAsString(playerDto);
+        String gameLobbyDtoJson = objectMapper.writeValueAsString(gameLobbyDto);
+
+        String payload = gameLobbyDtoJson + "|" + playerDtoJson;
+
+        assertThat(gameLobbyEntityService.findById(gameLobbyDto.getId()).isEmpty()).isTrue();
+        assertThat(playerEntityService.findPlayerById(playerDto.getId()).isPresent()).isTrue();
+        session.send("/app/lobby-create", payload);
+
+        gameLobbyDto.setNumPlayers(gameLobbyDto.getNumPlayers() + 1);
+        playerDto.setGameLobbyId(gameLobbyDto.getId());
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        Optional<PlayerEntity> updatedPlayerEntityOptional = playerEntityService.findPlayerById(playerDto.getId());
+        assertTrue(updatedPlayerEntityOptional.isPresent());
+        PlayerEntity updatedPlayerEntity = updatedPlayerEntityOptional.get();
+        assertThat(updatedPlayerEntity.getGameLobbyEntity()).isEqualTo(gameLobbyMapper.mapToEntity(gameLobbyDto));
+
+        String expectedResponse = objectMapper.writeValueAsString(getPlayerDtosInLobbyList(gameLobbyDto.getId()));
+
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+    }
+
 
     @Test
     void testThatCreateLobbyWithDuplicateLobbyIdFails() throws Exception {
@@ -240,7 +339,7 @@ public class GameLobbyControllerIntegrationTest {
 
     @Test
     void testThatGetListOfLobbiesReturnsListOfGameLobbyDtos() throws Exception {
-        StompSession session = initStompSession("/user/queue/lobby-response", messages);
+        StompSession session = initStompSession("/user/queue/lobby-list-response", messages);
 
         GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
         GameLobbyDto gameLobbyDtoB = TestDataUtil.createTestGameLobbyDtoB();
@@ -261,7 +360,7 @@ public class GameLobbyControllerIntegrationTest {
 
     @Test
     void testThatGetListOfLobbiesReturnsEmptyListOfGameLobbyDtos() throws Exception {
-        StompSession session = initStompSession("/user/queue/lobby-response", messages);
+        StompSession session = initStompSession("/user/queue/lobby-list-response", messages);
 
         List<GameLobbyDto> gameLobbyDtoList = new ArrayList<>();
 

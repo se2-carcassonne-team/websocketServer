@@ -12,7 +12,7 @@ public interface PlayerEntityService {
 
     PlayerEntity createPlayer(PlayerEntity playerEntity) throws EntityExistsException;
     PlayerEntity updateUsername(PlayerEntity playerEntity) throws EntityNotFoundException;
-    PlayerEntity joinLobby(Long gameLobbyId, PlayerEntity playerEntity) throws EntityNotFoundException, RuntimeException;
+    PlayerEntity joinLobby(Long gameLobbyId, PlayerEntity playerEntity) throws RuntimeException;
     List<PlayerEntity> getAllPlayersForLobby(Long gameLobbyId);
     PlayerEntity leaveLobby(PlayerEntity playerEntity) throws EntityNotFoundException;
     void deletePlayer(Long id);
