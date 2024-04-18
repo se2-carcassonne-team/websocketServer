@@ -617,7 +617,7 @@ public class PlayerControllerIntegrationTest {
 
     @Test
     void testThatListAllPlayersForALobbyReturnsExpectedResult() throws Exception {
-        StompSession session = initStompSession("/user/queue/response", messages);
+        StompSession session = initStompSession("/user/queue/player-list-response", messages);
 
         GameLobbyEntity gameLobbyEntity = TestDataUtil.createTestGameLobbyEntityA();
         gameLobbyEntityService.createLobby(gameLobbyEntity);
@@ -649,7 +649,7 @@ public class PlayerControllerIntegrationTest {
 
     @Test
     void testThatListAllPlayersForALobbyReturnsNoPlayers() throws Exception {
-        StompSession session = initStompSession("/user/queue/response", messages);
+        StompSession session = initStompSession("/user/queue/player-list-response", messages);
 
         GameLobbyEntity gameLobbyEntity = TestDataUtil.createTestGameLobbyEntityA();
         gameLobbyEntityService.createLobby(gameLobbyEntity);

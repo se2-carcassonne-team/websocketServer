@@ -132,7 +132,7 @@ public class PlayerController {
      * @throws JsonProcessingException
      */
     @MessageMapping("/player-list")
-    @SendToUser("/queue/response")
+    @SendToUser("/queue/player-list-response")
     public String getAllPlayersForLobby(String gameLobbyIdString) throws RuntimeException, JsonProcessingException {
         try {
             Long gameLobbyId = Long.parseLong(gameLobbyIdString);
