@@ -188,6 +188,7 @@ public class PlayerController {
      * - (might be a lot of data to be sent when there are a lot of lobbies, but it's just Strings, so not really that much data when you think about it)
      * (response code: 301) </p>
      * <p> 3) /topic/lobby-$id --> updated list of players in lobby (response code: 201)</p>
+     * <p> 4) /topic/lobby-$id/update --> updated gameLobbyDto (response code?)</p>
      * @param playerDtoJson playerDto that wants to leave the lobby he is currently in
      * @throws RuntimeException
      */
@@ -216,6 +217,12 @@ public class PlayerController {
             this.template.convertAndSend(
                     "/topic/lobby-" + gameLobbyId,
                     objectMapper.writeValueAsString(getPlayerDtosInLobbyList(gameLobbyId, gameLobbyEntityService, playerEntityService, playerMapper))
+            );
+
+            // send updated gameLobbyDto to all players in the lobby (relevant for lobbyCreator)
+            this.template.convertAndSend(
+                    "/topic/lobby-" + gameLobbyId + "/update",
+                    objectMapper.writeValueAsString(gameLobbyEntityService.findById(gameLobbyId))
             );
 
             // send response to: /user/queue/response --> updated playerDto (later with response code: 101)

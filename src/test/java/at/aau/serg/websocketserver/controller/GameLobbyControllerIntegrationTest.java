@@ -108,7 +108,7 @@ public class GameLobbyControllerIntegrationTest {
 
         PlayerDto playerDto = playerMapper.mapToDto(playerEntity);
         GameLobbyDto gameLobbyDto = TestDataUtil.createTestGameLobbyDtoA();
-        gameLobbyDto.setLobbyCreatorId(playerEntity.getId());
+        gameLobbyDto.setLobbyAdminId(playerEntity.getId());
 
         String playerDtoJson = objectMapper.writeValueAsString(playerDto);
         String gameLobbyDtoJson = objectMapper.writeValueAsString(gameLobbyDto);
@@ -142,7 +142,7 @@ public class GameLobbyControllerIntegrationTest {
 
         PlayerDto playerDto = playerMapper.mapToDto(playerEntity);
         GameLobbyDto gameLobbyDto = TestDataUtil.createTestGameLobbyDtoA();
-        gameLobbyDto.setLobbyCreatorId(playerEntity.getId());
+        gameLobbyDto.setLobbyAdminId(playerEntity.getId());
 
         String playerDtoJson = objectMapper.writeValueAsString(playerDto);
         String gameLobbyDtoJson = objectMapper.writeValueAsString(gameLobbyDto);
@@ -176,7 +176,7 @@ public class GameLobbyControllerIntegrationTest {
 
         PlayerDto playerDto = playerMapper.mapToDto(playerEntity);
         GameLobbyDto gameLobbyDto = TestDataUtil.createTestGameLobbyDtoA();
-        gameLobbyDto.setLobbyCreatorId(playerEntity.getId());
+        gameLobbyDto.setLobbyAdminId(playerEntity.getId());
 
         StompSession session = initStompSession("/topic/lobby-" + gameLobbyDto.getId(), messages);
 
@@ -257,7 +257,7 @@ public class GameLobbyControllerIntegrationTest {
         PlayerDto playerDto = playerMapper.mapToDto(playerEntity);
 
         GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
-        gameLobbyDtoA.setLobbyCreatorId(playerEntity.getId());
+        gameLobbyDtoA.setLobbyAdminId(playerEntity.getId());
         assertThat(gameLobbyEntityService.findById(gameLobbyDtoA.getId()).isEmpty()).isTrue();
 
         String playerDtoJson = objectMapper.writeValueAsString(playerDto);
