@@ -117,10 +117,6 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
         if (gameLobbyEntity == null) {
             throw new EntityNotFoundException(ErrorCode.ERROR_2005.getErrorCode());
         }
-//        else if (gameLobbyEntityRepository.findById(gameLobbyEntity.getId()).isEmpty()){
-//            throw new EntityNotFoundException("The game lobby the player is in doesn't exist.");
-//            // this case shouldn't be possible due to the cascading rule, but I still included it here in case we need it
-//        }
 
         playerEntity.setGameLobbyEntity(null);
         playerEntityRepository.save(playerEntity);
@@ -129,6 +125,14 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
         int numberOfPlayers = gameLobbyEntity.getNumPlayers();
         if(numberOfPlayers > 1) {
             gameLobbyEntity.setNumPlayers(gameLobbyEntity.getNumPlayers()-1);
+
+            if(playerEntity.getId() == gameLobbyEntity.getLobbyAdminId()) {
+                // transfer lobby admin rights to another player
+                List<PlayerEntity> remainingPlayersInLobby = playerEntityRepository.findPlayerEntitiesByGameLobbyEntity_Id(gameLobbyEntity.getId());
+                PlayerEntity nextPlayerEntity = remainingPlayersInLobby.get(0);
+                gameLobbyEntity.setLobbyAdminId(nextPlayerEntity.getId());
+            }
+
             gameLobbyEntityRepository.save(gameLobbyEntity);
         } else {
             gameLobbyEntityRepository.deleteById(gameLobbyEntity.getId());

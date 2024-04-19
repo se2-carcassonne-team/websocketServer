@@ -67,7 +67,7 @@ public class GameLobbyController {
 
             try {
                 PlayerDto playerDto = objectMapper.readValue(splitJsonStrings[1], PlayerDto.class);
-                gameLobbyDto.setLobbyCreatorId(playerDto.getId());
+                gameLobbyDto.setLobbyAdminId(playerDto.getId());
 
                 GameLobbyEntity createdGameLobbyEntity = gameLobbyEntityService.createLobby(gameLobbyMapper.mapToEntity(gameLobbyDto));
                 PlayerEntity playerEntity = playerEntityService.joinLobby(createdGameLobbyEntity.getId(), playerMapper.mapToEntity(playerDto));
