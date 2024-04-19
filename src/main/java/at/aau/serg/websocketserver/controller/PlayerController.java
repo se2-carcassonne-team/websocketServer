@@ -229,7 +229,7 @@ public class PlayerController {
             // send updated gameLobbyDto to all players in the lobby (relevant for lobbyCreator)
             this.template.convertAndSend(
                     "/topic/lobby-" + gameLobbyId + "/update",
-                    objectMapper.writeValueAsString(gameLobbyEntityService.findById(gameLobbyId))
+                    objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(gameLobbyEntityService.findById(gameLobbyId).get()))
             );
 
             // send response to: /user/queue/response --> updated playerDto (later with response code: 101)
