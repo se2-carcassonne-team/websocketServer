@@ -1,6 +1,7 @@
 package at.aau.serg.websocketserver;
 
 import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
+import at.aau.serg.websocketserver.domain.dto.GameSessionDto;
 import at.aau.serg.websocketserver.domain.dto.GameState;
 import at.aau.serg.websocketserver.domain.dto.PlayerDto;
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
@@ -123,6 +124,15 @@ public class TestDataUtil {
                 .gameStartTimestamp(timeStamp)
                 .gameState(GameState.LOBBY)
                 .numPlayers(0)
+                .build();
+    }
+
+    public static GameSessionDto createTestGameSessionDtoA(PlayerDto lobbyCreator) {
+        return GameSessionDto.builder()
+                .id(1L)
+                .turnPlayerId(lobbyCreator.getId())
+                .gameState(GameState.IN_GAME)
+                .playerIds(null)
                 .build();
     }
 }
