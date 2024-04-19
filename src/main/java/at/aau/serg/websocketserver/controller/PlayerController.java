@@ -226,11 +226,14 @@ public class PlayerController {
                     objectMapper.writeValueAsString(getPlayerDtosInLobbyList(gameLobbyId, gameLobbyEntityService, playerEntityService, playerMapper))
             );
 
-            // send updated gameLobbyDto to all players in the lobby (relevant for lobbyCreator)
-            this.template.convertAndSend(
-                    "/topic/lobby-" + gameLobbyId + "/update",
-                    objectMapper.writeValueAsString(gameLobbyEntityService.findById(gameLobbyId))
-            );
+            // TODO: test
+            if (gameLobbyEntityService.findById(gameLobbyId).isPresent()){
+                // send updated gameLobbyDto to all players in the lobby (relevant for lobbyCreator)
+                this.template.convertAndSend(
+                        "/topic/lobby-" + gameLobbyId + "/update",
+                        objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(gameLobbyEntityService.findById(gameLobbyId).get()))
+                );
+            }
 
             // send response to: /user/queue/response --> updated playerDto (later with response code: 101)
             return objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
