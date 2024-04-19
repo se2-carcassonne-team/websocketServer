@@ -38,7 +38,7 @@ public class GameSessionController {
         this.gameLobbyEntityService = gameLobbyEntityService;
     }
 
-    @MessageMapping("/start-game")
+    @MessageMapping("/game-start")
     @SendToUser("/queue/lobby-list-response")
     public String createGameSession(String gameLobbyIdString) throws JsonProcessingException {
         // Get GameSessionEntity and update lobby as not available
