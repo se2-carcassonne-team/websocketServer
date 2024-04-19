@@ -46,8 +46,8 @@ public class GameSessionEntityServiceImpl implements GameSessionEntityService {
             List<PlayerEntity> playerEntityList = playerEntityService.getAllPlayersForLobby(gameLobbyId);
 
             List<Long> playerIds = new ArrayList<>(playerEntityList.size());
-            for(int i = 0; i < playerEntityList.size(); i++) {
-                playerIds.add(playerEntityList.get(i).getId());
+            for (PlayerEntity playerEntity : playerEntityList) {
+                playerIds.add(playerEntity.getId());
             }
             gameSessionEntity.setPlayerIds(playerIds);
 
