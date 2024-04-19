@@ -90,7 +90,7 @@ public class GameSessionControllerIntegrationTest {
         GameSessionDto gameSessionDtoA = TestDataUtil.createTestGameSessionDtoA(playerMapper.mapToDto(playerEntityA));
 
         StompSession session = initStompSession("/topic/lobby-" + gameLobbyDtoA.getId() + "/game-start", messages);
-        session.send("/app/start-game", gameLobbyDtoA.getId() + "");
+        session.send("/app/game-start", gameLobbyDtoA.getId() + "");
 
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
         assertThat(actualResponse).isEqualTo(gameSessionDtoA.getId() + "");
