@@ -34,7 +34,7 @@ public class GameLobbyEntityServiceImpl implements GameLobbyEntityService {
             throw new EntityExistsException(ErrorCode.ERROR_1002.getErrorCode());
         }
 
-        if(gameLobbyEntity.getLobbyCreatorId() != null && playerEntityRepository.findById(gameLobbyEntity.getLobbyCreatorId()).isEmpty()) {
+        if(gameLobbyEntity.getLobbyAdminId() != null && playerEntityRepository.findById(gameLobbyEntity.getLobbyAdminId()).isEmpty()) {
             throw new RuntimeException(ErrorCode.ERROR_2001.getErrorCode());
         }
 

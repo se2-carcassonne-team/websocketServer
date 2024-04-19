@@ -851,7 +851,7 @@ public class PlayerControllerIntegrationTest {
         PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
         GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
         testPlayerEntityA.setGameLobbyEntity(testGameLobbyEntityA);
-        testGameLobbyEntityA.setLobbyCreatorId(testGameLobbyEntityA.getId());
+        testGameLobbyEntityA.setLobbyAdminId(testGameLobbyEntityA.getId());
 
         PlayerEntity testPlayerEntityB = TestDataUtil.createTestPlayerEntityB(null);
         testPlayerEntityB.setGameLobbyEntity(testGameLobbyEntityA);
@@ -885,7 +885,7 @@ public class PlayerControllerIntegrationTest {
         // assert that the player and game lobby entities in the database have updated as expected
         testGameLobbyEntityA.setNumPlayers(1);
         // new: update lobbyCreator id
-        testGameLobbyEntityA.setLobbyCreatorId(testPlayerEntityB.getId());
+        testGameLobbyEntityA.setLobbyAdminId(testPlayerEntityB.getId());
         assertThat(gameLobbyEntityService.findById(testPlayerDtoA.getId()).get()).isEqualTo(testGameLobbyEntityA);
 
         testPlayerEntityA.setGameLobbyEntity(null);
@@ -905,7 +905,7 @@ public class PlayerControllerIntegrationTest {
         testPlayerEntityA.setGameLobbyEntity(testGameLobbyEntityA);
 
         // testPlayerA is the lobby creator:
-        testGameLobbyEntityA.setLobbyCreatorId(testGameLobbyEntityA.getId());
+        testGameLobbyEntityA.setLobbyAdminId(testGameLobbyEntityA.getId());
 
         PlayerEntity testPlayerEntityB = TestDataUtil.createTestPlayerEntityB(null);
         testPlayerEntityB.setGameLobbyEntity(testGameLobbyEntityA);
@@ -927,7 +927,7 @@ public class PlayerControllerIntegrationTest {
         assertThat(playerEntityService.findPlayerById(testPlayerEntityB.getId()).get()).isEqualTo(testPlayerEntityB);
         assertThat(gameLobbyEntityService.findById(testGameLobbyEntityA.getId()).get()).isEqualTo(testGameLobbyEntityA);
 
-        assertThat(gameLobbyEntityService.findById(testGameLobbyEntityA.getLobbyCreatorId()).get().getLobbyCreatorId()).isEqualTo(testPlayerEntityA.getId());
+        assertThat(gameLobbyEntityService.findById(testGameLobbyEntityA.getLobbyAdminId()).get().getLobbyAdminId()).isEqualTo(testPlayerEntityA.getId());
 
 
         // create payload string (player who is not a lobbyCreator)
@@ -946,7 +946,7 @@ public class PlayerControllerIntegrationTest {
         testPlayerEntityB.setGameLobbyEntity(null);
         assertThat(playerEntityService.findPlayerById(testPlayerEntityB.getId()).get()).isEqualTo(testPlayerEntityB);
 
-        assertThat(gameLobbyEntityService.findById(testGameLobbyEntityA.getLobbyCreatorId()).get().getLobbyCreatorId()).isEqualTo(testPlayerEntityA.getId());
+        assertThat(gameLobbyEntityService.findById(testGameLobbyEntityA.getLobbyAdminId()).get().getLobbyAdminId()).isEqualTo(testPlayerEntityA.getId());
 
         testPlayerDtoB.setGameLobbyId(null);
         var expectedResponse = objectMapper.writeValueAsString(testGameLobbyEntityA);

@@ -126,11 +126,11 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
         if(numberOfPlayers > 1) {
             gameLobbyEntity.setNumPlayers(gameLobbyEntity.getNumPlayers()-1);
 
-            if(playerEntity.getId() == gameLobbyEntity.getLobbyCreatorId()) {
+            if(playerEntity.getId() == gameLobbyEntity.getLobbyAdminId()) {
                 // transfer lobby admin rights to another player
                 List<PlayerEntity> remainingPlayersInLobby = playerEntityRepository.findPlayerEntitiesByGameLobbyEntity_Id(gameLobbyEntity.getId());
                 PlayerEntity nextPlayerEntity = remainingPlayersInLobby.get(0);
-                gameLobbyEntity.setLobbyCreatorId(nextPlayerEntity.getId());
+                gameLobbyEntity.setLobbyAdminId(nextPlayerEntity.getId());
             }
 
             gameLobbyEntityRepository.save(gameLobbyEntity);
