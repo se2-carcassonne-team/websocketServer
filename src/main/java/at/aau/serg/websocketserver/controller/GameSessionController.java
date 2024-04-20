@@ -1,5 +1,6 @@
 package at.aau.serg.websocketserver.controller;
 
+import at.aau.serg.websocketserver.controller.helper.HelperMethods;
 import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
@@ -38,22 +39,27 @@ public class GameSessionController {
         this.gameLobbyEntityService = gameLobbyEntityService;
     }
 
+    /**
+     * Topics/Queues for the Endpoint /app/game-start
+     * <p>1) /topic/lobby-$id-game-start -> id of the created gameSession (acts as a signal for all players in a lobby that a gameSession has started)</p>
+     * <p>2) /user/queue/lobby-list-response -> updated list of gameLobbies</p>
+     * <p>3) /user/queue/errors -> relay for Exceptions (once a exception occurs it will be sent to this topic)</p>
+     *
+     * @param gameLobbyIdString Id of the GameLobby, that serves as a basis for the GameSession
+     * @return
+     * @throws JsonProcessingException
+     */
     @MessageMapping("/game-start")
     @SendToUser("/queue/lobby-list-response")
     public String createGameSession(String gameLobbyIdString) throws JsonProcessingException {
-        // Get GameSessionEntity and update lobby as not available
         Long gameLobbyId = Long.parseLong(gameLobbyIdString);
         GameSessionEntity gameSessionEntity = gameSessionEntityService.createGameSession(gameLobbyId);
 
-        List<GameLobbyEntity> gameLobbyEntities = gameLobbyEntityService.getListOfLobbies();
-        List<GameLobbyDto> gameLobbyDtos = new ArrayList<>();
-
-        for (GameLobbyEntity gameLobbyEntity : gameLobbyEntities) {
-            gameLobbyDtos.add(gameLobbyMapper.mapToDto(gameLobbyEntity));
-        }
-
+        // Get list of lobbies and broadcast it to all subscribers
+        List<GameLobbyDto> gameLobbyDtoList = HelperMethods.getGameLobbyDtoList(gameLobbyEntityService, gameLobbyMapper);
         this.template.convertAndSend("/topic/lobby-" + gameLobbyId + "/game-start", objectMapper.writeValueAsString(gameSessionEntity.getId()));
-        return objectMapper.writeValueAsString(gameLobbyDtos);
+
+        return objectMapper.writeValueAsString(gameLobbyDtoList);
     }
 
     @MessageExceptionHandler
