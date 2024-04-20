@@ -43,7 +43,7 @@ public class GameSessionEntityServiceImpl implements GameSessionEntityService {
             // Create a new gameSession
             GameSessionEntity gameSessionEntity = new GameSessionEntity();
             gameSessionEntity.setGameState(GameState.IN_GAME.name());
-            gameSessionEntity.setTurnPlayerId(gameLobbyEntity.getLobbyCreatorId());
+            gameSessionEntity.setTurnPlayerId(gameLobbyEntity.getLobbyAdminId());
 
             List<PlayerEntity> playerEntityList = playerEntityService.getAllPlayersForLobby(gameLobbyId);
 
