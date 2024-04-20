@@ -35,10 +35,12 @@ public class GameSessionEntityServiceImpl implements GameSessionEntityService {
         Optional<GameLobbyEntity> gameLobbyEntityOptional = gameLobbyEntityRepository.findById(gameLobbyId);
 
         if(gameLobbyEntityOptional.isPresent()) {
+            // Get lobby from database, update its status and write changes back to the database
             GameLobbyEntity gameLobbyEntity = gameLobbyEntityOptional.get();
             gameLobbyEntity.setGameState(GameState.IN_GAME.name());
             gameLobbyEntityRepository.save(gameLobbyEntity);
 
+            // Create a new gameSession
             GameSessionEntity gameSessionEntity = new GameSessionEntity();
             gameSessionEntity.setGameState(GameState.IN_GAME.name());
             gameSessionEntity.setTurnPlayerId(gameLobbyEntity.getLobbyCreatorId());
@@ -46,8 +48,8 @@ public class GameSessionEntityServiceImpl implements GameSessionEntityService {
             List<PlayerEntity> playerEntityList = playerEntityService.getAllPlayersForLobby(gameLobbyId);
 
             List<Long> playerIds = new ArrayList<>(playerEntityList.size());
-            for(int i = 0; i < playerEntityList.size(); i++) {
-                playerIds.add(playerEntityList.get(i).getId());
+            for (PlayerEntity playerEntity : playerEntityList) {
+                playerIds.add(playerEntity.getId());
             }
             gameSessionEntity.setPlayerIds(playerIds);
 
@@ -55,5 +57,10 @@ public class GameSessionEntityServiceImpl implements GameSessionEntityService {
         } else {
             throw new EntityNotFoundException(ErrorCode.ERROR_1003.getErrorCode());
         }
+    }
+
+    @Override
+    public Optional<GameSessionEntity> findById(Long id) throws EntityNotFoundException {
+        return gameSessionEntityRepository.findById(id);
     }
 }
