@@ -1,5 +1,6 @@
 package at.aau.serg.websocketserver.controller;
 
+import at.aau.serg.websocketserver.controller.helper.HelperMethods;
 import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketserver.domain.dto.PlayerDto;
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
@@ -123,13 +124,7 @@ public class GameLobbyController {
     @MessageMapping("/lobby-list")
     @SendToUser("/queue/lobby-list-response")
     public String handleGetAllLobbies() throws JsonProcessingException {
-        List<GameLobbyEntity> gameLobbyEntities = gameLobbyEntityService.getListOfLobbies();
-        List<GameLobbyDto> gameLobbyDtos = new ArrayList<>();
-
-        for (GameLobbyEntity gameLobbyEntity : gameLobbyEntities) {
-            gameLobbyDtos.add(gameLobbyMapper.mapToDto(gameLobbyEntity));
-        }
-
+        List<GameLobbyDto> gameLobbyDtos = HelperMethods.getGameLobbyDtoList(gameLobbyEntityService, gameLobbyMapper);
         return objectMapper.writeValueAsString(gameLobbyDtos);
     }
 
