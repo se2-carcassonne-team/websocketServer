@@ -82,7 +82,7 @@ public class GameSessionControllerIntegrationTest {
         PlayerEntity playerEntityA = TestDataUtil.createTestPlayerEntityA(null);
         PlayerEntity playerEntityB = TestDataUtil.createTestPlayerEntityB(null);
         PlayerEntity playerEntityC = TestDataUtil.createTestPlayerEntityC(null);
-        gameLobbyEntityA.setLobbyCreatorId(playerEntityA.getId());
+        gameLobbyEntityA.setLobbyAdminId(playerEntityA.getId());
 
         playerEntityService.createPlayer(playerEntityA);
         playerEntityService.createPlayer(playerEntityB);
@@ -117,8 +117,8 @@ public class GameSessionControllerIntegrationTest {
         PlayerEntity playerEntityA = TestDataUtil.createTestPlayerEntityA(null);
         PlayerEntity playerEntityB = TestDataUtil.createTestPlayerEntityB(null);
         PlayerEntity playerEntityC = TestDataUtil.createTestPlayerEntityC(null);
-        gameLobbyEntityA.setLobbyCreatorId(playerEntityA.getId());
-        gameLobbyEntityB.setLobbyCreatorId(playerEntityA.getId());
+        gameLobbyEntityA.setLobbyAdminId(playerEntityA.getId());
+        gameLobbyEntityB.setLobbyAdminId(playerEntityA.getId());
 
         playerEntityService.createPlayer(playerEntityA);
         playerEntityService.createPlayer(playerEntityB);
@@ -141,11 +141,11 @@ public class GameSessionControllerIntegrationTest {
 
         List<GameLobbyDto> gameLobbyDtoList = new ArrayList<>();
         gameLobbyDtoA.setGameState(GameState.IN_GAME);
-        gameLobbyDtoA.setLobbyCreatorId(playerEntityA.getId());
+        gameLobbyDtoA.setLobbyAdminId(playerEntityA.getId());
         gameLobbyDtoA.setNumPlayers(3);
         gameLobbyDtoList.add(gameLobbyDtoA);
 
-        gameLobbyDtoB.setLobbyCreatorId(playerEntityA.getId());
+        gameLobbyDtoB.setLobbyAdminId(playerEntityA.getId());
         gameLobbyDtoList.add(gameLobbyDtoB);
 
         String expectedResponse = objectMapper.writeValueAsString(gameLobbyDtoList);
@@ -163,7 +163,7 @@ public class GameSessionControllerIntegrationTest {
         PlayerEntity playerEntityA = TestDataUtil.createTestPlayerEntityA(null);
         PlayerEntity playerEntityB = TestDataUtil.createTestPlayerEntityB(null);
         PlayerEntity playerEntityC = TestDataUtil.createTestPlayerEntityC(null);
-        gameLobbyEntityA.setLobbyCreatorId(playerEntityA.getId());
+        gameLobbyEntityA.setLobbyAdminId(playerEntityA.getId());
 
         playerEntityService.createPlayer(playerEntityA);
         playerEntityService.createPlayer(playerEntityB);
