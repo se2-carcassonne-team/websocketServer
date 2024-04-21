@@ -14,7 +14,7 @@ RUN mvn clean package
 COPY target/websocketServer.jar /app/websocketServer.jar
 
 # Use a smaller base image for runtime
-FROM adoptopenjdk/openjdk17:alpine-jre
+FROM openjdk17:alpine-jre
 
 # Set the working directory in the container
 WORKDIR /app
