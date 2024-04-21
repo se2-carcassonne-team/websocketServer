@@ -3,6 +3,7 @@ package at.aau.serg.websocketserver.statuscode;
 public enum ResponseCode {
     RESPONSE_101("received updated playerDto", "101"),
     RESPONSE_102("placeholder", "102"),
+    RESPONSE_103("player successfully deleted", "103"),
     RESPONSE_201("received updated list of players in the current lobby", "201"),
     RESPONSE_202("received updated name of current lobby", "202"),
     RESPONSE_203("lobby was deleted", "203"),
