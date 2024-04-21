@@ -1,5 +1,8 @@
-# Use a base image with the JDK and Maven installed
-FROM maven:3.8.4-openjdk-17-slim AS build
+# Use a larger base image for building
+FROM maven:3.8.4-openjdk-17 AS build
+
+## Base image for runtime
+#FROM eclipse-temurin:17-jdk-jammy
 
 # Set the working directory in the container
 WORKDIR /app
@@ -7,23 +10,23 @@ WORKDIR /app
 # Copy the project's pom.xml file
 COPY pom.xml .
 
-# Download dependencies and build the application
-RUN mvn clean package
+# Download dependencies
+RUN mvn dependency:go-offline
 
-# Copy the application JAR file into the container
-COPY target/websocketServer.jar /app/websocketServer.jar
+# Copy the application source code
+COPY src src
+
+# Build the application
+RUN mvn package -DskipTests
 
 # Use a smaller base image for runtime
-FROM openjdk17:alpine-jre
+FROM eclipse-temurin:17-jdk-jammy
 
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy the application JAR file from the previous stage
-COPY --from=build /app/websocketServer.jar /app/websocketServer.jar
+# Copy the application JAR file into the container
+COPY target/WebSocket-Server-1.0.0-SNAPSHOT.jar /app/WebSocket-Server-1.0.0-SNAPSHOT.jar
 
-# Expose the port that your Spring Boot application runs on
-EXPOSE 8080
+ENTRYPOINT ["java","-jar","WebSocket-Server-1.0.0-SNAPSHOT.jar"]
 
-# Command to run your Spring Boot application when the container starts
-CMD ["java", "-jar", "websocketServer.jar"]
