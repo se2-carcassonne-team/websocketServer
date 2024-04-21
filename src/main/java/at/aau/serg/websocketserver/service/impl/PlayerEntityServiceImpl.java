@@ -142,12 +142,19 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
 
     @Override
     public void deletePlayer(Long id) {
-        playerEntityRepository.deleteById(id);
+        Optional<PlayerEntity> playerEntityOptional = playerEntityRepository.findById(id);
+        if(playerEntityOptional.isPresent()) {
+            PlayerEntity playerEntity = playerEntityOptional.get();
+            GameLobbyEntity gameLobbyEntity = playerEntity.getGameLobbyEntity();
+
+            if(gameLobbyEntity != null) {
+                leaveLobby(playerEntity);
+            }
+            playerEntityRepository.deleteById(id);
+        } else {
+            throw new EntityNotFoundException(ErrorCode.ERROR_2001.getErrorCode());
+        }
     }
-    // alternative suggestion:
-//    public void deletePlayer(PlayerEntity playerEntity) {
-//        playerEntityRepository.delete(playerEntity);
-//    }
 
 
 

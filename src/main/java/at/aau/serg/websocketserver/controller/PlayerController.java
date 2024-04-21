@@ -9,8 +9,10 @@ import at.aau.serg.websocketserver.mapper.PlayerMapper;
 import at.aau.serg.websocketserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketserver.service.PlayerEntityService;
 import at.aau.serg.websocketserver.statuscode.ErrorCode;
+import at.aau.serg.websocketserver.statuscode.ResponseCode;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.persistence.EntityExistsException;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
@@ -240,19 +242,38 @@ public class PlayerController {
         }
     }
 
-    // TODO: handle deletion of player inside a lobby properly?
     @MessageMapping("/player-delete")
-    @SendToUser("/queue/player-response")
+    @SendToUser("/queue/response")
     public String handleDeletePlayer(String playerDtoJson) throws JsonProcessingException {
         PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
 
         playerEntityService.deletePlayer(playerDto.getId());
-        Optional<PlayerEntity> shouldBeEmpty = playerEntityService.findPlayerById(playerDto.getId());
-        if (shouldBeEmpty.isEmpty()) {
-            return "DELETED";
-        } else {
-            throw new RuntimeException("player was not deleted");
+
+        Optional<PlayerEntity> playerEntity = playerEntityService.findPlayerById(playerDto.getId());
+        if (playerEntity.isPresent()) {
+            throw new EntityExistsException(ErrorCode.ERROR_2006.getErrorCode());
         }
+
+        // Update logic if a player was part of a lobby
+        if(playerDto.getGameLobbyId() != null) {
+            Optional<GameLobbyEntity> gameLobbyEntityOptional = gameLobbyEntityService.findById(playerDto.getGameLobbyId());
+            if(gameLobbyEntityOptional.isPresent()) {
+                GameLobbyEntity gameLobbyEntity = gameLobbyEntityOptional.get();
+                // send response to: /topic/lobby-$id --> updated list of players in lobby (later with response code: 201)
+                this.template.convertAndSend(
+                        "/topic/lobby-" + gameLobbyEntity.getId(),
+                        objectMapper.writeValueAsString(getPlayerDtosInLobbyList(gameLobbyEntity.getId(), gameLobbyEntityService, playerEntityService, playerMapper))
+                );
+            } else {
+                // send response to: /topic/lobby-list --> updated list of lobbies (later with response code 301)
+                this.template.convertAndSend(
+                        "/topic/lobby-list",
+                        objectMapper.writeValueAsString(getGameLobbyDtoList(gameLobbyEntityService, gameLobbyMapper))
+                );
+            }
+        }
+
+        return ResponseCode.RESPONSE_103.getResponseCode();
     }
 
     @MessageExceptionHandler
