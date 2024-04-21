@@ -11,10 +11,11 @@ public enum ErrorCode {
     ERROR_2002("player with the id already exists", "2002"),
     ERROR_2003("player with the username already exists", "2003"),
     ERROR_2004("invalid playerDto JSON", "2004"),
-    ERROR_2005("player is not in a gameLobby", "2005");
+    ERROR_2005("player is not in a gameLobby", "2005"),
+    ERROR_2006("player still exists", "2006");
+
     private final String errorDescription;
     private final String errorCode;
-
 
     /**
      * Enum of standardized custom response codes.
