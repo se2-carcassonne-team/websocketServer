@@ -11,6 +11,7 @@ import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
 import at.aau.serg.websocketserver.mapper.PlayerMapper;
 import at.aau.serg.websocketserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketserver.service.PlayerEntityService;
+import at.aau.serg.websocketserver.statuscode.ResponseCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -1151,8 +1152,8 @@ public class PlayerControllerIntegrationTest {
     }
 
     @Test
-    void testThatDeletePlayerSuccessfullyDeletesExistingPlayer() throws Exception {
-        StompSession session = initStompSession("/user/queue/player-response", messages);
+    void testThatDeletePlayerWithoutLobbySuccessfullyDeletesExistingPlayer() throws Exception {
+        StompSession session = initStompSession("/user/queue/response", messages);
 
         PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
         playerEntityService.createPlayer(testPlayerEntityA);
@@ -1168,13 +1169,97 @@ public class PlayerControllerIntegrationTest {
         // assert that player no longer exists in database
         assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
 
-        var expectedResponse = "DELETED";
-        assertThat(actualResponse).contains(expectedResponse);
+        assertThat(actualResponse).isEqualTo(ResponseCode.RESPONSE_103.getResponseCode());
     }
 
     @Test
-    void testThatDeletePlayerSuccessfullyDeletesNonExistentPlayer() throws Exception {
-        StompSession session = initStompSession("/user/queue/player-response", messages);
+    void testThatDeletePlayerInLobbySuccessfullyRemovesPlayerFromLobbyAndDeletesExistingPlayer() throws Exception {
+        GameLobbyEntity gameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
+        GameLobbyDto gameLobbyDtoA = gameLobbyMapper.mapToDto(gameLobbyEntityA);
+        gameLobbyDtoA.setNumPlayers(2);
+
+        StompSession session = initStompSessionWithSecondTopic("/user/queue/response", "/topic/lobby-" + gameLobbyEntityA.getId(), messages, messages2);
+
+        PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        PlayerEntity testPlayerEntityB = TestDataUtil.createTestPlayerEntityB(null);
+
+        PlayerDto playerDtoB = playerMapper.mapToDto(testPlayerEntityB);
+        playerDtoB.setGameLobbyId(gameLobbyEntityA.getId());
+        List<PlayerDto> playerDtoList = new ArrayList<>();
+        playerDtoList.add(playerDtoB);
+
+        playerEntityService.createPlayer(testPlayerEntityA);
+        playerEntityService.createPlayer(testPlayerEntityB);
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get()).isEqualTo(testPlayerEntityA);
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityB.getId()).get()).isEqualTo(testPlayerEntityB);
+
+        gameLobbyEntityService.createLobby(gameLobbyEntityA);
+        assertThat(gameLobbyEntityService.findById(gameLobbyEntityA.getId())).isPresent();
+
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), testPlayerEntityA);
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), testPlayerEntityB);
+
+        PlayerDto testPlayerDtoA = playerMapper.mapToDto(testPlayerEntityA);
+        session.send("/app/player-delete", objectMapper.writeValueAsString(testPlayerDtoA));
+
+        String actualResponseTopic1 = messages.poll(1, TimeUnit.SECONDS);
+
+        String expectedResponseTopic2 = objectMapper.writeValueAsString(playerDtoList);
+        String actualResponseTopic2 = messages2.poll(1, TimeUnit.SECONDS);
+
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
+        assertThat(gameLobbyEntityService.findById(gameLobbyEntityA.getId())).isPresent();
+
+        List<PlayerEntity> playerEntityList = playerEntityService.getAllPlayersForLobby(gameLobbyEntityA.getId());
+        gameLobbyDtoA.setNumPlayers(gameLobbyDtoA.getNumPlayers() - 1);
+        assertThat(playerEntityList.size()).isEqualTo(gameLobbyDtoA.getNumPlayers());
+
+        assertThat(actualResponseTopic1).isEqualTo(ResponseCode.RESPONSE_103.getResponseCode());
+        assertThat(actualResponseTopic2).isEqualTo(expectedResponseTopic2);
+    }
+
+    @Test
+    void testThatDeletePlayerOnlyPlayerInLobbySuccessfullyDeletesLobbyAndPlayer() throws Exception {
+        GameLobbyEntity gameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
+        GameLobbyEntity gameLobbyEntityB = TestDataUtil.createTestGameLobbyEntityB();
+        GameLobbyDto gameLobbyDtoA = gameLobbyMapper.mapToDto(gameLobbyEntityA);
+        GameLobbyDto gameLobbyDtoB = gameLobbyMapper.mapToDto(gameLobbyEntityB);
+        gameLobbyDtoA.setNumPlayers(2);
+
+        List<GameLobbyDto> gameLobbyDtoList = new ArrayList<>();
+        gameLobbyDtoList.add(gameLobbyDtoB);
+
+        StompSession session = initStompSessionWithSecondTopic("/user/queue/response", "/topic/lobby-list", messages, messages2);
+
+        PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+
+        playerEntityService.createPlayer(testPlayerEntityA);
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get()).isEqualTo(testPlayerEntityA);
+
+        gameLobbyEntityService.createLobby(gameLobbyEntityA);
+        gameLobbyEntityService.createLobby(gameLobbyEntityB);
+        assertThat(gameLobbyEntityService.findById(gameLobbyEntityA.getId())).isPresent();
+
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), testPlayerEntityA);
+
+        PlayerDto testPlayerDtoA = playerMapper.mapToDto(testPlayerEntityA);
+        session.send("/app/player-delete", objectMapper.writeValueAsString(testPlayerDtoA));
+
+        String actualResponseTopic1 = messages.poll(1, TimeUnit.SECONDS);
+
+        String expectedResponseTopic2 = objectMapper.writeValueAsString(gameLobbyDtoList);
+        String actualResponseTopic2 = messages2.poll(1, TimeUnit.SECONDS);
+
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
+        assertThat(gameLobbyEntityService.findById(gameLobbyEntityA.getId())).isEmpty();
+
+        assertThat(actualResponseTopic1).isEqualTo(ResponseCode.RESPONSE_103.getResponseCode());
+        assertThat(actualResponseTopic2).isEqualTo(expectedResponseTopic2);
+    }
+
+    @Test
+    void testThatDeletePlayerWhenDeletingNonExistentPlayerFails() throws Exception {
+        StompSession session = initStompSession("/user/queue/errors", messages);
 
         PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
 
@@ -1189,8 +1274,7 @@ public class PlayerControllerIntegrationTest {
         // assert that player no longer exists in database
         assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
 
-        var expectedResponse = "DELETED";
-        assertThat(actualResponse).contains(expectedResponse);
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_2001.getErrorCode());
     }
 
     public StompSession initStompSession(String topic, BlockingQueue<String> messages) throws Exception {
@@ -1205,6 +1289,13 @@ public class PlayerControllerIntegrationTest {
         // subscribes to the topic defined in WebSocketBrokerController
         // and adds received messages to WebSocketBrokerIntegrationTest#messages
         session.subscribe(topic, new StompFrameHandlerClientImpl(messages));
+
+        return session;
+    }
+
+    public StompSession initStompSessionWithSecondTopic(String topic, String secondTopic, BlockingQueue<String> messages, BlockingQueue<String> messages2) throws Exception {
+        StompSession session = initStompSession(topic, messages);
+        session.subscribe(secondTopic, new StompFrameHandlerClientImpl(messages2));
 
         return session;
     }
