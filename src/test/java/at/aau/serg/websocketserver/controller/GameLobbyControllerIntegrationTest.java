@@ -324,7 +324,7 @@ public class GameLobbyControllerIntegrationTest {
 
     @Test
     void testThatUpdateLobbyNameFails() throws Exception {
-        StompSession session = initStompSessionWithErrorTopic("/topic/game-lobby-response", "/user/queue/errors", messages);
+        StompSession session = initStompSessionWithSecondTopic("/topic/game-lobby-response", "/user/queue/errors", messages);
 
         GameLobbyDto gameLobbyDto = TestDataUtil.createTestGameLobbyDtoA();
         gameLobbyEntityService.createLobby(gameLobbyMapper.mapToEntity(gameLobbyDto));
@@ -405,7 +405,7 @@ public class GameLobbyControllerIntegrationTest {
         return session;
     }
 
-    public StompSession initStompSessionWithErrorTopic(String topic, String errorTopic, BlockingQueue<String> messages) throws Exception {
+    public StompSession initStompSessionWithSecondTopic(String topic, String errorTopic, BlockingQueue<String> messages) throws Exception {
         StompSession session = initStompSession(topic, messages);
         session.subscribe(errorTopic, new StompFrameHandlerClientImpl(messages));
 
