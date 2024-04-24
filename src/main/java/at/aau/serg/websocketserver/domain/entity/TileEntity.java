@@ -1,6 +1,5 @@
 package at.aau.serg.websocketserver.domain.entity;
 
-import at.aau.serg.websocketserver.domain.dto.TileType;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

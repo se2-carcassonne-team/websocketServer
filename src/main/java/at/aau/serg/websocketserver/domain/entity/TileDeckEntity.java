@@ -22,6 +22,5 @@ public class TileDeckEntity {
     //DOCU: https://www.baeldung.com/java-jpa-persist-string-list
     @ElementCollection(targetClass = Long.class)
     private List<Long> tileId;
-
     private Long gameSessionId;
 }

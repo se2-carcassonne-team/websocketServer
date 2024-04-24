@@ -2,12 +2,14 @@ package at.aau.serg.websocketserver.controller;
 
 import at.aau.serg.websocketserver.controller.helper.HelperMethods;
 import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
-import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
+import at.aau.serg.websocketserver.domain.entity.TileDeckEntity;
+import at.aau.serg.websocketserver.domain.entity.repository.TileDeckRepository;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
 import at.aau.serg.websocketserver.mapper.GameSessionMapper;
 import at.aau.serg.websocketserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketserver.service.GameSessionEntityService;
+import at.aau.serg.websocketserver.service.impl.TileDeckEntityServiceImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
@@ -16,7 +18,6 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @Controller
@@ -29,14 +30,28 @@ public class GameSessionController {
     private GameLobbyMapper gameLobbyMapper;
     private GameLobbyEntityService gameLobbyEntityService;
 
+    private TileDeckRepository tileDeckRepository;
 
-    public GameSessionController(SimpMessagingTemplate template, GameSessionEntityService gameSessionEntityService, ObjectMapper objectMapper, GameSessionMapper gameSessionMapper, GameLobbyMapper gameLobbyMapper, GameLobbyEntityService gameLobbyEntityService) {
+    private TileDeckEntityServiceImpl tileDeckEntityServiceImpl;
+
+
+
+    public GameSessionController(SimpMessagingTemplate template,
+                                 GameSessionEntityService gameSessionEntityService,
+                                 ObjectMapper objectMapper,
+                                 GameSessionMapper gameSessionMapper,
+                                 GameLobbyMapper gameLobbyMapper,
+                                 GameLobbyEntityService gameLobbyEntityService,
+                                 TileDeckRepository tileDeckRepository,
+                                 TileDeckEntityServiceImpl tileDeckEntityServiceImpl){
         this.template = template;
         this.gameSessionEntityService = gameSessionEntityService;
         this.objectMapper = objectMapper;
         this.gameSessionMapper = gameSessionMapper;
         this.gameLobbyMapper = gameLobbyMapper;
         this.gameLobbyEntityService = gameLobbyEntityService;
+        this.tileDeckRepository = tileDeckRepository;
+        this.tileDeckEntityServiceImpl = tileDeckEntityServiceImpl;
     }
 
     /**
@@ -61,6 +76,22 @@ public class GameSessionController {
 
         return objectMapper.writeValueAsString(gameLobbyDtoList);
     }
+
+//    TODO: Implement the getNextCardId endpoint
+    @MessageMapping("/next-turn")
+    @SendToUser("/queue/next-turn-response")
+    public String getNextCardId(String gameSessionId) throws JsonProcessingException {
+
+        Long gameSessionIdLong = Long.parseLong(gameSessionId);
+
+//        Get the right tile deck based on gameId and draw the next card
+        TileDeckEntity tileDeck = tileDeckRepository.findByGameSessionId(gameSessionIdLong);
+        Long drawnCardId = tileDeckEntityServiceImpl.drawNextTile(tileDeck);
+
+        return objectMapper.writeValueAsString(drawnCardId);
+    }
+
+
 
     @MessageExceptionHandler
     @SendToUser("/queue/errors")
