@@ -12,6 +12,7 @@ import at.aau.serg.websocketserver.mapper.PlayerMapper;
 import at.aau.serg.websocketserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketserver.service.GameSessionEntityService;
 import at.aau.serg.websocketserver.service.PlayerEntityService;
+import at.aau.serg.websocketserver.service.TileDeckEntityService;
 import at.aau.serg.websocketserver.statuscode.ErrorCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
@@ -48,15 +49,19 @@ public class GameSessionControllerIntegrationTest {
     private final GameSessionEntityService gameSessionEntityService;
     private final GameLobbyEntityService gameLobbyEntityService;
     private final PlayerEntityService playerEntityService;
+    private final TileDeckEntityService tileDeckEntityService;
+
+
 
     @Autowired
-    public GameSessionControllerIntegrationTest(ObjectMapper objectMapper, GameLobbyMapper gameLobbyMapper, PlayerMapper playerMapper, GameSessionEntityService gameSessionEntityService, GameLobbyEntityService gameLobbyEntityService, PlayerEntityService playerEntityService) {
+    public GameSessionControllerIntegrationTest(ObjectMapper objectMapper, GameLobbyMapper gameLobbyMapper, PlayerMapper playerMapper, GameSessionEntityService gameSessionEntityService, GameLobbyEntityService gameLobbyEntityService, PlayerEntityService playerEntityService, TileDeckEntityService tileDeckEntityService) {
         this.objectMapper = objectMapper;
         this.gameLobbyMapper = gameLobbyMapper;
         this.playerMapper = playerMapper;
         this.gameSessionEntityService = gameSessionEntityService;
         this.gameLobbyEntityService = gameLobbyEntityService;
         this.playerEntityService = playerEntityService;
+        this.tileDeckEntityService = tileDeckEntityService;
     }
 
     @LocalServerPort
@@ -183,6 +188,7 @@ public class GameSessionControllerIntegrationTest {
         assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isEmpty();
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
+
 
     public StompSession initStompSession(String topic, BlockingQueue<String> messages) throws Exception {
         WebSocketStompClient stompClient = new WebSocketStompClient(new StandardWebSocketClient());

@@ -1,42 +1,64 @@
 package at.aau.serg.websocketserver.service.impl;
 
+import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
 import at.aau.serg.websocketserver.domain.entity.TileDeckEntity;
+import at.aau.serg.websocketserver.domain.entity.repository.GameSessionEntityRepository;
 import at.aau.serg.websocketserver.domain.entity.repository.TileDeckRepository;
+import at.aau.serg.websocketserver.service.GameSessionEntityService;
 import at.aau.serg.websocketserver.service.TileDeckEntityService;
+import at.aau.serg.websocketserver.statuscode.ErrorCode;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @Service
-@Transactional
 public class TileDeckEntityServiceImpl implements TileDeckEntityService {
+    TileDeckRepository tileDeckRepository;
+    GameSessionEntityRepository gameSessionEntityRepository;
+    GameSessionEntityService gameSessionEntityService;
 
-    private final TileDeckRepository tileDeckRepository;
-
-    public TileDeckEntityServiceImpl(TileDeckRepository tileDeckRepository) {
+    public TileDeckEntityServiceImpl(TileDeckRepository tileDeckRepository,
+                                     GameSessionEntityRepository gameSessionEntityRepository,
+                                     GameSessionEntityService gameSessionEntityService) {
         this.tileDeckRepository = tileDeckRepository;
+        this.gameSessionEntityRepository = gameSessionEntityRepository;
+        this.gameSessionEntityService = gameSessionEntityService;
     }
+
     @Override
     public TileDeckEntity createTileDeck(Long gameSessionId) {
-        TileDeckEntity tileDeck = TileDeckEntity.builder()
-                .tileId(generateTileIds())
-                .gameSessionId(gameSessionId)
-                .build();
-        return tileDeckRepository.save(tileDeck);
+        Optional<GameSessionEntity> gameSessionOptional = gameSessionEntityService.findById(gameSessionId);
+
+        if (gameSessionOptional.isPresent()) {
+            GameSessionEntity gameSession = gameSessionOptional.get();
+
+//            Create a new tile deck entity
+            TileDeckEntity tileDeck = new TileDeckEntity();
+            tileDeck.setTileId(generateTileIds());
+            tileDeck.setGameSession(gameSession);
+
+//            Return the created tile deck entity
+            return tileDeckRepository.save(tileDeck);
+        } else {
+            throw new EntityNotFoundException(ErrorCode.ERROR_3003.getErrorCode());
+        }
     }
 
     @Override
     public List<Long> generateTileIds() {
         List<Long> tileIds = new ArrayList<>();
-        for (long i = 1; i <= 72; i++) {
+        for (Long i = 0L; i <= 71L; i++) {
             tileIds.add(i);
         }
         Collections.shuffle(tileIds);
         return tileIds;
     }
+
     @Override
     public Long drawNextTile(TileDeckEntity tileDeck) {
         List<Long> tileIds = tileDeck.getTileId();
@@ -80,7 +102,8 @@ public class TileDeckEntityServiceImpl implements TileDeckEntityService {
 //            // (Optional: you can throw an exception or log a message)
 //        }
 //    }
-}
+    }
+
     @Override
     public List<Long> getAllTilesInDeck(Long gameSessionId) {
         return null;

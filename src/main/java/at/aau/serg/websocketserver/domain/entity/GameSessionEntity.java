@@ -22,4 +22,8 @@ public class GameSessionEntity {
     private Long turnPlayerId;
     private String gameState;
     private List<Long> playerIds;
+
+    // One-to-one relationship with TileDeckEntity
+    @OneToOne(mappedBy = "gameSession")
+    private TileDeckEntity tileDeck;
 }

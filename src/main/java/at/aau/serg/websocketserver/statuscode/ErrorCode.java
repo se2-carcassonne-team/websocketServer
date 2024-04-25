@@ -12,7 +12,8 @@ public enum ErrorCode {
     ERROR_2003("player with the username already exists", "2003"),
     ERROR_2004("invalid playerDto JSON", "2004"),
     ERROR_2005("player is not in a gameLobby", "2005"),
-    ERROR_2006("player still exists", "2006");
+    ERROR_2006("player still exists", "2006"),
+    ERROR_3003("gameSession with the id does not exist", "3003");
 
     private final String errorDescription;
     private final String errorCode;

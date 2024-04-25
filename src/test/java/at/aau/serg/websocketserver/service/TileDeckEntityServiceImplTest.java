@@ -1,0 +1,118 @@
+package at.aau.serg.websocketserver.service;
+
+import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
+import at.aau.serg.websocketserver.domain.entity.TileDeckEntity;
+import at.aau.serg.websocketserver.domain.entity.repository.TileDeckRepository;
+import at.aau.serg.websocketserver.service.impl.TileDeckEntityServiceImpl;
+import jakarta.persistence.EntityNotFoundException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.boot.jdbc.EmbeddedDatabaseConnection;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+@DataJpaTest
+@AutoConfigureTestDatabase(connection = EmbeddedDatabaseConnection.H2)
+class TileDeckEntityServiceImplTest {
+
+
+    @Mock
+    private TileDeckRepository tileDeckRepository;
+    @Mock
+    private GameSessionEntityService gameSessionEntityService;
+    @InjectMocks
+    private TileDeckEntityServiceImpl tileDeckEntityService;
+
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    @AfterEach
+    void tearDown() {
+    }
+
+    @Test
+    void createTileDeck() {
+        // Arrange
+        Long gameSessionId = 1L; // replace with the actual gameSessionId you want to use
+
+        // Mock the behavior of gameSessionEntityService.findById method
+        GameSessionEntity gameSessionEntity = new GameSessionEntity();
+        gameSessionEntity.setId(gameSessionId);
+        when(gameSessionEntityService.findById(gameSessionId)).thenReturn(Optional.of(gameSessionEntity));
+
+        // Mock the behavior of tileDeckRepository.save method
+        TileDeckEntity tileDeck = new TileDeckEntity();
+        when(tileDeckRepository.save(any(TileDeckEntity.class))).thenReturn(tileDeck);
+
+        // Act
+        TileDeckEntity result = tileDeckEntityService.createTileDeck(gameSessionId);
+
+        // Assert
+        assertNotNull(result);
+        verify(tileDeckRepository, times(1)).save(any(TileDeckEntity.class));
+    }
+
+    @Test
+    void createTileDeck_EntityNotFoundException() {
+        // Arrange
+        Long gameSessionId = 1L; // replace with the actual gameSessionId you want to use
+
+        // Mock the behavior of gameSessionEntityService.findById method to return an empty Optional
+        when(gameSessionEntityService.findById(gameSessionId)).thenReturn(Optional.empty());
+
+        // Act and Assert
+        assertThrows(EntityNotFoundException.class, () -> {
+            tileDeckEntityService.createTileDeck(gameSessionId);
+        });
+    }
+
+    @Test
+    void drawNextTile() {
+        // Arrange
+        List<Long> tileIds = new ArrayList<>(Arrays.asList(1L, 2L, 3L));
+        TileDeckEntity tileDeck = new TileDeckEntity();
+        tileDeck.setTileId(tileIds);
+
+        // Mock the behavior of tileDeckRepository.save method
+        when(tileDeckRepository.save(any(TileDeckEntity.class))).thenReturn(tileDeck);
+
+        // Act
+        Long result = tileDeckEntityService.drawNextTile(tileDeck);
+
+        // Assert
+        assertEquals(1L, result);
+        assertEquals(2, tileDeck.getTileId().size());
+        verify(tileDeckRepository, times(1)).save(tileDeck);
+    }
+
+    @Test
+    void drawNextTile_EmptyDeck() {
+        // Arrange
+        TileDeckEntity tileDeck = new TileDeckEntity();
+        tileDeck.setTileId(new ArrayList<>()); // Set the tileId list as an empty list
+
+        // Act
+        Long result = tileDeckEntityService.drawNextTile(tileDeck);
+
+        // Assert
+        assertNull(result);
+    }
+
+//    TODO: Add more tests
+
+}

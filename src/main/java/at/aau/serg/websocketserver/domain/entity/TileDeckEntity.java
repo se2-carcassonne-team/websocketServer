@@ -16,11 +16,15 @@ import java.util.List;
 @Table(name = "tiledeck")
 public class TileDeckEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "tiledeck_id_seq")
     private Long id;
 
     //DOCU: https://www.baeldung.com/java-jpa-persist-string-list
-    @ElementCollection(targetClass = Long.class)
+//    @ElementCollection(targetClass = Long.class)
     private List<Long> tileId;
-    private Long gameSessionId;
+
+    // One-to-one relationship with GameSessionEntity
+    @OneToOne
+    @JoinColumn(name = "game_session_id", unique = true)
+    private GameSessionEntity gameSession;
 }
