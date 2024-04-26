@@ -1,11 +1,9 @@
 package at.aau.serg.websocketserver.domain.entity;
 
 import at.aau.serg.websocketserver.domain.dto.GameState;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.List;
 
@@ -25,5 +23,6 @@ public class GameSessionEntity {
 
     // One-to-one relationship with TileDeckEntity
     @OneToOne(mappedBy = "gameSession")
+//    @EqualsAndHashCode.Exclude
     private TileDeckEntity tileDeck;
 }

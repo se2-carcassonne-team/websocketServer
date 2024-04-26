@@ -2,6 +2,7 @@ package at.aau.serg.websocketserver.controller;
 
 import at.aau.serg.websocketserver.controller.helper.HelperMethods;
 import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
+import at.aau.serg.websocketserver.domain.dto.GameState;
 import at.aau.serg.websocketserver.domain.dto.NextTurnDto;
 import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
 import at.aau.serg.websocketserver.domain.entity.TileDeckEntity;
@@ -20,6 +21,7 @@ import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
 
 import java.util.List;
+import java.util.Optional;
 
 @Controller
 public class GameSessionController {
@@ -36,15 +38,7 @@ public class GameSessionController {
     private TileDeckEntityServiceImpl tileDeckEntityServiceImpl;
 
 
-
-    public GameSessionController(SimpMessagingTemplate template,
-                                 GameSessionEntityService gameSessionEntityService,
-                                 ObjectMapper objectMapper,
-                                 GameSessionMapper gameSessionMapper,
-                                 GameLobbyMapper gameLobbyMapper,
-                                 GameLobbyEntityService gameLobbyEntityService,
-                                 TileDeckRepository tileDeckRepository,
-                                 TileDeckEntityServiceImpl tileDeckEntityServiceImpl){
+    public GameSessionController(SimpMessagingTemplate template, GameSessionEntityService gameSessionEntityService, ObjectMapper objectMapper, GameSessionMapper gameSessionMapper, GameLobbyMapper gameLobbyMapper, GameLobbyEntityService gameLobbyEntityService, TileDeckRepository tileDeckRepository, TileDeckEntityServiceImpl tileDeckEntityServiceImpl) {
         this.template = template;
         this.gameSessionEntityService = gameSessionEntityService;
         this.objectMapper = objectMapper;
@@ -89,23 +83,44 @@ public class GameSessionController {
      */
     @MessageMapping("/next-turn")
     @SendToUser("/queue/next-turn-response")
-    public String getPlayerIdAndNextCardId(String gameSessionId) throws JsonProcessingException {
+    public String getNextPlayerIdAndNextCardId(String gameSessionId) throws JsonProcessingException {
 
         Long gameSessionIdLong = Long.parseLong(gameSessionId);
 
-//         Get the next player id from the gameSession
-        Long playerId = gameSessionEntityService.calculateNextPlayer(gameSessionIdLong);
+        Optional<GameSessionEntity> optionalGameSession = gameSessionEntityService.findById(gameSessionIdLong);
 
-//        Get the right tile deck based on gameId and draw the next card
-        TileDeckEntity tileDeck = tileDeckRepository.findByGameSessionId(gameSessionIdLong);
-        Long drawnCardId = tileDeckEntityServiceImpl.drawNextTile(tileDeck);
+        if (optionalGameSession.isPresent()) {
 
-//        Create the nextTurnDto
-        NextTurnDto nextTurnDto = new NextTurnDto(playerId, drawnCardId);
+            GameSessionEntity currentGameSession = optionalGameSession.get();
+//            System.out.println("Current GameSession: " + currentGameSession.getGameState());
 
-        return objectMapper.writeValueAsString(nextTurnDto);
+            if (!currentGameSession.getGameState().equals(GameState.FINISHED.name())) {
+                Long playerId = gameSessionEntityService.calculateNextPlayer(gameSessionIdLong);
+
+//              Get the right tile deck based on gameId and check if it is empty
+                TileDeckEntity tileDeck = tileDeckRepository.findByGameSessionId(gameSessionIdLong);
+                if (!tileDeckEntityServiceImpl.isTileDeckEmpty(tileDeck)) {
+//                    If not empty draw the next tile
+                    Long drawnCardId = tileDeckEntityServiceImpl.drawNextTile(tileDeck);
+
+                    // Create the nextTurnDto
+                    NextTurnDto nextTurnDto = new NextTurnDto(playerId, drawnCardId);
+//                    Send the nextTurnDto to the user
+                    return objectMapper.writeValueAsString(nextTurnDto);
+                } else {
+//                    If the deck is empty finish the game
+                    gameSessionEntityService.terminateGameSession(gameSessionIdLong);
+//                    TODO implement the finish game topic
+                    throw new IllegalStateException("No more tile left in the deck.");
+                }
+            } else {
+//            TODO implement the finish game logic
+                throw new IllegalStateException("Game is already finished.");
+            }
+        } else {
+            throw new IllegalStateException("GameSession not found.");
+        }
     }
-
 
 
     @MessageExceptionHandler

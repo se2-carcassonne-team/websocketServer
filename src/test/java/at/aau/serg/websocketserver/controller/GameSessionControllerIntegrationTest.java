@@ -7,13 +7,17 @@ import at.aau.serg.websocketserver.domain.dto.GameSessionDto;
 import at.aau.serg.websocketserver.domain.dto.GameState;
 import at.aau.serg.websocketserver.domain.dto.NextTurnDto;
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
+import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
+import at.aau.serg.websocketserver.domain.entity.TileDeckEntity;
+import at.aau.serg.websocketserver.domain.entity.repository.GameSessionEntityRepository;
+import at.aau.serg.websocketserver.domain.entity.repository.TileDeckRepository;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
 import at.aau.serg.websocketserver.mapper.PlayerMapper;
 import at.aau.serg.websocketserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketserver.service.GameSessionEntityService;
 import at.aau.serg.websocketserver.service.PlayerEntityService;
-import at.aau.serg.websocketserver.service.TileDeckEntityService;
+import at.aau.serg.websocketserver.service.impl.TileDeckEntityServiceImpl;
 import at.aau.serg.websocketserver.statuscode.ErrorCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
@@ -23,14 +27,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
-import org.springframework.http.MediaType;
 import org.springframework.messaging.converter.StringMessageConverter;
 import org.springframework.messaging.simp.stomp.StompSession;
 import org.springframework.messaging.simp.stomp.StompSessionHandlerAdapter;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 
@@ -41,8 +42,6 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ExtendWith(SpringExtension.class)
@@ -55,11 +54,12 @@ public class GameSessionControllerIntegrationTest {
     private final GameSessionEntityService gameSessionEntityService;
     private final GameLobbyEntityService gameLobbyEntityService;
     private final PlayerEntityService playerEntityService;
-    private final TileDeckEntityService tileDeckEntityService;
+    private final TileDeckEntityServiceImpl tileDeckEntityService;
+    private final TileDeckRepository tileDeckRepository;
 
 
     @Autowired
-    public GameSessionControllerIntegrationTest(ObjectMapper objectMapper, GameLobbyMapper gameLobbyMapper, PlayerMapper playerMapper, GameSessionEntityService gameSessionEntityService, GameLobbyEntityService gameLobbyEntityService, PlayerEntityService playerEntityService, TileDeckEntityService tileDeckEntityService) {
+    public GameSessionControllerIntegrationTest(ObjectMapper objectMapper, GameLobbyMapper gameLobbyMapper, PlayerMapper playerMapper, GameSessionEntityService gameSessionEntityService, GameLobbyEntityService gameLobbyEntityService, PlayerEntityService playerEntityService, TileDeckEntityServiceImpl tileDeckEntityService, TileDeckRepository tileDeckRepository) {
         this.objectMapper = objectMapper;
         this.gameLobbyMapper = gameLobbyMapper;
         this.playerMapper = playerMapper;
@@ -67,6 +67,7 @@ public class GameSessionControllerIntegrationTest {
         this.gameLobbyEntityService = gameLobbyEntityService;
         this.playerEntityService = playerEntityService;
         this.tileDeckEntityService = tileDeckEntityService;
+        this.tileDeckRepository = tileDeckRepository;
     }
 
     @LocalServerPort
@@ -75,6 +76,10 @@ public class GameSessionControllerIntegrationTest {
     BlockingQueue<String> messages;
     BlockingQueue<String> messages2;
     BlockingQueue<String> messages3;
+    BlockingQueue<String> messages4;
+    @Autowired
+    private GameSessionEntityRepository gameSessionEntityRepository;
+
 
 
     @BeforeEach
@@ -82,6 +87,7 @@ public class GameSessionControllerIntegrationTest {
         messages = new LinkedBlockingDeque<>();
         messages2 = new LinkedBlockingDeque<>();
         messages3 = new LinkedBlockingDeque<>();
+        messages4 = new LinkedBlockingDeque<>();
     }
 
     @AfterEach
@@ -89,6 +95,7 @@ public class GameSessionControllerIntegrationTest {
         messages = null;
         messages2 = null;
         messages3 = null;
+        messages4 = null;
     }
 
     @Test
@@ -232,31 +239,27 @@ public class GameSessionControllerIntegrationTest {
         String actualResponseNextTurnDto = messages3.poll(1, TimeUnit.SECONDS);
         NextTurnDto result = objectMapper.readValue(actualResponseNextTurnDto, NextTurnDto.class);
 
-
         assertThat(result.getPlayerId()).isEqualTo(expectedResponseNextPlayerId);
     }
 
+    //      TODO: Write this test
     @Test
     void testThatGetNextPlayerIdAndNextTileIdReturnsTheRightNextTile() throws Exception {
         GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
         GameLobbyEntity gameLobbyEntityA = gameLobbyMapper.mapToEntity(gameLobbyDtoA);
-        GameLobbyDto gameLobbyDtoB = TestDataUtil.createTestGameLobbyDtoB();
-        GameLobbyEntity gameLobbyEntityB = gameLobbyMapper.mapToEntity(gameLobbyDtoB);
+
 
         PlayerEntity playerEntityA = TestDataUtil.createTestPlayerEntityA(null);
         PlayerEntity playerEntityB = TestDataUtil.createTestPlayerEntityB(null);
         PlayerEntity playerEntityC = TestDataUtil.createTestPlayerEntityC(null);
         gameLobbyEntityA.setLobbyAdminId(playerEntityA.getId());
-        gameLobbyEntityB.setLobbyAdminId(playerEntityA.getId());
 
         playerEntityService.createPlayer(playerEntityA);
         playerEntityService.createPlayer(playerEntityB);
         playerEntityService.createPlayer(playerEntityC);
 
         gameLobbyEntityService.createLobby(gameLobbyEntityA);
-        gameLobbyEntityService.createLobby(gameLobbyEntityB);
         assertThat(gameLobbyEntityService.findById(gameLobbyDtoA.getId())).isPresent();
-        assertThat(gameLobbyEntityService.findById(gameLobbyDtoB.getId())).isPresent();
 
         playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityA);
         playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityB);
@@ -269,38 +272,130 @@ public class GameSessionControllerIntegrationTest {
         initStompSession("/topic/lobby-" + gameLobbyDtoA.getId() + "/game-start", messages2);
         session.send("/app/game-start", gameLobbyDtoA.getId() + "");
 
-        List<GameLobbyDto> gameLobbyDtoList = new ArrayList<>();
-        gameLobbyDtoA.setGameState(GameState.IN_GAME);
-        gameLobbyDtoA.setLobbyAdminId(playerEntityA.getId());
-        gameLobbyDtoA.setNumPlayers(3);
-        gameLobbyDtoList.add(gameLobbyDtoA);
+//        Get the expected GameSessionEntity
+        String expectedResponseGameSessionEntity = objectMapper.writeValueAsString(gameSessionDtoA.getId());
+        String actualResponseGameSessionEntity = messages2.poll(1, TimeUnit.SECONDS);
 
-        gameLobbyDtoB.setLobbyAdminId(playerEntityA.getId());
-        gameLobbyDtoList.add(gameLobbyDtoB);
+        assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isPresent();
 
-        String expectedResponse = objectMapper.writeValueAsString(gameLobbyDtoList);
-        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+//        Get the TileDeck from the gameSession
+        TileDeckEntity tileDeck = tileDeckRepository.findByGameSessionId(gameSessionDtoA.getId());
+        assertThat(tileDeck).isNotNull();
+
+        List<Long> firstTile = tileDeck.getTileId();
+
+//      Subscribe to the topic for the next turn
+        StompSession session2 = initStompSession("/user/queue/next-turn-response", messages3);
+        session2.send("/app/next-turn", gameSessionDtoA.getId() + "");
+//
+//      Receive the next turn dto from the endpoint
+        Long expectedFirstTile = firstTile.get(0);
+        String actualResponseNextTurnDto = messages3.poll(1, TimeUnit.SECONDS);
+        NextTurnDto result = objectMapper.readValue(actualResponseNextTurnDto, NextTurnDto.class);
+//
+//      Extract the next player id
+        assertThat(result.getTileId()).isEqualTo(expectedFirstTile);
+    }
+
+    @Test
+    void testThatGameInFinishedStateThrowsException() throws Exception {
+        GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
+        GameLobbyEntity gameLobbyEntityA = gameLobbyMapper.mapToEntity(gameLobbyDtoA);
+
+        PlayerEntity playerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        PlayerEntity playerEntityB = TestDataUtil.createTestPlayerEntityB(null);
+        PlayerEntity playerEntityC = TestDataUtil.createTestPlayerEntityC(null);
+        gameLobbyEntityA.setLobbyAdminId(playerEntityA.getId());
+
+        playerEntityService.createPlayer(playerEntityA);
+        playerEntityService.createPlayer(playerEntityB);
+        playerEntityService.createPlayer(playerEntityC);
+
+        gameLobbyEntityService.createLobby(gameLobbyEntityA);
+        assertThat(gameLobbyEntityService.findById(gameLobbyDtoA.getId())).isPresent();
+
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityA);
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityB);
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityC);
+
+        GameSessionDto gameSessionDtoA = TestDataUtil.createTestGameSessionDtoA(playerMapper.mapToDto(playerEntityA));
+        assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isEmpty();
+
+//        Create gameSessionEntity
+        StompSession session = initStompSession("/user/queue/lobby-list-response", messages);
+        initStompSession("/topic/lobby-" + gameLobbyDtoA.getId() + "/game-start", messages2);
+        session.send("/app/game-start", gameLobbyDtoA.getId() + "");
 
 //        Get the expected GameSessionEntity
         String expectedResponseGameSessionEntity = objectMapper.writeValueAsString(gameSessionDtoA.getId());
         String actualResponseGameSessionEntity = messages2.poll(1, TimeUnit.SECONDS);
 
         assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isPresent();
-        assertThat(actualResponse).isEqualTo(expectedResponse);
         assertThat(actualResponseGameSessionEntity).isEqualTo(expectedResponseGameSessionEntity);
 
-        StompSession session2 = initStompSession("/user/queue/next-turn-response", messages3);
+//        Set the gameSessionEntity to finished
+        GameSessionEntity gameSession = gameSessionEntityService.findById(gameSessionDtoA.getId()).get();
+        gameSession.setGameState(GameState.FINISHED.name());
+        gameSessionEntityRepository.save(gameSession);
+
+        StompSession session2 = initStompSession("/user/queue/errors", messages3);
         session2.send("/app/next-turn", gameSessionDtoA.getId() + "");
 
-        Long expectedResponseNextPlayerId = playerEntityB.getId();
-        String actualResponseNextTurnDto = messages3.poll(1, TimeUnit.SECONDS);
-        NextTurnDto result = objectMapper.readValue(actualResponseNextTurnDto, NextTurnDto.class);
+        String expectedResponse = "ERROR: " + "Game is already finished.";
+        String actualResponse = messages3.poll(1, TimeUnit.SECONDS);
 
-        assertThat(result.getPlayerId()).isEqualTo(expectedResponseNextPlayerId);
-
-
+        assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
+    @Test
+    void testThatGameTerminatesIfTheDeckIsEmpty() throws Exception {
+        GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
+        GameLobbyEntity gameLobbyEntityA = gameLobbyMapper.mapToEntity(gameLobbyDtoA);
+
+        PlayerEntity playerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        PlayerEntity playerEntityB = TestDataUtil.createTestPlayerEntityB(null);
+        PlayerEntity playerEntityC = TestDataUtil.createTestPlayerEntityC(null);
+        gameLobbyEntityA.setLobbyAdminId(playerEntityA.getId());
+
+        playerEntityService.createPlayer(playerEntityA);
+        playerEntityService.createPlayer(playerEntityB);
+        playerEntityService.createPlayer(playerEntityC);
+
+        gameLobbyEntityService.createLobby(gameLobbyEntityA);
+        assertThat(gameLobbyEntityService.findById(gameLobbyDtoA.getId())).isPresent();
+
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityA);
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityB);
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityC);
+
+        GameSessionDto gameSessionDtoA = TestDataUtil.createTestGameSessionDtoA(playerMapper.mapToDto(playerEntityA));
+        assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isEmpty();
+
+//        Create gameSessionEntity
+        StompSession session = initStompSession("/user/queue/lobby-list-response", messages);
+        initStompSession("/topic/lobby-" + gameLobbyDtoA.getId() + "/game-start", messages2);
+        session.send("/app/game-start", gameLobbyDtoA.getId() + "");
+
+//        Get the expected GameSessionEntity
+        String expectedResponseGameSessionEntity = objectMapper.writeValueAsString(gameSessionDtoA.getId());
+        String actualResponseGameSessionEntity = messages2.poll(1, TimeUnit.SECONDS);
+
+        assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isPresent();
+        assertThat(actualResponseGameSessionEntity).isEqualTo(expectedResponseGameSessionEntity);
+
+//        Find the deck and set it to empty deck
+        TileDeckEntity tileDeck = tileDeckRepository.findByGameSessionId(gameSessionDtoA.getId());
+        tileDeck.setTileId(new ArrayList<>());
+        tileDeckRepository.save(tileDeck);
+
+        StompSession session2 = initStompSession("/user/queue/errors", messages3);
+        session2.send("/app/next-turn", gameSessionDtoA.getId() + "");
+
+        String expectedResponse = "ERROR: " + "No more tile left in the deck.";
+        String actualResponse = messages3.poll(1, TimeUnit.SECONDS);
+
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+    }
 
     @Test
     void testThatCreateGameSessionWhenGivenInvalidLobbyIdFails() throws Exception {
@@ -330,7 +425,6 @@ public class GameSessionControllerIntegrationTest {
         assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isEmpty();
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
-
 
     public StompSession initStompSession(String topic, BlockingQueue<String> messages) throws Exception {
         WebSocketStompClient stompClient = new WebSocketStompClient(new StandardWebSocketClient());
