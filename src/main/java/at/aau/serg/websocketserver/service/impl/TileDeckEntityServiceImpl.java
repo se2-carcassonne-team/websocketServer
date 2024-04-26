@@ -19,19 +19,17 @@ import java.util.Optional;
 public class TileDeckEntityServiceImpl implements TileDeckEntityService {
     TileDeckRepository tileDeckRepository;
     GameSessionEntityRepository gameSessionEntityRepository;
-    GameSessionEntityService gameSessionEntityService;
+
 
     public TileDeckEntityServiceImpl(TileDeckRepository tileDeckRepository,
-                                     GameSessionEntityRepository gameSessionEntityRepository,
-                                     GameSessionEntityService gameSessionEntityService) {
+                                     GameSessionEntityRepository gameSessionEntityRepository) {
         this.tileDeckRepository = tileDeckRepository;
         this.gameSessionEntityRepository = gameSessionEntityRepository;
-        this.gameSessionEntityService = gameSessionEntityService;
     }
 
     @Override
     public TileDeckEntity createTileDeck(Long gameSessionId) {
-        Optional<GameSessionEntity> gameSessionOptional = gameSessionEntityService.findById(gameSessionId);
+        Optional<GameSessionEntity> gameSessionOptional = gameSessionEntityRepository.findById(gameSessionId);
 
         if (gameSessionOptional.isPresent()) {
             GameSessionEntity gameSession = gameSessionOptional.get();

@@ -78,22 +78,32 @@ public class GameSessionController {
         return objectMapper.writeValueAsString(gameLobbyDtoList);
     }
 
-//    TODO: Implement the getNextCardId endpoint
+    /**
+     * Topics/Queues for the Endpoint /app/next-turn
+     * <p>1) /user/queue/next-turn-response -> nextTurnDto</p>
+     * <p>2) /user/queue/errors -> relay for Exceptions (once a exception occurs it will be sent to this topic)</p>
+     *
+     * @param gameSessionId Id of the GameSession
+     * @return
+     * @throws JsonProcessingException
+     */
     @MessageMapping("/next-turn")
     @SendToUser("/queue/next-turn-response")
-    public String getNextCardId(String gameSessionId) throws JsonProcessingException {
+    public String getPlayerIdAndNextCardId(String gameSessionId) throws JsonProcessingException {
 
         Long gameSessionIdLong = Long.parseLong(gameSessionId);
+
+//         Get the next player id from the gameSession
+        Long playerId = gameSessionEntityService.calculateNextPlayer(gameSessionIdLong);
 
 //        Get the right tile deck based on gameId and draw the next card
         TileDeckEntity tileDeck = tileDeckRepository.findByGameSessionId(gameSessionIdLong);
         Long drawnCardId = tileDeckEntityServiceImpl.drawNextTile(tileDeck);
 
-////        TODO: Get the next player id from the gameSession
-//        Long playerId;
-//        NextTurnDto nextTurnDto = new NextTurnDto(playerId, drawnCardId);
+//        Create the nextTurnDto
+        NextTurnDto nextTurnDto = new NextTurnDto(playerId, drawnCardId);
 
-        return objectMapper.writeValueAsString(drawnCardId);
+        return objectMapper.writeValueAsString(nextTurnDto);
     }
 
 
