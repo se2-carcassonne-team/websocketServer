@@ -2,9 +2,11 @@ package at.aau.serg.websocketserver.controller;
 
 import at.aau.serg.websocketserver.TestDataUtil;
 import at.aau.serg.websocketserver.demo.websocket.StompFrameHandlerClientImpl;
+import at.aau.serg.websocketserver.domain.dto.GameBoardTileDto;
 import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketserver.domain.dto.GameSessionDto;
-import at.aau.serg.websocketserver.domain.dto.GameState;
+import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
+import at.aau.serg.websocketserver.domain.pojo.GameState;
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
@@ -189,6 +191,29 @@ public class GameSessionControllerIntegrationTest {
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
+    // test forwarding of a placed GameBoardTileDto to all players in the game session
+    @Test
+    void testThatForwardPlacedTileForwardsGameBoardTileDto() throws Exception {
+        // TODO: @Albert please fix
+
+        GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
+        PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(testGameLobbyEntityA);
+        PlayerEntity testPlayerEntityB = TestDataUtil.createTestPlayerEntityA(testGameLobbyEntityA);
+        PlayerEntity testPlayerEntityC = TestDataUtil.createTestPlayerEntityC(testGameLobbyEntityA);
+
+        GameSessionEntity gameSessionEntity = TestDataUtil.createTestGameSessionEntityWith3Players();
+
+        StompSession session = initStompSession("/topic/game-session-" + gameSessionEntity.getId() + "/tile", messages);
+
+        GameBoardTileDto gameBoardTileDto = TestDataUtil.createTestGameBoardTileDto(gameSessionEntity.getId());
+
+        session.send("/app/place-tile", objectMapper.writeValueAsString(gameBoardTileDto));
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+
+        assertThat(actualResponse).isEqualTo(objectMapper.writeValueAsString(gameBoardTileDto));
+    }
 
     public StompSession initStompSession(String topic, BlockingQueue<String> messages) throws Exception {
         WebSocketStompClient stompClient = new WebSocketStompClient(new StandardWebSocketClient());

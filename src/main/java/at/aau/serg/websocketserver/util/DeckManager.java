@@ -1,6 +1,6 @@
 package at.aau.serg.websocketserver.util;
 
-import at.aau.serg.websocketserver.domain.dto.TileType;
+import at.aau.serg.websocketserver.domain.pojo.TileType;
 
 import java.util.ArrayList;
 import java.util.Collections;

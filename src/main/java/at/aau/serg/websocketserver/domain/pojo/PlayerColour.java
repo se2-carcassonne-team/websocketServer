@@ -1,4 +1,4 @@
-package at.aau.serg.websocketserver.domain.dto;
+package at.aau.serg.websocketserver.domain.pojo;
 
 public enum PlayerColour {
     BLACK,

@@ -1,6 +1,7 @@
 package at.aau.serg.websocketserver.controller;
 
 import at.aau.serg.websocketserver.controller.helper.HelperMethods;
+import at.aau.serg.websocketserver.domain.dto.GameBoardTileDto;
 import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketserver.domain.dto.NextTurnDto;
 import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
@@ -94,6 +95,23 @@ public class GameSessionController {
 //        NextTurnDto nextTurnDto = new NextTurnDto(playerId, drawnCardId);
 
         return objectMapper.writeValueAsString(drawnCardId);
+    }
+
+    /**
+     * forwards the placed tile to all other players in the gameSession
+     * @param placedTile the tile placed by the player
+     * @throws JsonProcessingException
+     */
+    @MessageMapping("/place-tile")
+    public void forwardPlacedTile(String placedTile) throws JsonProcessingException {
+        // TODO: catch json processing error
+        GameBoardTileDto gameBoardTileDto = objectMapper.readValue(placedTile, GameBoardTileDto.class);
+
+        // forward placedTile to the other players:
+        this.template.convertAndSend(
+                placedTile,
+                "/topic/game-session-" + gameBoardTileDto.getGameSessionId() + "/tile"
+        );
     }
 
 

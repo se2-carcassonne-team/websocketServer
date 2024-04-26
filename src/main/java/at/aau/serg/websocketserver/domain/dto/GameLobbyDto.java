@@ -1,5 +1,6 @@
 package at.aau.serg.websocketserver.domain.dto;
 
+import at.aau.serg.websocketserver.domain.pojo.GameState;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

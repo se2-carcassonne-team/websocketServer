@@ -1,6 +1,6 @@
 package at.aau.serg.websocketserver.service.impl;
 
-import at.aau.serg.websocketserver.domain.dto.GameState;
+import at.aau.serg.websocketserver.domain.pojo.GameState;
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
@@ -24,10 +24,11 @@ public class GameSessionEntityServiceImpl implements GameSessionEntityService {
     PlayerEntityServiceImpl playerEntityService;
     TileDeckEntityServiceImpl tileDeckEntityService;
 
-    public GameSessionEntityServiceImpl(GameLobbyEntityRepository gameLobbyEntityRepository, GameSessionEntityRepository gameSessionEntityRepository, PlayerEntityServiceImpl playerEntityService) {
+    public GameSessionEntityServiceImpl(GameLobbyEntityRepository gameLobbyEntityRepository, GameSessionEntityRepository gameSessionEntityRepository, PlayerEntityServiceImpl playerEntityService, TileDeckEntityServiceImpl tileDeckEntityService) {
         this.gameLobbyEntityRepository = gameLobbyEntityRepository;
         this.gameSessionEntityRepository = gameSessionEntityRepository;
         this.playerEntityService = playerEntityService;
+        this.tileDeckEntityService = tileDeckEntityService;
     }
 
     @Override
