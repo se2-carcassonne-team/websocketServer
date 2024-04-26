@@ -9,7 +9,6 @@ import at.aau.serg.websocketserver.service.TileDeckEntityService;
 import at.aau.serg.websocketserver.statuscode.ErrorCode;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -63,7 +62,7 @@ public class TileDeckEntityServiceImpl implements TileDeckEntityService {
     public Long drawNextTile(TileDeckEntity tileDeck) {
         List<Long> tileIds = tileDeck.getTileId();
         if (tileIds.isEmpty()) {
-            return null; // No more tiles left in the deck
+            throw new IllegalStateException("No more tile left in the deck."); // No more tiles left in the deck
         }
         Long drawnTileId = tileIds.remove(0); // Remove and return the first tile from the deck
         tileDeck.setTileId(tileIds); // Update the tile deck in the database
@@ -103,7 +102,7 @@ public class TileDeckEntityServiceImpl implements TileDeckEntityService {
 //        }
 //    }
     }
-
+//TODO implement this method
     @Override
     public List<Long> getAllTilesInDeck(Long gameSessionId) {
         return null;
