@@ -190,6 +190,7 @@ public class TestDataUtil {
     public static GameBoardTileDto createTestGameBoardTileDto(Long gameSessionId) {
         return GameBoardTileDto.builder()
                 .gameSessionId(gameSessionId)
+                .tileId(1L)
                 .coordinates(new Coordinates(12,12))
                 .rotation(1)
                 .build();

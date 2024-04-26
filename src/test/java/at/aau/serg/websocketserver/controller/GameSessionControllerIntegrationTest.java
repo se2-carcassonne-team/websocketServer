@@ -70,15 +70,18 @@ public class GameSessionControllerIntegrationTest {
     private int port;
     private final String WEBSOCKET_URI = "ws://localhost:%d/websocket-broker";
     BlockingQueue<String> messages;
+    BlockingQueue<String> messages2;
 
     @BeforeEach
     public void setUp() {
         messages = new LinkedBlockingDeque<>();
+        messages2 = new LinkedBlockingDeque<>();
     }
 
     @AfterEach
     public void tearDown() {
         messages = null;
+        messages2 = null;
     }
 
     @Test
@@ -204,15 +207,18 @@ public class GameSessionControllerIntegrationTest {
         GameSessionEntity gameSessionEntity = TestDataUtil.createTestGameSessionEntityWith3Players();
 
         StompSession session = initStompSession("/topic/game-session-" + gameSessionEntity.getId() + "/tile", messages);
+        StompSession session2 = initStompSession("/topic/game-session-" + gameSessionEntity.getId() + "/tile", messages2);
 
         GameBoardTileDto gameBoardTileDto = TestDataUtil.createTestGameBoardTileDto(gameSessionEntity.getId());
 
         session.send("/app/place-tile", objectMapper.writeValueAsString(gameBoardTileDto));
 
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+        String actualResponse2 = messages2.poll(1, TimeUnit.SECONDS);
 
 
         assertThat(actualResponse).isEqualTo(objectMapper.writeValueAsString(gameBoardTileDto));
+        assertThat(actualResponse2).isEqualTo(objectMapper.writeValueAsString(gameBoardTileDto));
     }
 
     public StompSession initStompSession(String topic, BlockingQueue<String> messages) throws Exception {

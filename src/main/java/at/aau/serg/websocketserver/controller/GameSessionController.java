@@ -109,9 +109,9 @@ public class GameSessionController {
 
         // forward placedTile to the other players:
         this.template.convertAndSend(
-                placedTile,
-                "/topic/game-session-" + gameBoardTileDto.getGameSessionId() + "/tile"
-        );
+                "/topic/game-session-" + gameBoardTileDto.getGameSessionId() + "/tile",
+                placedTile
+                );
     }
 
 
