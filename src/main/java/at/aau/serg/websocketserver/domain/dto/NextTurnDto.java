@@ -11,6 +11,5 @@ import lombok.NoArgsConstructor;
 @Builder
 public class NextTurnDto {
     Long playerId;
-
     Long tileId;
 }
