@@ -22,6 +22,7 @@ public class GameSessionEntityServiceImpl implements GameSessionEntityService {
     GameLobbyEntityRepository gameLobbyEntityRepository;
     GameSessionEntityRepository gameSessionEntityRepository;
     PlayerEntityServiceImpl playerEntityService;
+    TileDeckEntityServiceImpl tileDeckEntityService;
 
     public GameSessionEntityServiceImpl(GameLobbyEntityRepository gameLobbyEntityRepository, GameSessionEntityRepository gameSessionEntityRepository, PlayerEntityServiceImpl playerEntityService) {
         this.gameLobbyEntityRepository = gameLobbyEntityRepository;
@@ -34,7 +35,7 @@ public class GameSessionEntityServiceImpl implements GameSessionEntityService {
 
         Optional<GameLobbyEntity> gameLobbyEntityOptional = gameLobbyEntityRepository.findById(gameLobbyId);
 
-        if(gameLobbyEntityOptional.isPresent()) {
+        if (gameLobbyEntityOptional.isPresent()) {
             // Get lobby from database, update its status and write changes back to the database
             GameLobbyEntity gameLobbyEntity = gameLobbyEntityOptional.get();
             gameLobbyEntity.setGameState(GameState.IN_GAME.name());
@@ -53,7 +54,9 @@ public class GameSessionEntityServiceImpl implements GameSessionEntityService {
             }
             gameSessionEntity.setPlayerIds(playerIds);
 
-            return gameSessionEntityRepository.save(gameSessionEntity);
+            GameSessionEntity gameSessionEntityReturned = gameSessionEntityRepository.save(gameSessionEntity);
+            tileDeckEntityService.createTileDeck(gameSessionEntity.getId());
+            return gameSessionEntityReturned;
         } else {
             throw new EntityNotFoundException(ErrorCode.ERROR_1003.getErrorCode());
         }
@@ -62,5 +65,18 @@ public class GameSessionEntityServiceImpl implements GameSessionEntityService {
     @Override
     public Optional<GameSessionEntity> findById(Long id) throws EntityNotFoundException {
         return gameSessionEntityRepository.findById(id);
+    }
+
+    @Override
+    public GameSessionEntity terminateGameSession(Long gameSessionId) {
+        Optional<GameSessionEntity> gameSessionOptional = gameSessionEntityRepository.findById(gameSessionId);
+
+        if (gameSessionOptional.isPresent()) {
+            GameSessionEntity gameSession = gameSessionOptional.get();
+            gameSession.setGameState(GameState.FINISHED.name());
+            return gameSessionEntityRepository.save(gameSession);
+        } else {
+            throw new EntityNotFoundException(ErrorCode.ERROR_3003.getErrorCode());
+        }
     }
 }

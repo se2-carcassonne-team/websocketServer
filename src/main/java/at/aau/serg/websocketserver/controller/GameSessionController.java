@@ -2,6 +2,7 @@ package at.aau.serg.websocketserver.controller;
 
 import at.aau.serg.websocketserver.controller.helper.HelperMethods;
 import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
+import at.aau.serg.websocketserver.domain.dto.NextTurnDto;
 import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
 import at.aau.serg.websocketserver.domain.entity.TileDeckEntity;
 import at.aau.serg.websocketserver.domain.entity.repository.TileDeckRepository;
@@ -87,6 +88,10 @@ public class GameSessionController {
 //        Get the right tile deck based on gameId and draw the next card
         TileDeckEntity tileDeck = tileDeckRepository.findByGameSessionId(gameSessionIdLong);
         Long drawnCardId = tileDeckEntityServiceImpl.drawNextTile(tileDeck);
+
+////        TODO: Get the next player id from the gameSession
+//        Long playerId;
+//        NextTurnDto nextTurnDto = new NextTurnDto(playerId, drawnCardId);
 
         return objectMapper.writeValueAsString(drawnCardId);
     }

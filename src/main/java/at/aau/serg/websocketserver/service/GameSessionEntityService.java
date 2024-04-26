@@ -9,4 +9,5 @@ import java.util.Optional;
 public interface GameSessionEntityService {
     GameSessionEntity createGameSession(Long gameLobbyId) throws EntityExistsException;
     Optional<GameSessionEntity> findById(Long id) throws EntityNotFoundException;
+    GameSessionEntity terminateGameSession(Long gameSessionId);
 }
