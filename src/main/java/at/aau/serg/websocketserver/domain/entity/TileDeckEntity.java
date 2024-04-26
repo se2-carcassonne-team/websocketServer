@@ -6,6 +6,9 @@ import lombok.*;
 
 import java.util.List;
 
+//https://stackoverflow.com/questions/34972895/lombok-hashcode-issue-with-java-lang-stackoverflowerror-null
+// might help! if there is a recursive StackOverflow error change Lombok @Data to @Getter and @Setter
+//weird Lombok circular dependency issue
 @Data
 @AllArgsConstructor
 @NoArgsConstructor

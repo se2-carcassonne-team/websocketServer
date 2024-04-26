@@ -27,6 +27,14 @@ public class TileDeckEntityServiceImpl implements TileDeckEntityService {
         this.gameSessionEntityRepository = gameSessionEntityRepository;
     }
 
+    /**
+     * Create a new tile deck entity for the given game session ID.
+     *
+     * @param gameSessionId The ID of the game session for which the tile deck entity should be created.
+     * @return The created tile deck entity.
+     * @throws EntityNotFoundException If the game session entity does not exist for the given game session ID.
+     */
+
     @Override
     public TileDeckEntity createTileDeck(Long gameSessionId) {
         Optional<GameSessionEntity> gameSessionOptional = gameSessionEntityRepository.findById(gameSessionId);
@@ -46,6 +54,12 @@ public class TileDeckEntityServiceImpl implements TileDeckEntityService {
         }
     }
 
+    /**
+     * Generate a list of tile IDs for a new tile deck.
+     *
+     * @return A list of tile IDs.
+     */
+
     @Override
     public List<Long> generateTileIds() {
         List<Long> tileIds = new ArrayList<>();
@@ -55,6 +69,14 @@ public class TileDeckEntityServiceImpl implements TileDeckEntityService {
         Collections.shuffle(tileIds);
         return tileIds;
     }
+
+/**
+     * Draw the next tile from the tile deck.
+     *
+     * @param tileDeck The tile deck from which the next tile should be drawn.
+     * @return The ID of the drawn tile.
+     * @throws IllegalStateException If the tile deck is empty.
+     */
 
     @Override
     public Long drawNextTile(TileDeckEntity tileDeck) {
@@ -67,6 +89,13 @@ public class TileDeckEntityServiceImpl implements TileDeckEntityService {
         tileDeckRepository.save(tileDeck);
         return drawnTileId;
     }
+
+    /**
+     * Check if the tile deck is empty.
+     *
+     * @param tileDeck The tile deck to check.
+     * @return True if the tile deck is empty, false otherwise.
+     */
 
     @Override
     public boolean isTileDeckEmpty(TileDeckEntity tileDeck) {
@@ -101,6 +130,7 @@ public class TileDeckEntityServiceImpl implements TileDeckEntityService {
 //    }
     }
 //TODO implement this method
+
     @Override
     public List<Long> getAllTilesInDeck(Long gameSessionId) {
         return null;
