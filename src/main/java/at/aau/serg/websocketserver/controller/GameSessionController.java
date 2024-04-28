@@ -109,7 +109,9 @@ public class GameSessionController {
                 } else {
 //                    If the deck is empty finish the game
                     gameSessionEntityService.terminateGameSession(gameSessionIdLong);
-//                    Send the finish game message to the user when the game is finished
+//                    Send the finish game message to all users when the game is finished
+                    String currentGameState = gameSessionEntityService.findById(gameSessionIdLong).get().getGameState();
+                    this.template.convertAndSend("/topic/game-session-" + gameSessionId + "/game-finished", currentGameState);
                     return GameState.FINISHED.name();
                 }
             } else {
