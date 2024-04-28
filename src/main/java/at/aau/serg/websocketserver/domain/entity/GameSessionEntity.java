@@ -1,6 +1,5 @@
 package at.aau.serg.websocketserver.domain.entity;
 
-import at.aau.serg.websocketserver.domain.dto.GameState;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,4 +21,11 @@ public class GameSessionEntity {
     private Long turnPlayerId;
     private String gameState;
     private List<Long> playerIds;
+
+    // One-to-one relationship with TileDeckEntity
+//    @OneToOne(cascade = CascadeType.ALL)
+//    @JoinColumn(name = "tiledeck_id", unique = true)
+//    @EqualsAndHashCode.Exclude
+    @OneToOne(mappedBy = "gameSession", cascade = CascadeType.ALL, orphanRemoval = true)
+    private TileDeckEntity tileDeck;
 }

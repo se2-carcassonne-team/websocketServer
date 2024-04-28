@@ -119,7 +119,7 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
         }
 
         playerEntity.setGameLobbyEntity(null);
-        playerEntityRepository.save(playerEntity);
+        PlayerEntity updatedPlayerEntity =  playerEntityRepository.save(playerEntity);
 
         // Check if lobby can be deleted
         int numberOfPlayers = gameLobbyEntity.getNumPlayers();
@@ -137,7 +137,7 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
         } else {
             gameLobbyEntityRepository.deleteById(gameLobbyEntity.getId());
         }
-        return playerEntity;
+        return updatedPlayerEntity;
     }
 
     @Override

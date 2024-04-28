@@ -1,10 +1,8 @@
 package at.aau.serg.websocketserver;
 
-import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
-import at.aau.serg.websocketserver.domain.dto.GameSessionDto;
-import at.aau.serg.websocketserver.domain.dto.GameState;
-import at.aau.serg.websocketserver.domain.dto.PlayerDto;
+import at.aau.serg.websocketserver.domain.dto.*;
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
+import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
 
 import java.sql.Timestamp;
@@ -133,6 +131,23 @@ public class TestDataUtil {
                 .turnPlayerId(lobbyCreator.getId())
                 .gameState(GameState.IN_GAME)
                 .playerIds(null)
+                .build();
+    }
+
+    public static GameSessionEntity createTestGameSessionEntityA(PlayerEntity lobbyCreator) {
+        return GameSessionEntity.builder()
+                .id(1L)
+                .turnPlayerId(lobbyCreator.getId())
+                .gameState(GameState.IN_GAME.toString())
+                .playerIds(null)
+                .build();
+    }
+
+    public static TileDeckDto createTestTileDeckDtoA(Long gameSessionId) {
+        return TileDeckDto.builder()
+                .id(1L)
+                .tileId(null)
+                .gameSessionId(gameSessionId)
                 .build();
     }
 }

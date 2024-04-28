@@ -23,4 +23,10 @@ public class PlayerEntity {
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name="gamelobby_id")
     private GameLobbyEntity gameLobbyEntity;
+
+    private int points;
+
+    private boolean isMyTurn;
+
+    private String playerColour;
 }

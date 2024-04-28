@@ -214,6 +214,8 @@ public class PlayerController {
 
             // 3) player leaves lobby
             PlayerEntity updatedPlayerEntity = playerEntityService.leaveLobby(playerEntity);
+            System.out.println(playerMapper.mapToDto(updatedPlayerEntity));
+            System.out.println(objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity)));
 
 
             // send response to: /topic/lobby-list --> updated list of lobbies (later with response code 301)
@@ -228,9 +230,14 @@ public class PlayerController {
                     objectMapper.writeValueAsString(getPlayerDtosInLobbyList(gameLobbyId, gameLobbyEntityService, playerEntityService, playerMapper))
             );
 
-            // TODO: test
-            if (gameLobbyEntityService.findById(gameLobbyId).isPresent()){
-                // send updated gameLobbyDto to all players in the lobby (relevant for lobbyCreator)
+
+            // send updated gameLobbyDto to all players in the lobby (relevant for lobbyCreator)
+            if (gameLobbyEntityService.findById(gameLobbyId).isPresent()) {
+                this.template.convertAndSend(
+                        "/topic/lobby-" + gameLobbyId + "/update",
+                        objectMapper.writeValueAsString(gameLobbyEntityService.findById(gameLobbyId).get())
+                );
+
                 this.template.convertAndSend(
                         "/topic/lobby-" + gameLobbyId + "/update",
                         objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(gameLobbyEntityService.findById(gameLobbyId).get()))
@@ -245,6 +252,7 @@ public class PlayerController {
         }
     }
 
+    // TODO: handle deletion of player inside a lobby properly?
     @MessageMapping("/player-delete")
     @SendToUser("/queue/response")
     public String handleDeletePlayer(String playerDtoJson) throws JsonProcessingException {
