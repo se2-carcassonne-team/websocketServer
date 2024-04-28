@@ -2,12 +2,16 @@ package at.aau.serg.websocketserver.controller;
 
 import at.aau.serg.websocketserver.controller.helper.HelperMethods;
 import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
-import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
+import at.aau.serg.websocketserver.domain.dto.GameState;
+import at.aau.serg.websocketserver.domain.dto.NextTurnDto;
 import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
+import at.aau.serg.websocketserver.domain.entity.TileDeckEntity;
+import at.aau.serg.websocketserver.domain.entity.repository.TileDeckRepository;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
 import at.aau.serg.websocketserver.mapper.GameSessionMapper;
 import at.aau.serg.websocketserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketserver.service.GameSessionEntityService;
+import at.aau.serg.websocketserver.service.impl.TileDeckEntityServiceImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
@@ -16,8 +20,8 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Controller
 public class GameSessionController {
@@ -29,14 +33,20 @@ public class GameSessionController {
     private GameLobbyMapper gameLobbyMapper;
     private GameLobbyEntityService gameLobbyEntityService;
 
+    private TileDeckRepository tileDeckRepository;
 
-    public GameSessionController(SimpMessagingTemplate template, GameSessionEntityService gameSessionEntityService, ObjectMapper objectMapper, GameSessionMapper gameSessionMapper, GameLobbyMapper gameLobbyMapper, GameLobbyEntityService gameLobbyEntityService) {
+    private TileDeckEntityServiceImpl tileDeckEntityServiceImpl;
+
+
+    public GameSessionController(SimpMessagingTemplate template, GameSessionEntityService gameSessionEntityService, ObjectMapper objectMapper, GameSessionMapper gameSessionMapper, GameLobbyMapper gameLobbyMapper, GameLobbyEntityService gameLobbyEntityService, TileDeckRepository tileDeckRepository, TileDeckEntityServiceImpl tileDeckEntityServiceImpl) {
         this.template = template;
         this.gameSessionEntityService = gameSessionEntityService;
         this.objectMapper = objectMapper;
         this.gameSessionMapper = gameSessionMapper;
         this.gameLobbyMapper = gameLobbyMapper;
         this.gameLobbyEntityService = gameLobbyEntityService;
+        this.tileDeckRepository = tileDeckRepository;
+        this.tileDeckEntityServiceImpl = tileDeckEntityServiceImpl;
     }
 
     /**
@@ -61,6 +71,57 @@ public class GameSessionController {
 
         return objectMapper.writeValueAsString(gameLobbyDtoList);
     }
+
+    /**
+     * Topics/Queues for the Endpoint /app/next-turn
+     * <p>1) /user/queue/next-turn-response -> nextTurnDto</p>
+     * <p>2) /user/queue/errors -> relay for Exceptions (once a exception occurs it will be sent to this topic)</p>
+     *
+     * @param gameSessionId Id of the GameSession
+     * @return
+     * @throws JsonProcessingException
+     */
+    @MessageMapping("/next-turn")
+    @SendToUser("/queue/next-turn-response")
+    public String getNextPlayerIdAndNextCardId(String gameSessionId) throws JsonProcessingException {
+
+        Long gameSessionIdLong = Long.parseLong(gameSessionId);
+
+        Optional<GameSessionEntity> optionalGameSession = gameSessionEntityService.findById(gameSessionIdLong);
+
+        if (optionalGameSession.isPresent()) {
+
+            GameSessionEntity currentGameSession = optionalGameSession.get();
+
+            if (!currentGameSession.getGameState().equals(GameState.FINISHED.name())) {
+                Long playerId = gameSessionEntityService.calculateNextPlayer(gameSessionIdLong);
+
+//              Get the right tile deck based on gameId and check if it is empty
+                TileDeckEntity tileDeck = tileDeckRepository.findByGameSessionId(gameSessionIdLong);
+                if (!tileDeckEntityServiceImpl.isTileDeckEmpty(tileDeck)) {
+//                    If not empty draw the next tile
+                    Long drawnCardId = tileDeckEntityServiceImpl.drawNextTile(tileDeck);
+
+                    // Create the nextTurnDto
+                    NextTurnDto nextTurnDto = new NextTurnDto(playerId, drawnCardId);
+//                    Send the nextTurnDto to the user
+                    return objectMapper.writeValueAsString(nextTurnDto);
+                } else {
+//                    If the deck is empty finish the game
+                    gameSessionEntityService.terminateGameSession(gameSessionIdLong);
+//                    Send the finish game message to all users when the game is finished
+                    String currentGameState = gameSessionEntityService.findById(gameSessionIdLong).get().getGameState();
+                    this.template.convertAndSend("/topic/game-session-" + gameSessionId + "/game-finished", currentGameState);
+                    return GameState.FINISHED.name();
+                }
+            } else {
+                throw new IllegalStateException("Game is already finished.");
+            }
+        } else {
+            throw new IllegalStateException("GameSession not found.");
+        }
+    }
+
 
     @MessageExceptionHandler
     @SendToUser("/queue/errors")

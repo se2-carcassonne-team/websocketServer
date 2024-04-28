@@ -9,10 +9,8 @@ import at.aau.serg.websocketserver.mapper.PlayerMapper;
 import at.aau.serg.websocketserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketserver.service.PlayerEntityService;
 import at.aau.serg.websocketserver.statuscode.ErrorCode;
-import at.aau.serg.websocketserver.statuscode.ResponseCode;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.persistence.EntityExistsException;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
@@ -228,14 +226,11 @@ public class PlayerController {
                     objectMapper.writeValueAsString(getPlayerDtosInLobbyList(gameLobbyId, gameLobbyEntityService, playerEntityService, playerMapper))
             );
 
-            // TODO: test
-            if (gameLobbyEntityService.findById(gameLobbyId).isPresent()){
-                // send updated gameLobbyDto to all players in the lobby (relevant for lobbyCreator)
-                this.template.convertAndSend(
-                        "/topic/lobby-" + gameLobbyId + "/update",
-                        objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(gameLobbyEntityService.findById(gameLobbyId).get()))
-                );
-            }
+            // send updated gameLobbyDto to all players in the lobby (relevant for lobbyCreator)
+            this.template.convertAndSend(
+                    "/topic/lobby-" + gameLobbyId + "/update",
+                    objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(gameLobbyEntityService.findById(gameLobbyId).get()))
+            );
 
             // send response to: /user/queue/response --> updated playerDto (later with response code: 101)
             return objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
@@ -245,6 +240,7 @@ public class PlayerController {
         }
     }
 
+    // TODO: handle deletion of player inside a lobby properly?
     @MessageMapping("/player-delete")
     @SendToUser("/queue/response")
     public String handleDeletePlayer(String playerDtoJson) throws JsonProcessingException {
