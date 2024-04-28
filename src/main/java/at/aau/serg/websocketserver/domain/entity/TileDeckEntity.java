@@ -26,7 +26,6 @@ public class TileDeckEntity {
 //    @ElementCollection(targetClass = Long.class)
     private List<Long> tileId;
 
-
     // One-to-one relationship with GameSessionEntity
     //    @OneToOne(mappedBy = "tileDeck")
     @OneToOne

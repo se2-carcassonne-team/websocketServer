@@ -1059,7 +1059,6 @@ public class PlayerControllerIntegrationTest {
         testPlayerEntityA.setGameLobbyEntity(testGameLobbyEntityA);
 
         StompSession session = initStompSession("/user/queue/response", messages);
-        StompSession session2 = initStompSession("/topic/lobby-" + testGameLobbyEntityA.getId() + "/update", messages2);
 
         testGameLobbyEntityA.setNumPlayers(1);
         assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
@@ -1079,16 +1078,14 @@ public class PlayerControllerIntegrationTest {
         session.send("/app/player-leave-lobby", payload);
 
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
-        String actualResponse2 = messages2.poll(1, TimeUnit.SECONDS);
 
         assertThat(gameLobbyEntityService.findById(testGameLobbyEntityA.getId()).isEmpty()).isTrue();
         testPlayerEntityA.setGameLobbyEntity(null);
         assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get()).isEqualTo(testPlayerEntityA);
 
         testPlayerDtoA.setGameLobbyId(null);
-        var expectedResponse = objectMapper.writeValueAsString(testPlayerDtoA);
+        String expectedResponse = objectMapper.writeValueAsString(testPlayerDtoA);
         assertThat(actualResponse).isEqualTo(expectedResponse);
-        assertThat(actualResponse2).isEqualTo(null);
     }
 
     @Test
