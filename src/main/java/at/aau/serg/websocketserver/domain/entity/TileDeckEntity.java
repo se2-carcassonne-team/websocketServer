@@ -9,7 +9,9 @@ import java.util.List;
 //https://stackoverflow.com/questions/34972895/lombok-hashcode-issue-with-java-lang-stackoverflowerror-null
 // might help! if there is a recursive StackOverflow error change Lombok @Data to @Getter and @Setter
 //weird Lombok circular dependency issue
-@Data
+//@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -24,7 +26,9 @@ public class TileDeckEntity {
 //    @ElementCollection(targetClass = Long.class)
     private List<Long> tileId;
 
+
     // One-to-one relationship with GameSessionEntity
+    //    @OneToOne(mappedBy = "tileDeck")
     @OneToOne
     @JoinColumn(name = "game_session_id", unique = true)
     private GameSessionEntity gameSession;

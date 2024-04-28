@@ -92,7 +92,6 @@ public class GameSessionController {
         if (optionalGameSession.isPresent()) {
 
             GameSessionEntity currentGameSession = optionalGameSession.get();
-//            System.out.println("Current GameSession: " + currentGameSession.getGameState());
 
             if (!currentGameSession.getGameState().equals(GameState.FINISHED.name())) {
                 Long playerId = gameSessionEntityService.calculateNextPlayer(gameSessionIdLong);
@@ -110,11 +109,10 @@ public class GameSessionController {
                 } else {
 //                    If the deck is empty finish the game
                     gameSessionEntityService.terminateGameSession(gameSessionIdLong);
-//                    TODO implement the finish game topic
-                    throw new IllegalStateException("No more tile left in the deck.");
+//                    Send the finish game message to the user when the game is finished
+                    return GameState.FINISHED.name();
                 }
             } else {
-//            TODO implement the finish game logic
                 throw new IllegalStateException("Game is already finished.");
             }
         } else {
