@@ -82,7 +82,6 @@ public class GameSessionController {
      * @throws JsonProcessingException
      */
     @MessageMapping("/next-turn")
-    @SendToUser("/queue/next-turn-response")
     public String getNextPlayerIdAndNextCardId(String gameSessionId) throws JsonProcessingException {
 
         Long gameSessionIdLong = Long.parseLong(gameSessionId);
@@ -104,7 +103,8 @@ public class GameSessionController {
 
                     // Create the nextTurnDto
                     NextTurnDto nextTurnDto = new NextTurnDto(playerId, drawnCardId);
-//                    Send the nextTurnDto to the user
+//                    Send the nextTurnDto to the user to specific gameSession
+                    this.template.convertAndSend("/topic/game-session-" + gameSessionId + "/next-turn-response", objectMapper.writeValueAsString(nextTurnDto));
                     return objectMapper.writeValueAsString(nextTurnDto);
                 } else {
 //                    If the deck is empty finish the game

@@ -277,7 +277,8 @@ public class GameSessionControllerIntegrationTest {
         assertThat(actualResponse).isEqualTo(expectedResponse);
         assertThat(actualResponseGameSessionEntity).isEqualTo(expectedResponseGameSessionEntity);
 
-        StompSession session2 = initStompSession("/user/queue/next-turn-response", messages3);
+        String gameSessionId = gameSessionDtoA.getId().toString();
+        StompSession session2 = initStompSession("/topic/game-session-" + gameSessionId + "/next-turn-response", messages3);
         session2.send("/app/next-turn", gameSessionDtoA.getId() + "");
 
         Long expectedResponseNextPlayerId = playerEntityB.getId();
@@ -328,7 +329,8 @@ public class GameSessionControllerIntegrationTest {
         List<Long> firstTile = tileDeck.getTileId();
 
 //      Subscribe to the topic for the next turn
-        StompSession session2 = initStompSession("/user/queue/next-turn-response", messages3);
+        String gameSessionId = gameSessionDtoA.getId().toString();
+        StompSession session2 = initStompSession("/topic/game-session-" + gameSessionId + "/next-turn-response", messages3);
         session2.send("/app/next-turn", gameSessionDtoA.getId() + "");
 //
 //      Receive the next turn dto from the endpoint
@@ -524,7 +526,8 @@ public class GameSessionControllerIntegrationTest {
         tileDeck.setTileId(new ArrayList<>());
         tileDeckRepository.save(tileDeck);
 
-        StompSession session2 = initStompSession("/user/queue/next-turn-response", messages3);
+        String gameSessionId = gameSessionDtoA.getId().toString();
+        StompSession session2 = initStompSession("/topic/game-session-" + gameSessionId + "/game-finished", messages3);
         session2.send("/app/next-turn", gameSessionDtoA.getId() + "");
 
         String expectedResponse = "FINISHED";
@@ -573,7 +576,7 @@ public class GameSessionControllerIntegrationTest {
         tileDeck.setTileId(new ArrayList<>());
         tileDeckRepository.save(tileDeck);
 
-        StompSession session2 = initStompSession("/user/queue/next-turn-response", messages3);
+        StompSession session2 = initStompSession("/topic/game-session-" + gameLobbyDtoA.getId() + "/game-finished", messages3);
 //        Subscribe to topic for the game state finish
         StompSession session3 = initStompSession("/topic/game-session-" + gameLobbyDtoA.getId() + "/game-finished", messages4);
 //        Try to draw a tile
@@ -633,7 +636,9 @@ public class GameSessionControllerIntegrationTest {
         tileDeck.setTileId(lastTile);
         tileDeckRepository.save(tileDeck);
 
-        StompSession session2 = initStompSession("/user/queue/next-turn-response", messages3);
+        String gameSessionId = gameSessionDtoA.getId().toString();
+        StompSession session2 = initStompSession("/topic/game-session-" + gameSessionId + "/next-turn-response", messages3);
+        StompSession session3 = initStompSession("/topic/game-session-" + gameSessionId + "/game-finished", messages4);
         session2.send("/app/next-turn", gameSessionDtoA.getId() + "");
 
         String actualResponseBeforeDeckEmpty = messages3.poll(1, TimeUnit.SECONDS);
@@ -650,11 +655,11 @@ public class GameSessionControllerIntegrationTest {
         assertThat(actualEmptyDeck).isEqualTo(expectedEmptyDeck);
 
 //        Draw another tile
-        session2.send("/app/next-turn", gameSessionDtoA.getId() + "");
+        session3.send("/app/next-turn", gameSessionDtoA.getId() + "");
 
 //        Now we check if the user gets the right gameState message string
         String expectedResponse = "FINISHED";
-        String actualResponse = messages3.poll(1, TimeUnit.SECONDS);
+        String actualResponse = messages4.poll(1, TimeUnit.SECONDS);
 
         assertThat(actualResponse).isEqualTo(expectedResponse);
 //
