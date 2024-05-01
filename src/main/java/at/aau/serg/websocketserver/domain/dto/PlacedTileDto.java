@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class GameBoardTileDto {
+public class PlacedTileDto {
     // Game-Session id
     private Long gameSessionId;
 

@@ -187,14 +187,12 @@ public class TestDataUtil {
                 .build();
     }
 
-    public static GameBoardTileDto createTestGameBoardTileDto(Long gameSessionId) {
-        return GameBoardTileDto.builder()
+    public static PlacedTileDto createTestPlacedTileDto(Long gameSessionId) {
+        return PlacedTileDto.builder()
                 .gameSessionId(gameSessionId)
                 .tileId(1L)
                 .coordinates(new Coordinates(12,12))
                 .rotation(1)
                 .build();
-
-
     }
 }

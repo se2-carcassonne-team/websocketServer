@@ -1,9 +1,8 @@
 package at.aau.serg.websocketserver.controller;
 
 import at.aau.serg.websocketserver.controller.helper.HelperMethods;
-import at.aau.serg.websocketserver.domain.dto.GameBoardTileDto;
+import at.aau.serg.websocketserver.domain.dto.PlacedTileDto;
 import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
-import at.aau.serg.websocketserver.domain.dto.NextTurnDto;
 import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
 import at.aau.serg.websocketserver.domain.entity.TileDeckEntity;
 import at.aau.serg.websocketserver.domain.entity.repository.TileDeckRepository;
@@ -105,13 +104,13 @@ public class GameSessionController {
     @MessageMapping("/place-tile")
     public void forwardPlacedTile(String placedTile) throws JsonProcessingException {
         // TODO: catch json processing error
-        GameBoardTileDto gameBoardTileDto = objectMapper.readValue(placedTile, GameBoardTileDto.class);
+        PlacedTileDto placedTileDto = objectMapper.readValue(placedTile, PlacedTileDto.class);
 
         // forward placedTile to the other players:
         this.template.convertAndSend(
-                "/topic/game-session-" + gameBoardTileDto.getGameSessionId() + "/tile",
+                "/topic/game-session-" + placedTileDto.getGameSessionId() + "/tile",
                 placedTile
-                );
+        );
     }
 
 

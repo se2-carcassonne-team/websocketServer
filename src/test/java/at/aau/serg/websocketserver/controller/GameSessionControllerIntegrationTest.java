@@ -2,7 +2,7 @@ package at.aau.serg.websocketserver.controller;
 
 import at.aau.serg.websocketserver.TestDataUtil;
 import at.aau.serg.websocketserver.demo.websocket.StompFrameHandlerClientImpl;
-import at.aau.serg.websocketserver.domain.dto.GameBoardTileDto;
+import at.aau.serg.websocketserver.domain.dto.PlacedTileDto;
 import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketserver.domain.dto.GameSessionDto;
 import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
@@ -34,6 +34,7 @@ import org.springframework.web.socket.messaging.WebSocketStompClient;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
@@ -196,29 +197,35 @@ public class GameSessionControllerIntegrationTest {
 
     // test forwarding of a placed GameBoardTileDto to all players in the game session
     @Test
-    void testThatForwardPlacedTileForwardsGameBoardTileDto() throws Exception {
-        // TODO: @Albert please fix
+    void testThatPlaceTileForwardsPlacedTileDtoToAllPlayers() throws Exception {
 
         GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
+        //gameLobbyEntityService.createLobby(testGameLobbyEntityA);
+
         PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(testGameLobbyEntityA);
-        PlayerEntity testPlayerEntityB = TestDataUtil.createTestPlayerEntityA(testGameLobbyEntityA);
+        PlayerEntity testPlayerEntityB = TestDataUtil.createTestPlayerEntityB(testGameLobbyEntityA);
         PlayerEntity testPlayerEntityC = TestDataUtil.createTestPlayerEntityC(testGameLobbyEntityA);
 
+        //playerEntityService.createPlayer(testPlayerEntityA);
+        //playerEntityService.createPlayer(testPlayerEntityB);
+        //playerEntityService.createPlayer(testPlayerEntityC);
+
         GameSessionEntity gameSessionEntity = TestDataUtil.createTestGameSessionEntityWith3Players();
+        //GameSessionEntity databaseGameSession = gameSessionEntityService.createGameSession(testGameLobbyEntityA.getId());
 
         StompSession session = initStompSession("/topic/game-session-" + gameSessionEntity.getId() + "/tile", messages);
         StompSession session2 = initStompSession("/topic/game-session-" + gameSessionEntity.getId() + "/tile", messages2);
 
-        GameBoardTileDto gameBoardTileDto = TestDataUtil.createTestGameBoardTileDto(gameSessionEntity.getId());
+        PlacedTileDto placedTileDto = TestDataUtil.createTestPlacedTileDto(gameSessionEntity.getId());
 
-        session.send("/app/place-tile", objectMapper.writeValueAsString(gameBoardTileDto));
+        session.send("/app/place-tile", objectMapper.writeValueAsString(placedTileDto));
 
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
         String actualResponse2 = messages2.poll(1, TimeUnit.SECONDS);
 
 
-        assertThat(actualResponse).isEqualTo(objectMapper.writeValueAsString(gameBoardTileDto));
-        assertThat(actualResponse2).isEqualTo(objectMapper.writeValueAsString(gameBoardTileDto));
+        assertThat(actualResponse).isEqualTo(objectMapper.writeValueAsString(placedTileDto));
+        assertThat(actualResponse2).isEqualTo(objectMapper.writeValueAsString(placedTileDto));
     }
 
     public StompSession initStompSession(String topic, BlockingQueue<String> messages) throws Exception {
