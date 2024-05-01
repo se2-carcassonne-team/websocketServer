@@ -1,6 +1,6 @@
-package at.aau.serg.websocketserver.domain.dto;
+package at.aau.serg.websocketserver.domain.pojo;
 
-import static at.aau.serg.websocketserver.domain.dto.GroundType.*;
+import static at.aau.serg.websocketserver.domain.pojo.GroundType.*;
 
 public enum TileType {
 //    Null(0, OTHER, OTHER, OTHER, OTHER, OTHER, OTHER, OTHER, OTHER, OTHER),
