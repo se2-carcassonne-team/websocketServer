@@ -1,8 +1,9 @@
 package at.aau.serg.websocketserver.controller;
 
 import at.aau.serg.websocketserver.controller.helper.HelperMethods;
+import at.aau.serg.websocketserver.domain.dto.PlacedTileDto;
 import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
-import at.aau.serg.websocketserver.domain.dto.GameState;
+import at.aau.serg.websocketserver.domain.pojo.GameState;
 import at.aau.serg.websocketserver.domain.dto.NextTurnDto;
 import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
 import at.aau.serg.websocketserver.domain.entity.TileDeckEntity;
@@ -121,6 +122,24 @@ public class GameSessionController {
             throw new IllegalStateException("GameSession not found.");
         }
     }
+
+    /**
+     * forwards the placed tile to all other players in the gameSession
+     * @param placedTile the tile placed by the player
+     * @throws JsonProcessingException
+     */
+    @MessageMapping("/place-tile")
+    public void forwardPlacedTile(String placedTile) throws JsonProcessingException {
+        // TODO: catch json processing error
+        PlacedTileDto placedTileDto = objectMapper.readValue(placedTile, PlacedTileDto.class);
+
+        // forward placedTile to the other players:
+        this.template.convertAndSend(
+                "/topic/game-session-" + placedTileDto.getGameSessionId() + "/tile",
+                placedTile
+        );
+    }
+
 
 
     @MessageExceptionHandler

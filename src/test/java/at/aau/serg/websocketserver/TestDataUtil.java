@@ -4,11 +4,20 @@ import at.aau.serg.websocketserver.domain.dto.*;
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
+import at.aau.serg.websocketserver.domain.pojo.Coordinates;
+import at.aau.serg.websocketserver.domain.pojo.GameState;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class TestDataUtil {
+    /**
+     * id: 1L
+     * @param gameLobbyEntity
+     * @return
+     */
     public static PlayerEntity createTestPlayerEntityA(final GameLobbyEntity gameLobbyEntity){
         return PlayerEntity.builder()
                 .id(1L)
@@ -16,6 +25,12 @@ public class TestDataUtil {
                 .gameLobbyEntity(gameLobbyEntity)
                 .build();
     }
+
+    /**
+     * id: 2L
+     * @param gameLobbyEntity
+     * @return
+     */
     public static PlayerEntity createTestPlayerEntityB(final GameLobbyEntity gameLobbyEntity){
         return PlayerEntity.builder()
                 .id(2L)
@@ -23,6 +38,12 @@ public class TestDataUtil {
                 .gameLobbyEntity(gameLobbyEntity)
                 .build();
     }
+
+    /**
+     * id: 3L
+     * @param gameLobbyEntity
+     * @return
+     */
     public static PlayerEntity createTestPlayerEntityC(final GameLobbyEntity gameLobbyEntity){
         return PlayerEntity.builder()
                 .id(3L)
@@ -148,6 +169,30 @@ public class TestDataUtil {
                 .id(1L)
                 .tileId(null)
                 .gameSessionId(gameSessionId)
+                .build();
+    }
+
+    public static GameSessionEntity createTestGameSessionEntityWith3Players(){
+        List<Long> playerIds = new ArrayList<>();
+        playerIds.add(1L);
+        playerIds.add(2L);
+        playerIds.add(3L);
+
+        return GameSessionEntity.builder()
+                .id(1L)
+                .turnPlayerId(1L)
+                .gameState(GameState.IN_GAME.toString())
+                .playerIds(playerIds)
+                .tileDeck(null)
+                .build();
+    }
+
+    public static PlacedTileDto createTestPlacedTileDto(Long gameSessionId) {
+        return PlacedTileDto.builder()
+                .gameSessionId(gameSessionId)
+                .tileId(1L)
+                .coordinates(new Coordinates(12,12))
+                .rotation(1)
                 .build();
     }
 }
