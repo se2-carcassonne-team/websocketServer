@@ -45,6 +45,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ExtendWith(SpringExtension.class)
@@ -327,6 +328,7 @@ public class GameSessionControllerIntegrationTest {
 //        Get the TileDeck from the gameSession
         TileDeckEntity tileDeck = tileDeckRepository.findByGameSessionId(gameSessionDtoA.getId());
         assertThat(tileDeck).isNotNull();
+        assertFalse(tileDeck.getTileId().contains(0L), "TileDeck should not contain 0L as a value");
 
         List<Long> firstTile = tileDeck.getTileId();
 

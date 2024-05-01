@@ -63,7 +63,7 @@ public class TileDeckEntityServiceImpl implements TileDeckEntityService {
     @Override
     public List<Long> generateTileIds() {
         List<Long> tileIds = new ArrayList<>();
-        for (Long i = 0L; i <= 71L; i++) {
+        for (Long i = 1L; i <= 71L; i++) {
             tileIds.add(i);
         }
         Collections.shuffle(tileIds);
