@@ -22,7 +22,7 @@ public class PlacedTileDto {
     // Tile id
     private Long tileId;
 
-    // tile rotation
+    // tile coordinates
     private Coordinates coordinates;
 
     // tile rotation
