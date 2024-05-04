@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 
 @Service
 public class PlayerEntityServiceImpl implements PlayerEntityService {
@@ -89,6 +90,16 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
 
         // update the PlayerEntity's gameLobby property to reference the gameLobbyEntity which should be joined
         playerEntity.setGameLobbyEntity(gameLobbyEntity);
+
+        // Randomly assign player colour
+        List<String> colours = gameLobbyEntity.getAvailableColours();
+
+        Random random = new Random();
+        int randomIndex = random.nextInt(colours.size());
+        playerEntity.setPlayerColour(colours.get(randomIndex));
+        colours.remove(randomIndex);
+        gameLobbyEntity.setAvailableColours(colours);
+
         // update the numPlayers property of the gameLobbyEntity by 1
         gameLobbyEntity.setNumPlayers(gameLobbyEntity.getNumPlayers()+1);
         gameLobbyEntityRepository.save(gameLobbyEntity);

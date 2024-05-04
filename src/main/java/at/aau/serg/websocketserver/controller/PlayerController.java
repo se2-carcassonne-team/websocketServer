@@ -95,7 +95,6 @@ public class PlayerController {
 
             // 3) player joins lobby:
             PlayerEntity updatedPlayerEntity = playerEntityService.joinLobby(gameLobbyId, playerEntity);
-
             PlayerDto dto = playerMapper.mapToDto(updatedPlayerEntity);
 
             // send response to /topic/lobby-$id --> updated list of players in lobby (later with response code: 201)

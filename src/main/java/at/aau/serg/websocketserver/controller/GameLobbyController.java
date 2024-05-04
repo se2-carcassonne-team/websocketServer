@@ -78,12 +78,15 @@ public class GameLobbyController {
                 String updatedLobbyList = objectMapper.writeValueAsString(getGameLobbyDtoList(gameLobbyEntityService, gameLobbyMapper));
                 this.template.convertAndSend("/topic/lobby-list", updatedLobbyList);
 
+                // TODO
                 // send updated list of players in lobby to /topic/lobby-$id
                 // IMPORTANT: not relevant, as player does not know the lobby id when calling lobby-create
                 String updatedPlayerList = objectMapper.writeValueAsString(getPlayerDtosInLobbyList(createdGameLobbyEntity.getId(), gameLobbyEntityService, playerEntityService, playerMapper));
                 this.template.convertAndSend("/topic/lobby-" + createdGameLobbyEntity.getId(), updatedPlayerList);
 
-                // return updated playerDto to queue
+                // TODO: Add gamelobbyId in the future
+                this.template.convertAndSend("/topic/lobby-creator", playerMapper.mapToDto(playerEntity));
+
                 return objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(playerEntity.getGameLobbyEntity()));
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(ErrorCode.ERROR_2004.getErrorCode());

@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -30,4 +32,5 @@ public class GameLobbyEntity {
     private Integer numPlayers;
 
     private Long lobbyAdminId;
+    private List<String> availableColours;
 }
