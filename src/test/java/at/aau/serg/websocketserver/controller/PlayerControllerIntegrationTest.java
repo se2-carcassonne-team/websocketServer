@@ -5,6 +5,7 @@ import at.aau.serg.websocketserver.demo.websocket.StompFrameHandlerClientImpl;
 import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketserver.domain.dto.PlayerDto;
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
+import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
 import at.aau.serg.websocketserver.statuscode.ErrorCode;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
@@ -1320,4 +1321,6 @@ public class PlayerControllerIntegrationTest {
         }
         return playerDtos;
     }
+
+
 }

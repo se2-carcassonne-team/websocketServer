@@ -15,6 +15,7 @@ public interface PlayerEntityService {
     PlayerEntity joinLobby(Long gameLobbyId, PlayerEntity playerEntity) throws RuntimeException;
     List<PlayerEntity> getAllPlayersForLobby(Long gameLobbyId);
     PlayerEntity leaveLobby(PlayerEntity playerEntity) throws EntityNotFoundException;
+    PlayerEntity leaveGameSession(PlayerEntity playerEntity) throws EntityNotFoundException;
     void deletePlayer(Long id);
     boolean exists(Long id);
 

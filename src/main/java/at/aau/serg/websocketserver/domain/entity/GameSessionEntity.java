@@ -21,6 +21,7 @@ public class GameSessionEntity {
     private Long turnPlayerId;
     private String gameState;
     private List<Long> playerIds;
+    private Integer numPlayers;
 
     // One-to-one relationship with TileDeckEntity
 //    @OneToOne(cascade = CascadeType.ALL)

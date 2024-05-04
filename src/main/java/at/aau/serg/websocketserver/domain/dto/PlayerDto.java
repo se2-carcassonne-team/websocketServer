@@ -17,4 +17,5 @@ public class PlayerDto {
     //private GameLobbyDto gameLobbyDto;
     private Long gameLobbyId;
 
+    private Long gameSessionId;
 }

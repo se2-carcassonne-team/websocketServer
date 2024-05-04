@@ -1,12 +1,15 @@
 package at.aau.serg.websocketserver.controller;
 
 import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
+import at.aau.serg.websocketserver.domain.dto.GameSessionDto;
 import at.aau.serg.websocketserver.domain.dto.PlayerDto;
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
+import at.aau.serg.websocketserver.mapper.GameSessionMapper;
 import at.aau.serg.websocketserver.mapper.PlayerMapper;
 import at.aau.serg.websocketserver.service.GameLobbyEntityService;
+import at.aau.serg.websocketserver.service.GameSessionEntityService;
 import at.aau.serg.websocketserver.service.PlayerEntityService;
 import at.aau.serg.websocketserver.statuscode.ErrorCode;
 import at.aau.serg.websocketserver.statuscode.ResponseCode;
@@ -34,17 +37,21 @@ public class PlayerController {
     private final SimpMessagingTemplate template;
     private final PlayerEntityService playerEntityService;
     private final GameLobbyEntityService gameLobbyEntityService;
+    private final GameSessionEntityService gameSessionEntityService;
     private final ObjectMapper objectMapper;
     private final PlayerMapper playerMapper;
     private final GameLobbyMapper gameLobbyMapper;
+    private final GameSessionMapper gameSessionMapper;
 
-    public PlayerController(SimpMessagingTemplate template, PlayerEntityService playerEntityService, GameLobbyEntityService gameLobbyEntityService, ObjectMapper objectMapper, PlayerMapper playerMapper, GameLobbyMapper gameLobbyMapper) {
+    public PlayerController(SimpMessagingTemplate template, PlayerEntityService playerEntityService, GameLobbyEntityService gameLobbyEntityService, GameSessionEntityService gameSessionEntityService, ObjectMapper objectMapper, PlayerMapper playerMapper, GameLobbyMapper gameLobbyMapper, GameSessionMapper gameSessionMapper) {
         this.template = template;
         this.playerEntityService = playerEntityService;
         this.gameLobbyEntityService = gameLobbyEntityService;
+        this.gameSessionEntityService = gameSessionEntityService;
         this.objectMapper = objectMapper;
         this.playerMapper = playerMapper;
         this.gameLobbyMapper = gameLobbyMapper;
+        this.gameSessionMapper = gameSessionMapper;
     }
 
     @MessageMapping("/player-create")
@@ -286,6 +293,57 @@ public class PlayerController {
 
         return ResponseCode.RESPONSE_103.getResponseCode();
     }
+
+
+    /**
+     * Ideas for the endpoint /app/player-leave-gamesession
+     * <p>sends responses to:</p>
+     * <p> 1) /user/queue/response --> updated playerDto (response code: 101)</p>
+     * <p> 2) /topic/gamesession-list --> updated list of game sessions (numPlayers of the left game session decremented)
+     * - (response code: 301)</p>
+     * <p> 3) /topic/gamesession-$id --> updated list of players in the game session (response code: 201)</p>
+     * <p> 4) /topic/gamesession-$id/update --> updated gameSessionDto (response code?)</p>
+     * @param playerDtoJson playerDto that wants to leave the game session he is currently in
+     * @throws RuntimeException
+     */
+    @MessageMapping("/player-leave-gamesession")
+    @SendToUser("/queue/response")
+    public String handlePlayerLeaveGameSession(String playerDtoJson) throws RuntimeException {
+        try {
+            PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
+
+            // Convert the DTO to Entity Object for Service
+            PlayerEntity playerEntity = playerMapper.mapToEntity(playerDto);
+
+            Long gameSessionId = playerDto.getGameSessionId();
+
+
+            // Player leaves the game session
+            PlayerEntity updatedPlayerEntity = playerEntityService.leaveGameSession(playerEntity);
+
+
+
+            // Send updated gameSessionDto to all players in the game session (relevant for game session creator)
+            if (gameSessionEntityService.findById(gameSessionId).isPresent()) {
+                this.template.convertAndSend(
+                        "/topic/gamesession-" + gameSessionId + "/update",
+                        objectMapper.writeValueAsString(gameSessionEntityService.findById(gameSessionId).get())
+                );
+
+                this.template.convertAndSend(
+                        "/topic/gamesession-" + gameSessionId + "/update",
+                        objectMapper.writeValueAsString(gameSessionMapper.mapToDto(gameSessionEntityService.findById(gameSessionId).get()))
+                );
+            }
+
+            // Send response to: /user/queue/response --> updated playerDto (response code: 101)
+            return objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
+
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(ErrorCode.ERROR_2004.getErrorCode());
+        }
+    }
+
 
     @MessageExceptionHandler
     @SendToUser("/queue/errors")

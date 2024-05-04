@@ -680,6 +680,7 @@ public class GameSessionControllerIntegrationTest {
         GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
         GameLobbyEntity gameLobbyEntityA = gameLobbyMapper.mapToEntity(gameLobbyDtoA);
 
+
         PlayerEntity playerEntityA = TestDataUtil.createTestPlayerEntityA(null);
         PlayerEntity playerEntityB = TestDataUtil.createTestPlayerEntityB(null);
         PlayerEntity playerEntityC = TestDataUtil.createTestPlayerEntityC(null);
@@ -687,7 +688,6 @@ public class GameSessionControllerIntegrationTest {
 
         playerEntityService.createPlayer(playerEntityA);
         playerEntityService.createPlayer(playerEntityB);
-        playerEntityService.createPlayer(playerEntityC);
 
         assertThat(gameLobbyEntityService.findById(gameLobbyDtoA.getId())).isEmpty();
 
@@ -752,4 +752,55 @@ public class GameSessionControllerIntegrationTest {
 
         return session;
     }
+
+    @Test
+    void testOnePlayerLeaveWhenMoreThanTwoPlayersRemain() throws Exception {
+        // Erstellen einer Spiellobby
+        GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
+        GameLobbyEntity gameLobbyEntityA = gameLobbyMapper.mapToEntity(gameLobbyDtoA);
+
+        // Erstellen von 3 Spielern
+        PlayerEntity playerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        PlayerEntity playerEntityB = TestDataUtil.createTestPlayerEntityB(null);
+        PlayerEntity playerEntityC = TestDataUtil.createTestPlayerEntityC(null);
+        gameLobbyEntityA.setLobbyAdminId(playerEntityA.getId());
+
+        playerEntityService.createPlayer(playerEntityA);
+        playerEntityService.createPlayer(playerEntityB);
+        playerEntityService.createPlayer(playerEntityC);
+
+        gameLobbyEntityService.createLobby(gameLobbyEntityA);
+        assertThat(gameLobbyEntityService.findById(gameLobbyDtoA.getId())).isPresent();
+
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityA);
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityB);
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityC);
+
+        System.out.println(playerEntityA);
+        System.out.println(playerEntityB);
+        System.out.println(playerEntityC);
+
+        // Erstellen einer Spielsitzung mit den Spielern
+        GameSessionDto gameSessionDtoA = TestDataUtil.createTestGameSessionDtoA(playerMapper.mapToDto(playerEntityA));
+        assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isEmpty();
+
+
+        StompSession session = initStompSession("/user/queue/lobby-list-response", messages);
+        initStompSession("/topic/lobby-" + gameLobbyDtoA.getId() + "/game-start", messages2);
+        session.send("/app/game-start", gameLobbyDtoA.getId() + "");
+
+        String expectedResponseGameSessionEntity = objectMapper.writeValueAsString(gameSessionDtoA.getId());
+        String actualResponseGameSessionEntity = messages2.poll(1, TimeUnit.SECONDS);
+
+        assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isPresent();
+        assertThat(actualResponseGameSessionEntity).isEqualTo(expectedResponseGameSessionEntity);
+
+        System.out.println(gameSessionDtoA.getId() + "Gamesessionid");
+
+        playerEntityService.leaveGameSession(playerEntityC);
+
+        assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isPresent();
+    }
+
+
 }
