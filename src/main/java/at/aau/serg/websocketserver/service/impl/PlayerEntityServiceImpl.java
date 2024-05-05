@@ -172,6 +172,9 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
             gameSessionEntityRepository.deleteById(gameSessionEntity.getId());
         }
 
+        // TODO: remove playerId from gameSessionEntity --> private List<Long> playerIds
+
+
         return updatedPlayerEntity;
     }
 

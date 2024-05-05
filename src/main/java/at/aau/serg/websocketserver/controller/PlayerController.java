@@ -325,16 +325,14 @@ public class PlayerController {
 
             // Send updated gameSessionDto to all players in the game session (relevant for game session creator)
             if (gameSessionEntityService.findById(gameSessionId).isPresent()) {
-                this.template.convertAndSend(
-                        "/topic/gamesession-" + gameSessionId + "/update",
-                        objectMapper.writeValueAsString(gameSessionEntityService.findById(gameSessionId).get())
-                );
 
                 this.template.convertAndSend(
                         "/topic/gamesession-" + gameSessionId + "/update",
                         objectMapper.writeValueAsString(gameSessionMapper.mapToDto(gameSessionEntityService.findById(gameSessionId).get()))
                 );
             }
+
+            // TODO: player should leave lobby
 
             // Send response to: /user/queue/response --> updated playerDto (response code: 101)
             return objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));

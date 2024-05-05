@@ -26,7 +26,7 @@ public class PlayerEntity {
 
 
     @ManyToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "gamessesion_id")
+    @JoinColumn(name = "gamesession_id")
     private GameSessionEntity gameSessionEntity;
 
     private int points;

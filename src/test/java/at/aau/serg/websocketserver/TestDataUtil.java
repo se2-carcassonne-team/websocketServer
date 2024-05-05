@@ -183,6 +183,7 @@ public class TestDataUtil {
                 .turnPlayerId(1L)
                 .gameState(GameState.IN_GAME.toString())
                 .playerIds(playerIds)
+                .numPlayers(3)
                 .tileDeck(null)
                 .build();
     }
