@@ -4,7 +4,9 @@ import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketserver.domain.dto.GameSessionDto;
 import at.aau.serg.websocketserver.domain.dto.PlayerDto;
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
+import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
+import at.aau.serg.websocketserver.domain.pojo.GameState;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
 import at.aau.serg.websocketserver.mapper.GameSessionMapper;
 import at.aau.serg.websocketserver.mapper.PlayerMapper;
@@ -317,22 +319,29 @@ public class PlayerController {
 
             Long gameSessionId = playerDto.getGameSessionId();
 
-
             // Player leaves the game session
             PlayerEntity updatedPlayerEntity = playerEntityService.leaveGameSession(playerEntity);
 
-
-
             // Send updated gameSessionDto to all players in the game session (relevant for game session creator)
             if (gameSessionEntityService.findById(gameSessionId).isPresent()) {
-
+                GameSessionEntity gameSession = gameSessionEntityService.findById(gameSessionId).get();
                 this.template.convertAndSend(
                         "/topic/gamesession-" + gameSessionId + "/update",
-                        objectMapper.writeValueAsString(gameSessionMapper.mapToDto(gameSessionEntityService.findById(gameSessionId).get()))
+                        objectMapper.writeValueAsString(gameSessionMapper.mapToDto(gameSession))
                 );
+
+                // Check if the game session needs to be terminated
+                if (gameSession.getNumPlayers() <= 2) {
+                    // If there is only one player left or no players left, terminate the game session
+                    gameSessionEntityService.terminateGameSession(gameSessionId);
+                    // Send the finish game message to all users when the game is finished
+                    this.template.convertAndSend("/topic/game-session-" + gameSessionId + "/game-finished", gameSession.getGameState());
+                    return GameState.FINISHED.name();
+                }
             }
 
             // TODO: player should leave lobby
+            updatedPlayerEntity = playerEntityService.leaveLobby(updatedPlayerEntity);
 
             // Send response to: /user/queue/response --> updated playerDto (response code: 101)
             return objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));

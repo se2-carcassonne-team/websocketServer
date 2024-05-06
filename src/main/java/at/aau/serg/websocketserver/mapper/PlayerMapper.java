@@ -2,8 +2,10 @@ package at.aau.serg.websocketserver.mapper;
 
 import at.aau.serg.websocketserver.domain.dto.PlayerDto;
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
+import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
 import at.aau.serg.websocketserver.domain.entity.repository.GameLobbyEntityRepository;
+import at.aau.serg.websocketserver.domain.entity.repository.GameSessionEntityRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
@@ -15,6 +17,7 @@ public class PlayerMapper {
 
     private final ModelMapper modelMapper;
     GameLobbyEntityRepository gameLobbyEntityRepository;
+    GameSessionEntityRepository gameSessionEntityRepository;
 
     public PlayerMapper(ModelMapper modelMapper, GameLobbyEntityRepository gameLobbyEntityRepository) {
         this.modelMapper = modelMapper;
@@ -28,9 +31,6 @@ public class PlayerMapper {
     }
 
     public PlayerEntity mapToEntity(PlayerDto playerDto) {
-
-        // TODO: correctly map gameSessionEntity from Long to GameSessionEntity! @Caro
-
         PlayerEntity playerEntity = modelMapper.map(playerDto, PlayerEntity.class);
 
         if(playerDto.getGameLobbyId() != null) {
@@ -39,15 +39,27 @@ public class PlayerMapper {
             if(gameLobbyEntityOptional.isPresent()){
                 GameLobbyEntity gameLobbyEntity = gameLobbyEntityOptional.get();
                 playerEntity.setGameLobbyEntity(gameLobbyEntity);
-
-                return playerEntity;
+            } else {
+                throw new EntityNotFoundException("GameLobby with id " + playerDto.getGameLobbyId() + " does not exist");
             }
-
-            throw new EntityNotFoundException("GameLobby with id " + playerDto.getGameLobbyId() + " does not exist");
         } else {
             playerEntity.setGameLobbyEntity(null);
-            return playerEntity;
         }
 
+        // Laden und Zuweisen der GameSessionEntity basierend auf der ID aus dem DTO
+        if (playerDto.getGameSessionId() != null) {
+            Optional<GameSessionEntity> gameSessionEntityOptional = gameSessionEntityRepository.findById(playerDto.getGameSessionId());
+
+            if (gameSessionEntityOptional.isPresent()) {
+                GameSessionEntity gameSessionEntity = gameSessionEntityOptional.get();
+                playerEntity.setGameSessionEntity(gameSessionEntity);
+            } else {
+                throw new EntityNotFoundException("GameSession with id " + playerDto.getGameSessionId() + " does not exist");
+            }
+        } else {
+            playerEntity.setGameSessionEntity(null);
+        }
+
+        return playerEntity;
     }
 }

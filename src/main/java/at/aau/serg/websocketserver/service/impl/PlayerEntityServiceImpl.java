@@ -6,7 +6,6 @@ import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
 import at.aau.serg.websocketserver.domain.entity.repository.GameLobbyEntityRepository;
 import at.aau.serg.websocketserver.domain.entity.repository.GameSessionEntityRepository;
 import at.aau.serg.websocketserver.domain.entity.repository.PlayerEntityRepository;
-import at.aau.serg.websocketserver.service.GameSessionEntityService;
 import at.aau.serg.websocketserver.statuscode.ErrorCode;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
 import at.aau.serg.websocketserver.mapper.PlayerMapper;
@@ -18,6 +17,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 
+
 @Service
 public class PlayerEntityServiceImpl implements PlayerEntityService {
 
@@ -26,6 +26,7 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
     GameSessionEntityRepository gameSessionEntityRepository;
     GameLobbyMapper gameLobbyMapper;
     PlayerMapper playerMapper;
+
 
 
     public PlayerEntityServiceImpl(
@@ -150,16 +151,21 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
 
     @Override
     public PlayerEntity leaveGameSession(PlayerEntity playerEntity){
+
         if (playerEntityRepository.findById(playerEntity.getId()).isEmpty()) {
             throw new EntityNotFoundException(ErrorCode.ERROR_2001.getErrorCode());
         }
 
         GameSessionEntity gameSessionEntity = playerEntity.getGameSessionEntity();
 
-
         if (gameSessionEntity == null) {
             throw new EntityNotFoundException(ErrorCode.ERROR_3003.getErrorCode());
         }
+
+        // Entfernen der Spieler-ID aus der Liste playerIds der GameSessionEntity
+        List<Long> playerIds = gameSessionEntity.getPlayerIds();
+        playerIds.remove(playerEntity.getId());
+        gameSessionEntity.setPlayerIds(playerIds);
 
         playerEntity.setGameSessionEntity(null);
         PlayerEntity updatedPlayerEntity =  playerEntityRepository.save(playerEntity);
@@ -167,16 +173,14 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
         int numberOfPlayers = gameSessionEntity.getNumPlayers();
         if(numberOfPlayers > 1) {
             gameSessionEntity.setNumPlayers(gameSessionEntity.getNumPlayers()-1);
-
         } else {
             gameSessionEntityRepository.deleteById(gameSessionEntity.getId());
+
         }
-
-        // TODO: remove playerId from gameSessionEntity --> private List<Long> playerIds
-
 
         return updatedPlayerEntity;
     }
+
 
 
     @Override
