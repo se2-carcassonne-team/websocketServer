@@ -22,10 +22,14 @@ public class PlayerMapper {
     }
 
     public PlayerDto mapToDto(PlayerEntity playerEntity){
-        return modelMapper.map(playerEntity, PlayerDto.class);
+        PlayerDto dto =  modelMapper.map(playerEntity, PlayerDto.class);
+        dto.setGameSessionId(playerEntity.getGameSessionEntity().getId());
+        return dto;
     }
 
     public PlayerEntity mapToEntity(PlayerDto playerDto) {
+
+        // TODO: correctly map gameSessionEntity from Long to GameSessionEntity! @Caro
 
         PlayerEntity playerEntity = modelMapper.map(playerDto, PlayerEntity.class);
 
