@@ -13,6 +13,7 @@ import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.security.SecureRandom;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -24,7 +25,7 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
     GameLobbyEntityRepository gameLobbyEntityRepository;
     GameLobbyMapper gameLobbyMapper;
     PlayerMapper playerMapper;
-    Random random;
+    SecureRandom random;
 
     public PlayerEntityServiceImpl(
             PlayerEntityRepository playerEntityRepository,
@@ -36,7 +37,7 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
         this.gameLobbyEntityRepository = gameLobbyEntityRepository;
         this.gameLobbyMapper = gameLobbyMapper;
         this.playerMapper = playerMapper;
-        this.random = new Random();
+        this.random = new SecureRandom();
     }
 
     private void setPlayerColour(PlayerEntity playerEntity, GameLobbyEntity gameLobbyEntity) {
