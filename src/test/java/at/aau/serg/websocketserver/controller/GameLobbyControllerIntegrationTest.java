@@ -224,7 +224,6 @@ public class GameLobbyControllerIntegrationTest {
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
-    // TODO
     @Test
     void testThatCreateLobbyReturnsUpdatedPlayerToTopic() throws Exception {
         StompSession session = initStompSession("/topic/lobby-creator", messages);

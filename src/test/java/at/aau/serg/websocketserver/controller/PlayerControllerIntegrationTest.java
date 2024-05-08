@@ -319,7 +319,6 @@ public class PlayerControllerIntegrationTest {
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
-    // TODO
     // DONE: test 3 sessions in parallel (queue, topic/lobby-list, topic/lobby-$id)
     /**
      * Test if 3 sessions at the same time all receive their respective responses:

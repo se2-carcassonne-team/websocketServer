@@ -237,7 +237,6 @@ public class GameSessionControllerIntegrationTest {
         assertThat(actualResponseGameSessionEntity).isEqualTo(expectedResponse.toString());
     }
 
-    // TODO
     @Test
     void testThatGetNextPlayerIdAndNextTileIdReturnsTheRightNextPlayerId() throws Exception {
         GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
