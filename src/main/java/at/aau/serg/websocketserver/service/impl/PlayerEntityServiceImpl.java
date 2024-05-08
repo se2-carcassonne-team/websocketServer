@@ -1,6 +1,7 @@
 package at.aau.serg.websocketserver.service.impl;
 
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
+import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
 import at.aau.serg.websocketserver.domain.entity.repository.GameLobbyEntityRepository;
 import at.aau.serg.websocketserver.domain.entity.repository.PlayerEntityRepository;
@@ -36,6 +37,16 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
         this.playerMapper = playerMapper;
     }
 
+    private void setPlayerColour(PlayerEntity playerEntity, GameLobbyEntity gameLobbyEntity) {
+        List<String> colours = gameLobbyEntity.getAvailableColours();
+
+        Random random = new Random();
+        int randomIndex = random.nextInt(colours.size());
+        playerEntity.setPlayerColour(colours.get(randomIndex));
+        colours.remove(randomIndex);
+        gameLobbyEntity.setAvailableColours(colours);
+    }
+
     // @Dominik: slightly different approach: expose only entity objects to the service
     @Override
     public PlayerEntity createPlayer(PlayerEntity playerEntity) throws EntityExistsException {
@@ -67,6 +78,7 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
 
     /**
      * updates the PlayerEntity in the Database to reference gameLobbyEntity and
+     * updates the PlayerEntity in the Database with one of 5 predefined PlayerColours and
      * updates the GameLobbyEntity in the Database by incrementing numPlayers by 1
      * @param gameLobbyId  the gameLobbyId to join
      * @param playerEntity  the PlayerEntity who wants to join the gameLobbyEntity
@@ -92,13 +104,7 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
         playerEntity.setGameLobbyEntity(gameLobbyEntity);
 
         // Randomly assign player colour
-        List<String> colours = gameLobbyEntity.getAvailableColours();
-
-        Random random = new Random();
-        int randomIndex = random.nextInt(colours.size());
-        playerEntity.setPlayerColour(colours.get(randomIndex));
-        colours.remove(randomIndex);
-        gameLobbyEntity.setAvailableColours(colours);
+        setPlayerColour(playerEntity, gameLobbyEntity);
 
         // update the numPlayers property of the gameLobbyEntity by 1
         gameLobbyEntity.setNumPlayers(gameLobbyEntity.getNumPlayers()+1);
@@ -130,12 +136,20 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
         }
 
         playerEntity.setGameLobbyEntity(null);
+
+        // Remove colour from player
+        String playerColour = playerEntity.getPlayerColour();
+        playerEntity.setPlayerColour(null);
+
         PlayerEntity updatedPlayerEntity =  playerEntityRepository.save(playerEntity);
 
         // Check if lobby can be deleted
         int numberOfPlayers = gameLobbyEntity.getNumPlayers();
         if(numberOfPlayers > 1) {
             gameLobbyEntity.setNumPlayers(gameLobbyEntity.getNumPlayers()-1);
+
+            // Return playerColour to the list of available colors for reuse
+            gameLobbyEntity.getAvailableColours().add(playerColour);
 
             if(playerEntity.getId() == gameLobbyEntity.getLobbyAdminId()) {
                 // transfer lobby admin rights to another player

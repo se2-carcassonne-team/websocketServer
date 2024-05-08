@@ -85,7 +85,7 @@ public class GameLobbyController {
                 this.template.convertAndSend("/topic/lobby-" + createdGameLobbyEntity.getId(), updatedPlayerList);
 
                 // TODO: Add gamelobbyId in the future
-                this.template.convertAndSend("/topic/lobby-creator", playerMapper.mapToDto(playerEntity));
+                this.template.convertAndSend("/topic/lobby-creator", objectMapper.writeValueAsString(playerMapper.mapToDto(playerEntity)));
 
                 return objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(playerEntity.getGameLobbyEntity()));
             } catch (JsonProcessingException e) {

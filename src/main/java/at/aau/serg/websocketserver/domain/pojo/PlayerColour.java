@@ -5,9 +5,9 @@ import java.util.List;
 
 public enum PlayerColour {
     BLACK,
-    RED,
     BLUE,
     GREEN,
+    RED,
     YELLOW;
 
     public static List<String> getColoursAsList() {
