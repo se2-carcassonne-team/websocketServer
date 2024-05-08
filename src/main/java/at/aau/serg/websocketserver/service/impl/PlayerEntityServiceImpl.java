@@ -24,6 +24,7 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
     GameLobbyEntityRepository gameLobbyEntityRepository;
     GameLobbyMapper gameLobbyMapper;
     PlayerMapper playerMapper;
+    Random random;
 
     public PlayerEntityServiceImpl(
             PlayerEntityRepository playerEntityRepository,
@@ -35,12 +36,12 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
         this.gameLobbyEntityRepository = gameLobbyEntityRepository;
         this.gameLobbyMapper = gameLobbyMapper;
         this.playerMapper = playerMapper;
+        this.random = new Random();
     }
 
     private void setPlayerColour(PlayerEntity playerEntity, GameLobbyEntity gameLobbyEntity) {
         List<String> colours = gameLobbyEntity.getAvailableColours();
 
-        Random random = new Random();
         int randomIndex = random.nextInt(colours.size());
         playerEntity.setPlayerColour(colours.get(randomIndex));
         colours.remove(randomIndex);
