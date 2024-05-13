@@ -35,8 +35,8 @@ public class PlayerController {
     private final ObjectMapper objectMapper;
     private final PlayerMapper playerMapper;
     private final GameLobbyMapper gameLobbyMapper;
-    private final String LOBBY_LIST_TOPIC = "/topic/lobby-list";
-    private final String UPDATE_TOPIC = "/update";
+    private static final String LOBBY_LIST_TOPIC = "/topic/lobby-list";
+    private static final String UPDATE_TOPIC = "/update";
 
     public PlayerController(SimpMessagingTemplate template, PlayerEntityService playerEntityService, GameLobbyEntityService gameLobbyEntityService, ObjectMapper objectMapper, PlayerMapper playerMapper, GameLobbyMapper gameLobbyMapper) {
         this.template = template;

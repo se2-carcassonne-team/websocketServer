@@ -2,7 +2,6 @@ package at.aau.serg.websocketserver.mapper;
 
 import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
-import at.aau.serg.websocketserver.domain.entity.repository.PlayerEntityRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
 
