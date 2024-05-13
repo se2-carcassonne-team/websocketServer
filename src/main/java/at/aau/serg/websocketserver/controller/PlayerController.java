@@ -76,7 +76,7 @@ public class PlayerController {
      */
     @MessageMapping("/player-join-lobby")
     @SendToUser("/queue/response")
-    public String handlePlayerJoinLobby(Message message, String gameLobbyIdAndPlayerDtoJson) throws RuntimeException {
+    public String handlePlayerJoinLobby(String gameLobbyIdAndPlayerDtoJson) throws RuntimeException {
 
         try {
             // 1) extract GameLobbyDto and PlayerDto objects from the string payload:
@@ -124,7 +124,6 @@ public class PlayerController {
     }
 
 
-    // DONE
     /**
      * Ideas for the endpoint /app/player-list
      * <p>sends responses to: </p>
