@@ -22,7 +22,6 @@ import org.springframework.stereotype.Controller;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 import static at.aau.serg.websocketserver.controller.helper.HelperMethods.getGameLobbyDtoList;
 import static at.aau.serg.websocketserver.controller.helper.HelperMethods.getPlayerDtosInLobbyList;
@@ -92,39 +91,25 @@ public class PlayerController {
             PlayerEntity updatedPlayerEntity = playerEntityService.joinLobby(gameLobbyId, playerEntity);
             PlayerDto dto = playerMapper.mapToDto(updatedPlayerEntity);
 
-            CompletableFuture.runAsync(() -> {
-                // send response to /topic/lobby-$id --> updated list of players in lobby (later with response code: 201)
-                List<PlayerDto> updatedPlayerEntitiesInLobby = getPlayerDtosInLobbyList(gameLobbyId, gameLobbyEntityService, playerEntityService, playerMapper);
-                try {
-                    this.template.convertAndSend(
-                            "/topic/lobby-"+gameLobbyId,
-                            objectMapper.writeValueAsString(updatedPlayerEntitiesInLobby)
-                    );
-                } catch (JsonProcessingException e) {
-                    throw new RuntimeException(e);
-                }
-            }).thenRun(() -> {
-                // send response to /topic/lobby-list --> updated list of lobbies (numPlayers of the joined lobby incremented) (later with response code: 301)
-                List<GameLobbyDto> gameLobbyDtos = getGameLobbyDtoList(gameLobbyEntityService, gameLobbyMapper);
-                try {
-                    this.template.convertAndSend(
-                            LOBBY_LIST_TOPIC,
-                            objectMapper.writeValueAsString(gameLobbyDtos)
-                    );
-                } catch (JsonProcessingException e) {
-                    throw new RuntimeException(e);
-                }
-            }).thenRun(() -> {
-                // send updated gameLobbyDto to all players in the lobby (relevant for lobbyCreator)
-                try {
-                    this.template.convertAndSend(
-                            "/topic/lobby-" + gameLobbyId + UPDATE_TOPIC,
-                            objectMapper.writeValueAsString(gameLobbyEntityService.findById(gameLobbyId))
-                    );
-                } catch (JsonProcessingException e) {
-                    throw new RuntimeException(e);
-                }
-            });
+            // send response to /topic/lobby-$id --> updated list of players in lobby (later with response code: 201)
+            List<PlayerDto> updatedPlayerEntitiesInLobby = getPlayerDtosInLobbyList(gameLobbyId, gameLobbyEntityService, playerEntityService, playerMapper);
+            this.template.convertAndSend(
+                    "/topic/lobby-"+gameLobbyId,
+                    objectMapper.writeValueAsString(updatedPlayerEntitiesInLobby)
+            );
+
+            // send response to /topic/lobby-list --> updated list of lobbies (numPlayers of the joined lobby incremented) (later with response code: 301)
+            List<GameLobbyDto> gameLobbyDtos = getGameLobbyDtoList(gameLobbyEntityService, gameLobbyMapper);
+            this.template.convertAndSend(
+                    LOBBY_LIST_TOPIC,
+                    objectMapper.writeValueAsString(gameLobbyDtos)
+            );
+
+            // send updated gameLobbyDto to all players in the lobby (relevant for lobbyCreator)
+            this.template.convertAndSend(
+                    "/topic/lobby-" + gameLobbyId + UPDATE_TOPIC,
+                    objectMapper.writeValueAsString(gameLobbyEntityService.findById(gameLobbyId))
+            );
 
             // send response to /user/queue/response --> updated playerDto (id of the joined lobby now set) (later with response code)
             return objectMapper.writeValueAsString(dto);
