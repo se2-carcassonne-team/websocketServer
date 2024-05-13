@@ -13,12 +13,4 @@ public class TileDto {
 
     private Long id;
 
-//    private String tileName;
-//
-//    private String northEdgeType;
-//    private String southEdgeType;
-//    private String eastEdgeType;
-//    private String westEdgeType;
-//
-//    private int rotation;
 }

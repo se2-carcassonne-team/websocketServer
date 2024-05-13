@@ -281,7 +281,7 @@ public class GameLobbyControllerIntegrationTest {
         session.send("/app/lobby-create", payload);
 
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
-        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_1001.getErrorCode());
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_1001.getCode());
     }
 
     @Test
@@ -305,7 +305,7 @@ public class GameLobbyControllerIntegrationTest {
         session.send("/app/lobby-create", payload);
 
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
-        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_1002.getErrorCode());
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_1002.getCode());
     }
 
     @Test
@@ -326,7 +326,7 @@ public class GameLobbyControllerIntegrationTest {
         session.send("/app/lobby-create", payload);
 
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
-        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_2001.getErrorCode());
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_2001.getCode());
     }
 
     @Test
@@ -341,7 +341,7 @@ public class GameLobbyControllerIntegrationTest {
         session.send("/app/lobby-create", payload);
 
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
-        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_1006.getErrorCode());
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_1006.getCode());
     }
 
     @Test
@@ -356,7 +356,7 @@ public class GameLobbyControllerIntegrationTest {
         session.send("/app/lobby-create", payload);
 
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
-        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_2004.getErrorCode());
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_2004.getCode());
     }
 
     @Test
@@ -393,7 +393,7 @@ public class GameLobbyControllerIntegrationTest {
         session.send("/app/lobby-name-update", objectMapper.writeValueAsString(gameLobbyDto));
 
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
-        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_1003.getErrorCode());
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_1003.getCode());
     }
 
     @Test

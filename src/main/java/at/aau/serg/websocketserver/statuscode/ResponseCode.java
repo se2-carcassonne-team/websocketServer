@@ -11,23 +11,23 @@ public enum ResponseCode {
     ;
 
     private final String responseDescription;
-    private final String responseCode;
+    private final String code;
 
     /**
      * Enum of standardized custom response codes.
      * @param responseDescription short description of the response code meaning
-     * @param responseCode response code: 10X for player updates, 20X for lobby updates, 30X for list of lobbies
+     * @param code response code: 10X for player updates, 20X for lobby updates, 30X for list of lobbies
      */
-    ResponseCode(String responseDescription, String responseCode) {
+    ResponseCode(String responseDescription, String code) {
         this.responseDescription = responseDescription;
-        this.responseCode = responseCode;
+        this.code = code;
     }
 
     public String getResponseDescription() {
         return responseDescription;
     }
 
-    public String getResponseCode() {
-        return responseCode;
+    public String getCode() {
+        return code;
     }
 }

@@ -4,7 +4,6 @@ import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
 import at.aau.serg.websocketserver.domain.entity.TileDeckEntity;
 import at.aau.serg.websocketserver.domain.entity.repository.GameSessionEntityRepository;
 import at.aau.serg.websocketserver.domain.entity.repository.TileDeckRepository;
-import at.aau.serg.websocketserver.service.GameSessionEntityService;
 import at.aau.serg.websocketserver.service.TileDeckEntityService;
 import at.aau.serg.websocketserver.statuscode.ErrorCode;
 import jakarta.persistence.EntityNotFoundException;
@@ -50,7 +49,7 @@ public class TileDeckEntityServiceImpl implements TileDeckEntityService {
 //            Return the created tile deck entity
             return tileDeckRepository.save(tileDeck);
         } else {
-            throw new EntityNotFoundException(ErrorCode.ERROR_3003.getErrorCode());
+            throw new EntityNotFoundException(ErrorCode.ERROR_3003.getCode());
         }
     }
 
@@ -103,37 +102,8 @@ public class TileDeckEntityServiceImpl implements TileDeckEntityService {
     }
 
     @Override
-//    TODO: Implement the resetTileDeck method if needed
-    public void resetTileDeck(Long gameSessionId) {
-//        // Retrieve the tile deck entity for the given game session ID
-//        TileDeckEntity tileDeckEntity = tileDeckRepository.findByGameSessionId(gameSessionId);
-//
-//        if (tileDeckEntity != null) {
-//            // Retrieve all tiles from the database
-//            List<TileDeckEntity> allTiles = tileDeckRepository.findAll();
-//
-//            // Extract the IDs of all tiles
-//            List<Long> tileIds = new ArrayList<>();
-//            for (TileEntity tile : allTiles) {
-//                tileIds.add(tile.getId());
-//            }
-//
-//            // Update the tile deck entity with the new list of tile IDs
-//            tileDeckEntity.setTileId(tileIds);
-//
-//            // Save the updated tile deck entity
-//            tileDeckRepository.save(tileDeckEntity);
-//        } else {
-//            // Handle case where tile deck entity does not exist for the given game session ID
-//            // (Optional: you can throw an exception or log a message)
-//        }
-//    }
-    }
-//TODO implement this method
-
-    @Override
     public List<Long> getAllTilesInDeck(Long gameSessionId) {
-        return null;
+        return Collections.emptyList();
     }
 
 }

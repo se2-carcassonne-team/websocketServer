@@ -19,7 +19,6 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static at.aau.serg.websocketserver.controller.helper.HelperMethods.getGameLobbyDtoList;
@@ -89,12 +88,12 @@ public class GameLobbyController {
 
                 return objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(playerEntity.getGameLobbyEntity()));
             } catch (JsonProcessingException e) {
-                throw new RuntimeException(ErrorCode.ERROR_2004.getErrorCode());
+                throw new RuntimeException(ErrorCode.ERROR_2004.getCode());
             }
 
             // TODO: check if backend updates the gameLobbyDto Id to the one contained in the returned PlayerDto Object
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(ErrorCode.ERROR_1006.getErrorCode());
+            throw new RuntimeException(ErrorCode.ERROR_1006.getCode());
         }
     }
 

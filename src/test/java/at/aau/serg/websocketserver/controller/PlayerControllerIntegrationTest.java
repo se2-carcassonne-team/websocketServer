@@ -140,7 +140,7 @@ public class PlayerControllerIntegrationTest {
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
 
 
-        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_2002.getErrorCode());
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_2002.getCode());
     }
 
     @Test
@@ -166,7 +166,7 @@ public class PlayerControllerIntegrationTest {
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
 
 
-        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_2003.getErrorCode());
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_2003.getCode());
     }
 
     @Test
@@ -498,7 +498,7 @@ public class PlayerControllerIntegrationTest {
         assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get().getGameLobbyEntity()).isEqualTo(null);
 
         // JsonProcessingException:   "Unrecognized token 'faulty': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false') at [Source: (String)"faulty JSON"; line: 1, column: 7]"
-        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_1005.getErrorCode());
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_1005.getCode());
     }
 
     @Test
@@ -529,7 +529,7 @@ public class PlayerControllerIntegrationTest {
         assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get().getGameLobbyEntity()).isEqualTo(null);
 
         // JsonProcessingException:   "Unrecognized token 'faulty': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false') at [Source: (String)"faulty JSON"; line: 1, column: 7]"
-        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_2004.getErrorCode());
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_2004.getCode());
     }
 
     @Test
@@ -590,7 +590,7 @@ public class PlayerControllerIntegrationTest {
         // 2) assert that the seventh player still doesn't reference a lobby
         assertThat(playerEntityService.findPlayerById(testPlayerEntityF.getId()).get().getGameLobbyEntity()).isEqualTo(null);
 
-        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_1004.getErrorCode());
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_1004.getCode());
     }
 
     @Test
@@ -622,7 +622,7 @@ public class PlayerControllerIntegrationTest {
 
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
 
-        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_1003.getErrorCode());
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_1003.getCode());
     }
 
     @Test
@@ -684,7 +684,7 @@ public class PlayerControllerIntegrationTest {
         session.send("/app/player-list", gameLobbyEntity.getId() +  "");
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
 
-        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_1003.getErrorCode());
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_1003.getCode());
     }
 
     @Test
@@ -777,7 +777,7 @@ public class PlayerControllerIntegrationTest {
         // assert that the player still doesn't exist
         assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
 
-        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_2001.getErrorCode());
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_2001.getCode());
     }
 
     @Test
@@ -803,7 +803,7 @@ public class PlayerControllerIntegrationTest {
         // assert that the username of the player hasn't changed to "UPDATED"
         assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get().getUsername()).isEqualTo(testPlayerEntityA.getUsername());
 
-        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_2004.getErrorCode());
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_2004.getCode());
     }
 
     @Test
@@ -1161,7 +1161,7 @@ public class PlayerControllerIntegrationTest {
         assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
 
 
-        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_2001.getErrorCode());
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_2001.getCode());
     }
 
     @Test
@@ -1190,7 +1190,7 @@ public class PlayerControllerIntegrationTest {
         assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get()).isEqualTo(testPlayerEntityA);
 
         var expectedResponse = "Player is not in a game lobby.";
-        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_2005.getErrorCode());
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_2005.getCode());
     }
 
     @Test
@@ -1211,7 +1211,7 @@ public class PlayerControllerIntegrationTest {
         // assert that player no longer exists in database
         assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
 
-        assertThat(actualResponse).isEqualTo(ResponseCode.RESPONSE_103.getResponseCode());
+        assertThat(actualResponse).isEqualTo(ResponseCode.RESPONSE_103.getCode());
     }
 
     @Test
@@ -1262,7 +1262,7 @@ public class PlayerControllerIntegrationTest {
         gameLobbyDtoA.setNumPlayers(gameLobbyDtoA.getNumPlayers() - 1);
         assertThat(playerEntityList.size()).isEqualTo(gameLobbyDtoA.getNumPlayers());
 
-        assertThat(actualResponseTopic1).isEqualTo(ResponseCode.RESPONSE_103.getResponseCode());
+        assertThat(actualResponseTopic1).isEqualTo(ResponseCode.RESPONSE_103.getCode());
         assertThat(actualResponseTopic2).isEqualTo(expectedResponseTopic2);
     }
 
@@ -1301,7 +1301,7 @@ public class PlayerControllerIntegrationTest {
         assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
         assertThat(gameLobbyEntityService.findById(gameLobbyEntityA.getId())).isEmpty();
 
-        assertThat(actualResponseTopic1).isEqualTo(ResponseCode.RESPONSE_103.getResponseCode());
+        assertThat(actualResponseTopic1).isEqualTo(ResponseCode.RESPONSE_103.getCode());
         assertThat(actualResponseTopic2).isEqualTo(expectedResponseTopic2);
     }
 
@@ -1322,7 +1322,7 @@ public class PlayerControllerIntegrationTest {
         // assert that player no longer exists in database
         assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
 
-        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_2001.getErrorCode());
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_2001.getCode());
     }
 
     public StompSession initStompSession(String topic, BlockingQueue<String> messages) throws Exception {

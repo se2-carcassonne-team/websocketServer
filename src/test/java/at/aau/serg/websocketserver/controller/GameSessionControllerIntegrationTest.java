@@ -40,7 +40,6 @@ import org.springframework.web.socket.messaging.WebSocketStompClient;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
@@ -718,7 +717,7 @@ public class GameSessionControllerIntegrationTest {
         StompSession session = initStompSession("/user/queue/errors", messages);
         session.send("/app/game-start", gameLobbyDtoA.getId() + "");
 
-        String expectedResponse = "ERROR: " + ErrorCode.ERROR_1003.getErrorCode();
+        String expectedResponse = "ERROR: " + ErrorCode.ERROR_1003.getCode();
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
 
         assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isEmpty();

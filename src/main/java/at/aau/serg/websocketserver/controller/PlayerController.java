@@ -13,8 +13,6 @@ import at.aau.serg.websocketserver.statuscode.ResponseCode;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityExistsException;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -37,6 +35,8 @@ public class PlayerController {
     private final ObjectMapper objectMapper;
     private final PlayerMapper playerMapper;
     private final GameLobbyMapper gameLobbyMapper;
+    private static final String LOBBY_LIST_TOPIC = "/topic/lobby-list";
+    private static final String UPDATE_TOPIC = "/update";
 
     public PlayerController(SimpMessagingTemplate template, PlayerEntityService playerEntityService, GameLobbyEntityService gameLobbyEntityService, ObjectMapper objectMapper, PlayerMapper playerMapper, GameLobbyMapper gameLobbyMapper) {
         this.template = template;
@@ -49,10 +49,7 @@ public class PlayerController {
 
     @MessageMapping("/player-create")
     @SendToUser("/queue/response")
-    public String handleCreatePlayer(String playerDtoJson, @Header("simpSessionId") String sessionId, Message message) throws JsonProcessingException {
-
-        // for testing only:
-//        MessageHeaders messageHeader = message.getHeaders();
+    public String handleCreatePlayer(String playerDtoJson) throws JsonProcessingException {
 
         // read in the JSON String and convert to PlayerDTO Object
         PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
@@ -77,10 +74,7 @@ public class PlayerController {
      */
     @MessageMapping("/player-join-lobby")
     @SendToUser("/queue/response")
-    public String handlePlayerJoinLobby(Message message, String gameLobbyIdAndPlayerDtoJson) throws RuntimeException {
-
-        // testing only:
-//        message.getHeaders();
+    public String handlePlayerJoinLobby(String gameLobbyIdAndPlayerDtoJson) throws RuntimeException {
 
         try {
             // 1) extract GameLobbyDto and PlayerDto objects from the string payload:
@@ -107,13 +101,13 @@ public class PlayerController {
             // send response to /topic/lobby-list --> updated list of lobbies (numPlayers of the joined lobby incremented) (later with response code: 301)
             List<GameLobbyDto> gameLobbyDtos = getGameLobbyDtoList(gameLobbyEntityService, gameLobbyMapper);
             this.template.convertAndSend(
-                    "/topic/lobby-list",
+                    LOBBY_LIST_TOPIC,
                     objectMapper.writeValueAsString(gameLobbyDtos)
             );
 
             // send updated gameLobbyDto to all players in the lobby (relevant for lobbyCreator)
             this.template.convertAndSend(
-                    "/topic/lobby-" + gameLobbyId + "/update",
+                    "/topic/lobby-" + gameLobbyId + UPDATE_TOPIC,
                     objectMapper.writeValueAsString(gameLobbyEntityService.findById(gameLobbyId))
             );
 
@@ -121,14 +115,13 @@ public class PlayerController {
             return objectMapper.writeValueAsString(dto);
 
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(ErrorCode.ERROR_2004.getErrorCode());
+            throw new RuntimeException(ErrorCode.ERROR_2004.getCode());
         } catch (NumberFormatException e) {
-            throw new RuntimeException(ErrorCode.ERROR_1005.getErrorCode());
+            throw new RuntimeException(ErrorCode.ERROR_1005.getCode());
         }
     }
 
 
-    // DONE
     /**
      * Ideas for the endpoint /app/player-list
      * <p>sends responses to: </p>
@@ -155,7 +148,7 @@ public class PlayerController {
             // later with response code
             return objectMapper.writeValueAsString(playerDtoList);
         } catch (NumberFormatException e) {
-            throw new RuntimeException(ErrorCode.ERROR_1005.getErrorCode());
+            throw new RuntimeException(ErrorCode.ERROR_1005.getCode());
         }
     }
 
@@ -181,7 +174,7 @@ public class PlayerController {
             PlayerEntity updatedPlayerEntity = playerEntityService.updateUsername(playerEntity);
             return objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(ErrorCode.ERROR_2004.getErrorCode());
+            throw new RuntimeException(ErrorCode.ERROR_2004.getCode());
         }
 
     }
@@ -213,13 +206,10 @@ public class PlayerController {
 
             // 3) player leaves lobby
             PlayerEntity updatedPlayerEntity = playerEntityService.leaveLobby(playerEntity);
-            System.out.println(playerMapper.mapToDto(updatedPlayerEntity));
-            System.out.println(objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity)));
-
 
             // send response to: /topic/lobby-list --> updated list of lobbies (later with response code 301)
             this.template.convertAndSend(
-                    "/topic/lobby-list",
+                    LOBBY_LIST_TOPIC,
                     objectMapper.writeValueAsString(getGameLobbyDtoList(gameLobbyEntityService, gameLobbyMapper))
             );
 
@@ -230,15 +220,11 @@ public class PlayerController {
             );
 
 
-            // send updated gameLobbyDto to all players in the lobby (relevant for lobbyCreator)
             if (gameLobbyEntityService.findById(gameLobbyId).isPresent()) {
-                this.template.convertAndSend(
-                        "/topic/lobby-" + gameLobbyId + "/update",
-                        objectMapper.writeValueAsString(gameLobbyEntityService.findById(gameLobbyId).get())
-                );
 
+                // send updated gameLobbyDto to all players in the lobby
                 this.template.convertAndSend(
-                        "/topic/lobby-" + gameLobbyId + "/update",
+                        "/topic/lobby-" + gameLobbyId + UPDATE_TOPIC,
                         objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(gameLobbyEntityService.findById(gameLobbyId).get()))
                 );
             }
@@ -247,7 +233,7 @@ public class PlayerController {
             return objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
 
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(ErrorCode.ERROR_2004.getErrorCode());
+            throw new RuntimeException(ErrorCode.ERROR_2004.getCode());
         }
     }
 
@@ -261,7 +247,7 @@ public class PlayerController {
 
         Optional<PlayerEntity> playerEntity = playerEntityService.findPlayerById(playerDto.getId());
         if (playerEntity.isPresent()) {
-            throw new EntityExistsException(ErrorCode.ERROR_2006.getErrorCode());
+            throw new EntityExistsException(ErrorCode.ERROR_2006.getCode());
         }
 
         // Update logic if a player was part of a lobby
@@ -277,13 +263,13 @@ public class PlayerController {
             } else {
                 // send response to: /topic/lobby-list --> updated list of lobbies (later with response code 301)
                 this.template.convertAndSend(
-                        "/topic/lobby-list",
+                        LOBBY_LIST_TOPIC,
                         objectMapper.writeValueAsString(getGameLobbyDtoList(gameLobbyEntityService, gameLobbyMapper))
                 );
             }
         }
 
-        return ResponseCode.RESPONSE_103.getResponseCode();
+        return ResponseCode.RESPONSE_103.getCode();
     }
 
     @MessageExceptionHandler

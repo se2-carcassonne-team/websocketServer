@@ -63,7 +63,7 @@ public class GameSessionEntityServiceImpl implements GameSessionEntityService {
             tileDeckEntityService.createTileDeck(gameSessionEntity.getId());
             return gameSessionEntityReturned;
         } else {
-            throw new EntityNotFoundException(ErrorCode.ERROR_1003.getErrorCode());
+            throw new EntityNotFoundException(ErrorCode.ERROR_1003.getCode());
         }
     }
 
@@ -92,7 +92,7 @@ public class GameSessionEntityServiceImpl implements GameSessionEntityService {
 
             return nextTurnPlayerId;
         } else {
-            throw new EntityNotFoundException(ErrorCode.ERROR_3003.getErrorCode());
+            throw new EntityNotFoundException(ErrorCode.ERROR_3003.getCode());
         }
     }
 
@@ -105,7 +105,7 @@ public class GameSessionEntityServiceImpl implements GameSessionEntityService {
             gameSession.setGameState(GameState.FINISHED.name());
             return gameSessionEntityRepository.save(gameSession);
         } else {
-            throw new EntityNotFoundException(ErrorCode.ERROR_3003.getErrorCode());
+            throw new EntityNotFoundException(ErrorCode.ERROR_3003.getCode());
         }
     }
 }
