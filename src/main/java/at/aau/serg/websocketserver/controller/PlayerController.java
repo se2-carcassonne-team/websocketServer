@@ -37,6 +37,8 @@ public class PlayerController {
     private final ObjectMapper objectMapper;
     private final PlayerMapper playerMapper;
     private final GameLobbyMapper gameLobbyMapper;
+    private final String LOBBY_LIST_TOPIC = "/topic/lobby-list";
+    private final String UPDATE_TOPIC = "/update";
 
     public PlayerController(SimpMessagingTemplate template, PlayerEntityService playerEntityService, GameLobbyEntityService gameLobbyEntityService, ObjectMapper objectMapper, PlayerMapper playerMapper, GameLobbyMapper gameLobbyMapper) {
         this.template = template;
@@ -107,13 +109,13 @@ public class PlayerController {
             // send response to /topic/lobby-list --> updated list of lobbies (numPlayers of the joined lobby incremented) (later with response code: 301)
             List<GameLobbyDto> gameLobbyDtos = getGameLobbyDtoList(gameLobbyEntityService, gameLobbyMapper);
             this.template.convertAndSend(
-                    "/topic/lobby-list",
+                    LOBBY_LIST_TOPIC,
                     objectMapper.writeValueAsString(gameLobbyDtos)
             );
 
             // send updated gameLobbyDto to all players in the lobby (relevant for lobbyCreator)
             this.template.convertAndSend(
-                    "/topic/lobby-" + gameLobbyId + "/update",
+                    "/topic/lobby-" + gameLobbyId + UPDATE_TOPIC,
                     objectMapper.writeValueAsString(gameLobbyEntityService.findById(gameLobbyId))
             );
 
@@ -219,7 +221,7 @@ public class PlayerController {
 
             // send response to: /topic/lobby-list --> updated list of lobbies (later with response code 301)
             this.template.convertAndSend(
-                    "/topic/lobby-list",
+                    LOBBY_LIST_TOPIC,
                     objectMapper.writeValueAsString(getGameLobbyDtoList(gameLobbyEntityService, gameLobbyMapper))
             );
 
@@ -273,7 +275,7 @@ public class PlayerController {
             } else {
                 // send response to: /topic/lobby-list --> updated list of lobbies (later with response code 301)
                 this.template.convertAndSend(
-                        "/topic/lobby-list",
+                        LOBBY_LIST_TOPIC,
                         objectMapper.writeValueAsString(getGameLobbyDtoList(gameLobbyEntityService, gameLobbyMapper))
                 );
             }
