@@ -51,7 +51,7 @@ public class PlayerController {
 
     @MessageMapping("/player-create")
     @SendToUser("/queue/response")
-    public String handleCreatePlayer(String playerDtoJson, @Header("simpSessionId") String sessionId, Message message) throws JsonProcessingException {
+    public String handleCreatePlayer(String playerDtoJson) throws JsonProcessingException {
 
         // read in the JSON String and convert to PlayerDTO Object
         PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
