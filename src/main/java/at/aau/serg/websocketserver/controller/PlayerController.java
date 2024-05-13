@@ -208,9 +208,6 @@ public class PlayerController {
 
             // 3) player leaves lobby
             PlayerEntity updatedPlayerEntity = playerEntityService.leaveLobby(playerEntity);
-            System.out.println(playerMapper.mapToDto(updatedPlayerEntity));
-            System.out.println(objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity)));
-
 
             // send response to: /topic/lobby-list --> updated list of lobbies (later with response code 301)
             this.template.convertAndSend(
