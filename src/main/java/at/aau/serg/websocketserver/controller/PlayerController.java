@@ -230,15 +230,11 @@ public class PlayerController {
             );
 
 
-            // send updated gameLobbyDto to all players in the lobby (relevant for lobbyCreator)
             if (gameLobbyEntityService.findById(gameLobbyId).isPresent()) {
-                this.template.convertAndSend(
-                        "/topic/lobby-" + gameLobbyId + "/update",
-                        objectMapper.writeValueAsString(gameLobbyEntityService.findById(gameLobbyId).get())
-                );
 
+                // send updated gameLobbyDto to all players in the lobby
                 this.template.convertAndSend(
-                        "/topic/lobby-" + gameLobbyId + "/update",
+                        "/topic/lobby-" + gameLobbyId + UPDATE_TOPIC,
                         objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(gameLobbyEntityService.findById(gameLobbyId).get()))
                 );
             }
