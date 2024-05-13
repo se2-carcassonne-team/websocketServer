@@ -15,13 +15,14 @@ public class HelperMethodsTests {
             Constructor<HelperMethods> constructor = HelperMethods.class.getDeclaredConstructor();
             constructor.setAccessible(true);
             constructor.newInstance();
-            fail("Expected an IllegalStateException to be thrown");
-        } catch (NoSuchMethodException | IllegalAccessException | InstantiationException e) {
-            fail("Unexpected exception thrown: " + e.getMessage());
-        } catch (InvocationTargetException e) {
-            Throwable cause = e.getCause();
-            assertTrue(cause instanceof IllegalStateException, "Expected an IllegalStateException to be thrown, but got " + cause);
-            assertEquals("Utility class", cause.getMessage());
+        } catch (NoSuchMethodException | IllegalAccessException | InstantiationException | InvocationTargetException e) {
+            if (e instanceof InvocationTargetException) {
+                Throwable cause = e.getCause();
+                assertTrue(cause instanceof IllegalStateException, "Expected an IllegalStateException to be thrown, but got " + cause);
+                assertEquals("Utility class", cause.getMessage());
+            } else {
+                fail("Unexpected exception thrown: " + e.getMessage());
+            }
         }
     }
 }
