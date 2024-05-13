@@ -37,6 +37,7 @@ public class GameSessionController {
     private TileDeckRepository tileDeckRepository;
 
     private TileDeckEntityServiceImpl tileDeckEntityServiceImpl;
+    private static final String GAME_SESSION_TOPIC = "/topic/game-session-";
 
 
     public GameSessionController(SimpMessagingTemplate template, GameSessionEntityService gameSessionEntityService, ObjectMapper objectMapper, GameSessionMapper gameSessionMapper, GameLobbyMapper gameLobbyMapper, GameLobbyEntityService gameLobbyEntityService, TileDeckRepository tileDeckRepository, TileDeckEntityServiceImpl tileDeckEntityServiceImpl) {
@@ -105,14 +106,14 @@ public class GameSessionController {
                     // Create the nextTurnDto
                     NextTurnDto nextTurnDto = new NextTurnDto(playerId, drawnCardId);
 //                    Send the nextTurnDto to the user to specific gameSession
-                    this.template.convertAndSend("/topic/game-session-" + gameSessionId + "/next-turn-response", objectMapper.writeValueAsString(nextTurnDto));
+                    this.template.convertAndSend(GAME_SESSION_TOPIC + gameSessionId + "/next-turn-response", objectMapper.writeValueAsString(nextTurnDto));
                     return objectMapper.writeValueAsString(nextTurnDto);
                 } else {
 //                    If the deck is empty finish the game
                     gameSessionEntityService.terminateGameSession(gameSessionIdLong);
 //                    Send the finish game message to all users when the game is finished
                     String currentGameState = gameSessionEntityService.findById(gameSessionIdLong).get().getGameState();
-                    this.template.convertAndSend("/topic/game-session-" + gameSessionId + "/game-finished", currentGameState);
+                    this.template.convertAndSend(GAME_SESSION_TOPIC + gameSessionId + "/game-finished", currentGameState);
                     return GameState.FINISHED.name();
                 }
             } else {
@@ -135,7 +136,7 @@ public class GameSessionController {
 
         // forward placedTile to the other players:
         this.template.convertAndSend(
-                "/topic/game-session-" + placedTileDto.getGameSessionId() + "/tile",
+                GAME_SESSION_TOPIC + placedTileDto.getGameSessionId() + "/tile",
                 placedTile
         );
     }
