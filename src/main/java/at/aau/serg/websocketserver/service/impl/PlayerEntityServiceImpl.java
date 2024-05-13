@@ -1,7 +1,6 @@
 package at.aau.serg.websocketserver.service.impl;
 
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
-import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
 import at.aau.serg.websocketserver.domain.entity.repository.GameLobbyEntityRepository;
 import at.aau.serg.websocketserver.domain.entity.repository.PlayerEntityRepository;
@@ -16,7 +15,6 @@ import org.springframework.stereotype.Service;
 import java.security.SecureRandom;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
 
 @Service
 public class PlayerEntityServiceImpl implements PlayerEntityService {
@@ -55,12 +53,12 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
 
         // check if player with id already exists
         if(playerEntity.getId() != null && playerEntityRepository.findById(playerEntity.getId()).isPresent()) {
-            throw new EntityExistsException(ErrorCode.ERROR_2002.getErrorCode());
+            throw new EntityExistsException(ErrorCode.ERROR_2002.getCode());
         }
 
         // check if player with username already exists --> extra method in repository: findPlayerEntitiesByUsername
         if(playerEntity.getUsername() != null && !playerEntityRepository.findPlayerEntitiesByUsername(playerEntity.getUsername()).isEmpty()) {
-            throw new EntityExistsException(ErrorCode.ERROR_2003.getErrorCode());
+            throw new EntityExistsException(ErrorCode.ERROR_2003.getCode());
         }
 
         return playerEntityRepository.save(playerEntity);
@@ -73,7 +71,7 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
         return playerEntityRepository.findById(playerEntity.getId()).map( playerEntityToUpdate -> {
             Optional.ofNullable(playerEntity.getUsername()).ifPresent(playerEntityToUpdate::setUsername);
             return playerEntityRepository.save(playerEntityToUpdate);
-        }).orElseThrow(()-> new EntityNotFoundException(ErrorCode.ERROR_2001.getErrorCode()));
+        }).orElseThrow(()-> new EntityNotFoundException(ErrorCode.ERROR_2001.getCode()));
 
     }
 
@@ -92,12 +90,12 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
         // Check if lobby exists. Only if lobby exists can player join
         Optional<GameLobbyEntity> gameLobbyEntityInDatabase = gameLobbyEntityRepository.findById(gameLobbyId);
         if (gameLobbyEntityInDatabase.isEmpty()) {
-            throw new EntityNotFoundException(ErrorCode.ERROR_1003.getErrorCode());
+            throw new EntityNotFoundException(ErrorCode.ERROR_1003.getCode());
         }
 
         // only allow lobby join if lobby is not full yet
         if (gameLobbyEntityInDatabase.get().getNumPlayers() > 4) {
-            throw new RuntimeException(ErrorCode.ERROR_1004.getErrorCode());
+            throw new RuntimeException(ErrorCode.ERROR_1004.getCode());
         }
 
         GameLobbyEntity gameLobbyEntity = gameLobbyEntityInDatabase.get();
@@ -118,7 +116,7 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
     @Override
     public List<PlayerEntity> getAllPlayersForLobby(Long gameLobbyId) {
         if(gameLobbyEntityRepository.findById(gameLobbyId).isEmpty()) {
-            throw new RuntimeException(ErrorCode.ERROR_1003.getErrorCode());
+            throw new RuntimeException(ErrorCode.ERROR_1003.getCode());
         }
         return playerEntityRepository.findPlayerEntitiesByGameLobbyEntity_Id(gameLobbyId);
     }
@@ -128,13 +126,13 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
     public PlayerEntity leaveLobby(PlayerEntity playerEntity) throws EntityNotFoundException {
 
         if (playerEntityRepository.findById(playerEntity.getId()).isEmpty()) {
-            throw new EntityNotFoundException(ErrorCode.ERROR_2001.getErrorCode());
+            throw new EntityNotFoundException(ErrorCode.ERROR_2001.getCode());
         }
 
         GameLobbyEntity gameLobbyEntity = playerEntity.getGameLobbyEntity();
 
         if (gameLobbyEntity == null) {
-            throw new EntityNotFoundException(ErrorCode.ERROR_2005.getErrorCode());
+            throw new EntityNotFoundException(ErrorCode.ERROR_2005.getCode());
         }
 
         playerEntity.setGameLobbyEntity(null);
@@ -179,7 +177,7 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
             }
             playerEntityRepository.deleteById(id);
         } else {
-            throw new EntityNotFoundException(ErrorCode.ERROR_2001.getErrorCode());
+            throw new EntityNotFoundException(ErrorCode.ERROR_2001.getCode());
         }
     }
 

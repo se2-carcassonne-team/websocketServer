@@ -13,8 +13,6 @@ import at.aau.serg.websocketserver.statuscode.ResponseCode;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityExistsException;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -117,9 +115,9 @@ public class PlayerController {
             return objectMapper.writeValueAsString(dto);
 
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(ErrorCode.ERROR_2004.getErrorCode());
+            throw new RuntimeException(ErrorCode.ERROR_2004.getCode());
         } catch (NumberFormatException e) {
-            throw new RuntimeException(ErrorCode.ERROR_1005.getErrorCode());
+            throw new RuntimeException(ErrorCode.ERROR_1005.getCode());
         }
     }
 
@@ -150,7 +148,7 @@ public class PlayerController {
             // later with response code
             return objectMapper.writeValueAsString(playerDtoList);
         } catch (NumberFormatException e) {
-            throw new RuntimeException(ErrorCode.ERROR_1005.getErrorCode());
+            throw new RuntimeException(ErrorCode.ERROR_1005.getCode());
         }
     }
 
@@ -176,7 +174,7 @@ public class PlayerController {
             PlayerEntity updatedPlayerEntity = playerEntityService.updateUsername(playerEntity);
             return objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(ErrorCode.ERROR_2004.getErrorCode());
+            throw new RuntimeException(ErrorCode.ERROR_2004.getCode());
         }
 
     }
@@ -235,7 +233,7 @@ public class PlayerController {
             return objectMapper.writeValueAsString(playerMapper.mapToDto(updatedPlayerEntity));
 
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(ErrorCode.ERROR_2004.getErrorCode());
+            throw new RuntimeException(ErrorCode.ERROR_2004.getCode());
         }
     }
 
@@ -249,7 +247,7 @@ public class PlayerController {
 
         Optional<PlayerEntity> playerEntity = playerEntityService.findPlayerById(playerDto.getId());
         if (playerEntity.isPresent()) {
-            throw new EntityExistsException(ErrorCode.ERROR_2006.getErrorCode());
+            throw new EntityExistsException(ErrorCode.ERROR_2006.getCode());
         }
 
         // Update logic if a player was part of a lobby
@@ -271,7 +269,7 @@ public class PlayerController {
             }
         }
 
-        return ResponseCode.RESPONSE_103.getResponseCode();
+        return ResponseCode.RESPONSE_103.getCode();
     }
 
     @MessageExceptionHandler

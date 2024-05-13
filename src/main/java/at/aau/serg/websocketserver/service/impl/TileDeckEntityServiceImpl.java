@@ -4,7 +4,6 @@ import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
 import at.aau.serg.websocketserver.domain.entity.TileDeckEntity;
 import at.aau.serg.websocketserver.domain.entity.repository.GameSessionEntityRepository;
 import at.aau.serg.websocketserver.domain.entity.repository.TileDeckRepository;
-import at.aau.serg.websocketserver.service.GameSessionEntityService;
 import at.aau.serg.websocketserver.service.TileDeckEntityService;
 import at.aau.serg.websocketserver.statuscode.ErrorCode;
 import jakarta.persistence.EntityNotFoundException;
@@ -50,7 +49,7 @@ public class TileDeckEntityServiceImpl implements TileDeckEntityService {
 //            Return the created tile deck entity
             return tileDeckRepository.save(tileDeck);
         } else {
-            throw new EntityNotFoundException(ErrorCode.ERROR_3003.getErrorCode());
+            throw new EntityNotFoundException(ErrorCode.ERROR_3003.getCode());
         }
     }
 
