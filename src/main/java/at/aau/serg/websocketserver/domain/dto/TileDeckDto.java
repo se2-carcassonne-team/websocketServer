@@ -13,6 +13,6 @@ import java.util.List;
 @Builder
 public class TileDeckDto implements Serializable {
     Long id;
-    List<Long> tileId;
+    private List<Long> tileId;
     Long gameSessionId;
 }
