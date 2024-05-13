@@ -10,12 +10,10 @@ import org.springframework.stereotype.Component;
 public class GameLobbyMapper {
 
     private final ModelMapper modelMapper;
-    private final PlayerEntityRepository playerEntityRepository;
     private final PlayerMapper playerMapper;
 
-    public GameLobbyMapper(ModelMapper modelMapper, PlayerEntityRepository playerEntityRepository, PlayerMapper playerMapper) {
+    public GameLobbyMapper(ModelMapper modelMapper, PlayerMapper playerMapper) {
         this.modelMapper = modelMapper;
-        this.playerEntityRepository = playerEntityRepository;
         this.playerMapper = playerMapper;
     }
 
