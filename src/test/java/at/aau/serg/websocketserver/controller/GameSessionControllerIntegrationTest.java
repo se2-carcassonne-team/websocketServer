@@ -128,13 +128,19 @@ public class GameSessionControllerIntegrationTest {
         assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isEmpty();
 
         StompSession session = initStompSession("/topic/lobby-" + gameLobbyDtoA.getId() + "/game-start", messages);
+        StompSession session2 = initStompSession("/topic/lobby-list", messages2);
         session.send("/app/game-start", gameLobbyDtoA.getId() + "");
 
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+        String actualResponse2 = messages2.poll(1, TimeUnit.SECONDS);
 
         assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isPresent();
         assertThat(actualResponse).isEqualTo(gameSessionDtoA.getId() + "");
+
+        assertThat(actualResponse2).isNotNull();
+
     }
+
 
     @Test
     void testThatCreateGameSessionReturnsUpdatedLobbyListToQueue() throws Exception {
