@@ -104,7 +104,7 @@ public class TileDeckEntityServiceImpl implements TileDeckEntityService {
 
     @Override
     public List<Long> getAllTilesInDeck(Long gameSessionId) {
-        return null;
+        return Collections.emptyList();
     }
 
 }
