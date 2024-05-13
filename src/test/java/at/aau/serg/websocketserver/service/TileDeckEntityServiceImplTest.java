@@ -15,10 +15,7 @@ import org.springframework.boot.jdbc.EmbeddedDatabaseConnection;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -113,6 +110,16 @@ class TileDeckEntityServiceImplTest {
         assertThrows(IllegalStateException.class, () -> tileDeckEntityService.drawNextTile(tileDeck));
     }
 
-//    TODO: Add more tests
+    @Test
+    void testGetAllTilesInDeck() {
+        Long gameSessionId = 1L; // replace with the actual gameSessionId you want to use
+        List<Long> expectedTileIds = Collections.emptyList(); // The method is expected to return an empty list
+
+        // Act
+        List<Long> result = tileDeckEntityService.getAllTilesInDeck(gameSessionId);
+
+        // Assert
+        assertEquals(expectedTileIds, result);
+    }
 
 }
