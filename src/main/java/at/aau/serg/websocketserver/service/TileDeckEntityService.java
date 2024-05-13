@@ -13,7 +13,5 @@ public interface TileDeckEntityService {
 
     boolean isTileDeckEmpty(TileDeckEntity tileDeck);
 
-    void resetTileDeck(Long gameSessionId);
-
     List<Long> getAllTilesInDeck(Long gameSessionId);
 }
