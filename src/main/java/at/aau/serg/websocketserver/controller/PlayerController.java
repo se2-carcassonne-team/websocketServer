@@ -53,9 +53,6 @@ public class PlayerController {
     @SendToUser("/queue/response")
     public String handleCreatePlayer(String playerDtoJson, @Header("simpSessionId") String sessionId, Message message) throws JsonProcessingException {
 
-        // for testing only:
-//        MessageHeaders messageHeader = message.getHeaders();
-
         // read in the JSON String and convert to PlayerDTO Object
         PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
 
@@ -80,9 +77,6 @@ public class PlayerController {
     @MessageMapping("/player-join-lobby")
     @SendToUser("/queue/response")
     public String handlePlayerJoinLobby(Message message, String gameLobbyIdAndPlayerDtoJson) throws RuntimeException {
-
-        // testing only:
-//        message.getHeaders();
 
         try {
             // 1) extract GameLobbyDto and PlayerDto objects from the string payload:
