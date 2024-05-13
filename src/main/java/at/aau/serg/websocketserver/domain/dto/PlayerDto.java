@@ -15,7 +15,6 @@ public class PlayerDto {
 
     private String username;
 
-    //private GameLobbyDto gameLobbyDto;
     private Long gameLobbyId;
     private PlayerColour playerColour;
 
