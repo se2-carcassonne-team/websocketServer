@@ -24,6 +24,7 @@ import java.util.List;
 import static at.aau.serg.websocketserver.controller.helper.HelperMethods.getGameLobbyDtoList;
 import static at.aau.serg.websocketserver.controller.helper.HelperMethods.getPlayerDtosInLobbyList;
 
+// fixme avoid making this class a god class, the constr already requires many parameters
 @Controller
 public class GameLobbyController {
 

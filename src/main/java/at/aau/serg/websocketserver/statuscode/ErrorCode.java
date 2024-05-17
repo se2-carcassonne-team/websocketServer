@@ -1,5 +1,6 @@
 package at.aau.serg.websocketserver.statuscode;
 
+// fixme use meaningful enum names
 public enum ErrorCode {
     ERROR_1001("gameLobby with the id already exists", "1001"),
     ERROR_1002("gameLobby with the name already exists", "1002"),

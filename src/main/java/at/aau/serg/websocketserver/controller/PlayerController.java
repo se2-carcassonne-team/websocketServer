@@ -60,7 +60,7 @@ public class PlayerController {
     }
 
 
-
+    // fixme extract methods for readability
     // TODO: test topic 4) response
     /**
      * Ideas for the endpoint: /app/player-join-lobby
@@ -179,7 +179,7 @@ public class PlayerController {
 
     }
 
-
+    // fixme extract methods for readability
     // DONE
     /**
      * Ideas for the endpoint /app/player-leave-lobby

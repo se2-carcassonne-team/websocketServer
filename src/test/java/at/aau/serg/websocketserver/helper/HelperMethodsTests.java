@@ -9,6 +9,7 @@ import java.lang.reflect.InvocationTargetException;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class HelperMethodsTests {
+    // fixme create instance methods instead of static ones, this also simplifies the testing (and potential inheritance)
     @Test
     void testPrivateConstructor() {
         try {

@@ -100,6 +100,7 @@ public class GameLobbyControllerIntegrationTest {
         return playerDtos;
     }
 
+    // fixme split into multiple tests
     @Test
     void testThatCreateLobbyReturnsCreatedGameLobbyDtoToQueue() throws Exception {
         StompSession session = initStompSession("/user/queue/response", messages);
@@ -141,6 +142,7 @@ public class GameLobbyControllerIntegrationTest {
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
+    // fixme split into multiple tests
     @Test
     void testThatCreateLobbyReturnsUpdatedLobbyListToTopic() throws Exception {
         StompSession session = initStompSession("/topic/lobby-list", messages);
@@ -182,6 +184,7 @@ public class GameLobbyControllerIntegrationTest {
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
+    // fixme split into multiple tests
     @Test
     void testThatCreateLobbyReturnsUpdatedPlayerListToTopic() throws Exception {
 
@@ -224,6 +227,7 @@ public class GameLobbyControllerIntegrationTest {
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
+    // fixme split into multiple tests
     @Test
     void testThatCreateLobbyReturnsUpdatedPlayerToTopic() throws Exception {
         StompSession session = initStompSession("/topic/lobby-creator", messages);
@@ -264,6 +268,7 @@ public class GameLobbyControllerIntegrationTest {
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
+    // fixme split into multiple tests (also for preconditions)
     @Test
     void testThatCreateLobbyWithDuplicateLobbyIdFails() throws Exception {
         StompSession session = initStompSession("/user/queue/errors", messages);
@@ -284,6 +289,7 @@ public class GameLobbyControllerIntegrationTest {
         assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_1001.getCode());
     }
 
+    // fixme split into multiple tests (also for preconditions)
     @Test
     void testThatCreateLobbyWithDuplicateLobbyNameFails() throws Exception {
         StompSession session = initStompSession("/user/queue/errors", messages);
@@ -308,6 +314,7 @@ public class GameLobbyControllerIntegrationTest {
         assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_1002.getCode());
     }
 
+    // fixme split into multiple tests (also for preconditions)
     @Test
     void testThatCreateLobbyWithInvalidPlayerIdFails() throws Exception {
         StompSession session = initStompSession("/user/queue/errors", messages);

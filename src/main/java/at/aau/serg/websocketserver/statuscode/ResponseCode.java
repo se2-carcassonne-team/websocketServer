@@ -1,5 +1,6 @@
 package at.aau.serg.websocketserver.statuscode;
 
+// fixme use meaningful enum names
 public enum ResponseCode {
     RESPONSE_101("received updated playerDto", "101"),
     RESPONSE_102("placeholder", "102"),
