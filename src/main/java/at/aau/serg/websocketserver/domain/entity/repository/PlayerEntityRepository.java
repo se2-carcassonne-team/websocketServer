@@ -4,6 +4,7 @@ import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface PlayerEntityRepository extends JpaRepository<PlayerEntity, Long> {
 
@@ -13,4 +14,6 @@ public interface PlayerEntityRepository extends JpaRepository<PlayerEntity, Long
     List<PlayerEntity> findPlayerEntitiesByGameLobbyEntity_Id(Long id);
 
     List<PlayerEntity> findPlayerEntitiesByUsername(String username);
+
+    Optional<PlayerEntity> findBySessionId(String sessionId);
 }

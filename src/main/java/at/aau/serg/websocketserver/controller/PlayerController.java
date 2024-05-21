@@ -2,7 +2,6 @@ package at.aau.serg.websocketserver.controller;
 
 import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketserver.domain.dto.PlayerDto;
-import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
 import at.aau.serg.websocketserver.mapper.PlayerMapper;
@@ -12,7 +11,7 @@ import at.aau.serg.websocketserver.statuscode.ErrorCode;
 import at.aau.serg.websocketserver.statuscode.ResponseCode;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.persistence.EntityExistsException;
+import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -49,12 +48,12 @@ public class PlayerController {
 
     @MessageMapping("/player-create")
     @SendToUser("/queue/response")
-    public String handleCreatePlayer(String playerDtoJson) throws JsonProcessingException {
+    public String handleCreatePlayer(String playerDtoJson,@Header("simpSessionId") String sessionId) throws JsonProcessingException {
 
         // read in the JSON String and convert to PlayerDTO Object
         PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
 
-        PlayerEntity createdPlayerEntity = playerEntityService.createPlayer(playerMapper.mapToEntity(playerDto));
+        PlayerEntity createdPlayerEntity = playerEntityService.createPlayer(playerMapper.mapToEntity(playerDto), sessionId);
         // return the DTO of the created player
         return objectMapper.writeValueAsString(playerMapper.mapToDto(createdPlayerEntity));
     }
@@ -237,13 +236,13 @@ public class PlayerController {
         }
     }
 
-    // TODO: handle deletion of player inside a lobby properly?
+    // TODO: Delete
     @MessageMapping("/player-delete")
     @SendToUser("/queue/response")
     public String handleDeletePlayer(String playerDtoJson) throws JsonProcessingException {
         PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
 
-        playerEntityService.deletePlayer(playerDto.getId());
+        /*playerEntityService.deletePlayer(playerDto.getId());
 
         Optional<PlayerEntity> playerEntity = playerEntityService.findPlayerById(playerDto.getId());
         if (playerEntity.isPresent()) {
@@ -267,7 +266,7 @@ public class PlayerController {
                         objectMapper.writeValueAsString(getGameLobbyDtoList(gameLobbyEntityService, gameLobbyMapper))
                 );
             }
-        }
+        }*/
 
         return ResponseCode.RESPONSE_103.getCode();
     }
