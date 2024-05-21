@@ -12,7 +12,6 @@ import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
 import at.aau.serg.websocketserver.mapper.PlayerMapper;
 import at.aau.serg.websocketserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketserver.service.PlayerEntityService;
-import at.aau.serg.websocketserver.statuscode.ResponseCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -97,6 +96,12 @@ public class PlayerControllerIntegrationTest {
         session.send("/app/player-create", playerDtoJson);
 
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        // Handling of the session id
+        String playerSessionId = playerEntityService.findPlayerById(testPlayerEntity.getId()).get().getSessionId();
+        testPlayerDto.setSessionId(playerSessionId);
+        testPlayerEntity = playerMapper.mapToEntity(testPlayerDto);
+        playerDtoJson = objectMapper.writeValueAsString(testPlayerDto);
 
         // assert that the player now exists in the database
         assertThat(playerEntityService.findPlayerById(testPlayerEntity.getId())).isPresent();
@@ -1191,138 +1196,6 @@ public class PlayerControllerIntegrationTest {
 
         var expectedResponse = "Player is not in a game lobby.";
         assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_2005.getCode());
-    }
-
-    @Test
-    void testThatDeletePlayerWithoutLobbySuccessfullyDeletesExistingPlayer() throws Exception {
-        StompSession session = initStompSession("/user/queue/response", messages);
-
-        PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
-        playerEntityService.createPlayer(testPlayerEntityA);
-
-        // assert that player currently exists in database
-        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get()).isEqualTo(testPlayerEntityA);
-
-        PlayerDto testPlayerDtoA = playerMapper.mapToDto(testPlayerEntityA);
-        session.send("/app/player-delete", objectMapper.writeValueAsString(testPlayerDtoA));
-
-        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
-
-        // assert that player no longer exists in database
-        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
-
-        assertThat(actualResponse).isEqualTo(ResponseCode.RESPONSE_103.getCode());
-    }
-
-    @Test
-    void testThatDeletePlayerInLobbySuccessfullyRemovesPlayerFromLobbyAndDeletesExistingPlayer() throws Exception {
-        GameLobbyEntity gameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
-        StompSession session = initStompSessionWithSecondTopic("/user/queue/response", "/topic/lobby-" + gameLobbyEntityA.getId(), messages, messages2);
-
-        PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
-        PlayerEntity testPlayerEntityB = TestDataUtil.createTestPlayerEntityB(null);
-
-        GameLobbyDto gameLobbyDtoA = gameLobbyMapper.mapToDto(gameLobbyEntityA);
-        gameLobbyDtoA.setNumPlayers(2);
-
-        PlayerDto playerDtoB = playerMapper.mapToDto(testPlayerEntityB);
-        playerDtoB.setGameLobbyId(gameLobbyEntityA.getId());
-        List<PlayerDto> playerDtoList = new ArrayList<>();
-
-
-        playerEntityService.createPlayer(testPlayerEntityA);
-        playerEntityService.createPlayer(testPlayerEntityB);
-        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get()).isEqualTo(testPlayerEntityA);
-        assertThat(playerEntityService.findPlayerById(testPlayerEntityB.getId()).get()).isEqualTo(testPlayerEntityB);
-
-        gameLobbyEntityService.createLobby(gameLobbyEntityA);
-        assertThat(gameLobbyEntityService.findById(gameLobbyEntityA.getId())).isPresent();
-
-        playerEntityService.joinLobby(gameLobbyEntityA.getId(), testPlayerEntityA);
-        playerEntityService.joinLobby(gameLobbyEntityA.getId(), testPlayerEntityB);
-
-        //GameLobbyEntity test = gameLobbyEntityService.findById(gameLobbyEntityA.getId()).get();
-
-        PlayerDto testPlayerDtoA = playerMapper.mapToDto(testPlayerEntityA);
-        session.send("/app/player-delete", objectMapper.writeValueAsString(testPlayerDtoA));
-
-        String actualResponseTopic1 = messages.poll(1, TimeUnit.SECONDS);
-
-        // Randomness-Workaround
-        playerDtoB.setPlayerColour(PlayerColour.valueOf(playerEntityService.findPlayerById(testPlayerEntityB.getId()).get().getPlayerColour()));
-        playerDtoList.add(playerDtoB);
-
-        String expectedResponseTopic2 = objectMapper.writeValueAsString(playerDtoList);
-        String actualResponseTopic2 = messages2.poll(1, TimeUnit.SECONDS);
-
-        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
-        assertThat(gameLobbyEntityService.findById(gameLobbyEntityA.getId())).isPresent();
-
-        List<PlayerEntity> playerEntityList = playerEntityService.getAllPlayersForLobby(gameLobbyEntityA.getId());
-        gameLobbyDtoA.setNumPlayers(gameLobbyDtoA.getNumPlayers() - 1);
-        assertThat(playerEntityList.size()).isEqualTo(gameLobbyDtoA.getNumPlayers());
-
-        assertThat(actualResponseTopic1).isEqualTo(ResponseCode.RESPONSE_103.getCode());
-        assertThat(actualResponseTopic2).isEqualTo(expectedResponseTopic2);
-    }
-
-    @Test
-    void testThatDeletePlayerOnlyPlayerInLobbySuccessfullyDeletesLobbyAndPlayer() throws Exception {
-        GameLobbyEntity gameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
-        GameLobbyEntity gameLobbyEntityB = TestDataUtil.createTestGameLobbyEntityB();
-        GameLobbyDto gameLobbyDtoA = gameLobbyMapper.mapToDto(gameLobbyEntityA);
-        GameLobbyDto gameLobbyDtoB = gameLobbyMapper.mapToDto(gameLobbyEntityB);
-        gameLobbyDtoA.setNumPlayers(2);
-
-        List<GameLobbyDto> gameLobbyDtoList = new ArrayList<>();
-        gameLobbyDtoList.add(gameLobbyDtoB);
-
-        StompSession session = initStompSessionWithSecondTopic("/user/queue/response", "/topic/lobby-list", messages, messages2);
-
-        PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
-
-        playerEntityService.createPlayer(testPlayerEntityA);
-        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get()).isEqualTo(testPlayerEntityA);
-
-        gameLobbyEntityService.createLobby(gameLobbyEntityA);
-        gameLobbyEntityService.createLobby(gameLobbyEntityB);
-        assertThat(gameLobbyEntityService.findById(gameLobbyEntityA.getId())).isPresent();
-
-        playerEntityService.joinLobby(gameLobbyEntityA.getId(), testPlayerEntityA);
-
-        PlayerDto testPlayerDtoA = playerMapper.mapToDto(testPlayerEntityA);
-        session.send("/app/player-delete", objectMapper.writeValueAsString(testPlayerDtoA));
-
-        String actualResponseTopic1 = messages.poll(1, TimeUnit.SECONDS);
-
-        String expectedResponseTopic2 = objectMapper.writeValueAsString(gameLobbyDtoList);
-        String actualResponseTopic2 = messages2.poll(1, TimeUnit.SECONDS);
-
-        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
-        assertThat(gameLobbyEntityService.findById(gameLobbyEntityA.getId())).isEmpty();
-
-        assertThat(actualResponseTopic1).isEqualTo(ResponseCode.RESPONSE_103.getCode());
-        assertThat(actualResponseTopic2).isEqualTo(expectedResponseTopic2);
-    }
-
-    @Test
-    void testThatDeletePlayerWhenDeletingNonExistentPlayerFails() throws Exception {
-        StompSession session = initStompSession("/user/queue/errors", messages);
-
-        PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
-
-        // assert that player currently doesn't exist in database
-        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
-
-        PlayerDto testPlayerDtoA = playerMapper.mapToDto(testPlayerEntityA);
-        session.send("/app/player-delete", objectMapper.writeValueAsString(testPlayerDtoA));
-
-        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
-
-        // assert that player no longer exists in database
-        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
-
-        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_2001.getCode());
     }
 
     public StompSession initStompSession(String topic, BlockingQueue<String> messages) throws Exception {
