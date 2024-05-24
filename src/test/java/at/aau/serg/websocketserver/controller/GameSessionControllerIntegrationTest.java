@@ -774,6 +774,40 @@ public class GameSessionControllerIntegrationTest {
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
+    @Test
+    void testThatGameStartSendsListOfPlayersInGameSession() throws Exception {
+        // TODO: implement test method
+
+        GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
+
+        PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(testGameLobbyEntityA);
+        PlayerEntity testPlayerEntityB = TestDataUtil.createTestPlayerEntityB(testGameLobbyEntityA);
+        PlayerEntity testPlayerEntityC = TestDataUtil.createTestPlayerEntityC(testGameLobbyEntityA);
+
+        // save entities to database
+        gameLobbyEntityService.createLobby(testGameLobbyEntityA);
+        playerEntityService.createPlayer(testPlayerEntityA);
+        playerEntityService.createPlayer(testPlayerEntityB);
+        playerEntityService.createPlayer(testPlayerEntityC);
+
+        TestDataUtil.createTestGameSessionEntityWith3Players();
+
+
+
+        StompSession session = initStompSession("/topic/lobby-" + testGameLobbyEntityA.getId() + "/player-list", messages);
+
+        session.send("/app/game-start", testGameLobbyEntityA.getId() + "");
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+        List<Long> expectedResponse = new ArrayList<>();
+        expectedResponse.add(testPlayerEntityA.getId());
+        expectedResponse.add(testPlayerEntityB.getId());
+        expectedResponse.add(testPlayerEntityC.getId());
+
+        assertThat(actualResponse).isEqualTo(objectMapper.writeValueAsString(expectedResponse));
+
+    }
+
     public StompSession initStompSession(String topic, BlockingQueue<String> messages) throws Exception {
         WebSocketStompClient stompClient = new WebSocketStompClient(new StandardWebSocketClient());
         stompClient.setMessageConverter(new StringMessageConverter());
