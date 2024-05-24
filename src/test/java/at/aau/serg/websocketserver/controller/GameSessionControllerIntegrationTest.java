@@ -765,9 +765,9 @@ public class GameSessionControllerIntegrationTest {
 
     @Test
     void testThatUpdatePointsAndMeeplesForwardsSentString() throws Exception {
-        StompSession session = initStompSession("/topic/points-meeples", messages);
+        StompSession session = initStompSession("/topic/game-session-1/points-meeples", messages);
 
-        session.send("/app/update-points-meeples", "testString");
+        session.send("/app/update-points-meeples", "1|testString");
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
         String expectedResponse = "testString";
 
