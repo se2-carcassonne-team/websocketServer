@@ -776,7 +776,6 @@ public class GameSessionControllerIntegrationTest {
 
     @Test
     void testThatGameStartSendsListOfPlayersInGameSession() throws Exception {
-        // TODO: implement test method
 
         GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
 
