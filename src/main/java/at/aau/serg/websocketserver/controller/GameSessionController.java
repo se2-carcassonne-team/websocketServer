@@ -67,6 +67,10 @@ public class GameSessionController {
 
         // Get list of lobbies and broadcast it to all subscribers
         List<GameLobbyDto> gameLobbyDtoList = HelperMethods.getGameLobbyDtoList(gameLobbyEntityService, gameLobbyMapper);
+
+        // new
+        this.template.convertAndSend("/topic/lobby-" + gameLobbyId + "/player-list", objectMapper.writeValueAsString(gameSessionEntity.getPlayerIds()));
+
         this.template.convertAndSend("/topic/lobby-" + gameLobbyId + "/game-start", objectMapper.writeValueAsString(gameSessionEntity.getId()));
 
         this.template.convertAndSend("/topic/lobby-list", objectMapper.writeValueAsString(gameLobbyDtoList));
