@@ -146,11 +146,17 @@ public class GameSessionController {
     }
 
     @MessageMapping("/update-points-meeples")
-    public void updatePointsAndMeeples(String updatedPointsAndMeeplesToRemove) throws JsonProcessingException {
+    public void updatePointsAndMeeples(String gameSessionIdAndUpdatedPointsMeeplesToRemove) throws JsonProcessingException {
+
+        String[] strings = gameSessionIdAndUpdatedPointsMeeplesToRemove.split("\\|");
+        String gameSessionIdString = strings[0];
+        String updatedPointsAndMeeplesToRemove = strings[1];
+
+        long gameSessionId = Long.parseLong(gameSessionIdString);
 
         // forward updated points and meeples to be returned to all players in the gameSession
         this.template.convertAndSend(
-                GAME_SESSION_TOPIC + "/points-meeples",
+                GAME_SESSION_TOPIC + gameSessionId + "/points-meeples",
                 updatedPointsAndMeeplesToRemove
         );
 
