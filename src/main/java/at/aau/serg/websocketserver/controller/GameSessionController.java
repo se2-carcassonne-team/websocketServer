@@ -141,6 +141,17 @@ public class GameSessionController {
         );
     }
 
+    @MessageMapping("/update-points-meeples")
+    public void updatePointsAndMeeples(String updatedPointsAndMeeplesToRemove) throws JsonProcessingException {
+
+        // forward updated points and meeples to be returned to all players in the gameSession
+        this.template.convertAndSend(
+                GAME_SESSION_TOPIC + "/points-meeples",
+                updatedPointsAndMeeplesToRemove
+        );
+
+    }
+
 
 
     @MessageExceptionHandler
