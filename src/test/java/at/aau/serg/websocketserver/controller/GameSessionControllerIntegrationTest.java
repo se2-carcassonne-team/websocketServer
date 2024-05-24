@@ -763,6 +763,17 @@ public class GameSessionControllerIntegrationTest {
         assertThat(actualResponse2).isEqualTo(objectMapper.writeValueAsString(placedTileDto));
     }
 
+    @Test
+    void testThatUpdatePointsAndMeeplesForwardsSentString() throws Exception {
+        StompSession session = initStompSession("/topic/points-meeples", messages);
+
+        session.send("/app/update-points-meeples", "testString");
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+        String expectedResponse = "testString";
+
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+    }
+
     public StompSession initStompSession(String topic, BlockingQueue<String> messages) throws Exception {
         WebSocketStompClient stompClient = new WebSocketStompClient(new StandardWebSocketClient());
         stompClient.setMessageConverter(new StringMessageConverter());
