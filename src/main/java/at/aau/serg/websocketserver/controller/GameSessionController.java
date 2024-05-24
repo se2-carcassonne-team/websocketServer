@@ -1,6 +1,7 @@
 package at.aau.serg.websocketserver.controller;
 
 import at.aau.serg.websocketserver.controller.helper.HelperMethods;
+import at.aau.serg.websocketserver.domain.dto.FinishedTurnDto;
 import at.aau.serg.websocketserver.domain.dto.PlacedTileDto;
 import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketserver.domain.pojo.GameState;
@@ -146,18 +147,16 @@ public class GameSessionController {
     }
 
     @MessageMapping("/update-points-meeples")
-    public void updatePointsAndMeeples(String gameSessionIdAndUpdatedPointsMeeplesToRemove) throws JsonProcessingException {
+    public void updatePointsAndMeeples(String finishedTurnDtoString) throws JsonProcessingException {
 
-        String[] strings = gameSessionIdAndUpdatedPointsMeeplesToRemove.split("\\|");
-        String gameSessionIdString = strings[0];
-        String updatedPointsAndMeeplesToRemove = strings[1];
+        FinishedTurnDto finishedTurnDto = objectMapper.readValue(finishedTurnDtoString, FinishedTurnDto.class);
 
-        long gameSessionId = Long.parseLong(gameSessionIdString);
+        long gameSessionId = finishedTurnDto.getGameSessionId();
 
         // forward updated points and meeples to be returned to all players in the gameSession
         this.template.convertAndSend(
                 GAME_SESSION_TOPIC + gameSessionId + "/points-meeples",
-                updatedPointsAndMeeplesToRemove
+                finishedTurnDtoString
         );
 
     }

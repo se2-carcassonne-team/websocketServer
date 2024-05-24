@@ -2,10 +2,7 @@ package at.aau.serg.websocketserver.controller;
 
 import at.aau.serg.websocketserver.TestDataUtil;
 import at.aau.serg.websocketserver.demo.websocket.StompFrameHandlerClientImpl;
-import at.aau.serg.websocketserver.domain.dto.PlacedTileDto;
-import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
-import at.aau.serg.websocketserver.domain.dto.GameSessionDto;
-import at.aau.serg.websocketserver.domain.dto.NextTurnDto;
+import at.aau.serg.websocketserver.domain.dto.*;
 import at.aau.serg.websocketserver.domain.pojo.GameState;
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
@@ -767,9 +764,11 @@ public class GameSessionControllerIntegrationTest {
     void testThatUpdatePointsAndMeeplesForwardsSentString() throws Exception {
         StompSession session = initStompSession("/topic/game-session-1/points-meeples", messages);
 
-        session.send("/app/update-points-meeples", "1|testString");
+        FinishedTurnDto finishedTurnDto = TestDataUtil.getTestFinishedTurnDto();
+
+        session.send("/app/update-points-meeples", objectMapper.writeValueAsString(finishedTurnDto));
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
-        String expectedResponse = "testString";
+        String expectedResponse = objectMapper.writeValueAsString(finishedTurnDto);
 
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
