@@ -1,12 +1,14 @@
 package at.aau.serg.websocketserver.domain.dto;
 
 import at.aau.serg.websocketserver.domain.pojo.GameState;
+import at.aau.serg.websocketserver.domain.pojo.PlayerColour;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.sql.Timestamp;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -28,5 +30,7 @@ public class GameLobbyDto {
     private Integer numPlayers;
 
     private Long lobbyAdminId;
+
+    private List<PlayerColour> availableColours;
 }
 

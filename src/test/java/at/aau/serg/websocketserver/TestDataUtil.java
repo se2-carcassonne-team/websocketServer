@@ -6,6 +6,7 @@ import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
 import at.aau.serg.websocketserver.domain.pojo.Coordinates;
 import at.aau.serg.websocketserver.domain.pojo.GameState;
+import at.aau.serg.websocketserver.domain.pojo.PlayerColour;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -23,6 +24,7 @@ public class TestDataUtil {
                 .id(1L)
                 .username("usernameA")
                 .gameLobbyEntity(gameLobbyEntity)
+                .playerColour(null)
                 .build();
     }
 
@@ -36,6 +38,7 @@ public class TestDataUtil {
                 .id(2L)
                 .username("usernameB")
                 .gameLobbyEntity(gameLobbyEntity)
+                .playerColour(null)
                 .build();
     }
 
@@ -49,6 +52,7 @@ public class TestDataUtil {
                 .id(3L)
                 .username("usernameC")
                 .gameLobbyEntity(gameLobbyEntity)
+                .playerColour(null)
                 .build();
     }
     public static PlayerEntity createTestPlayerEntityD(final GameLobbyEntity gameLobbyEntity){
@@ -56,6 +60,7 @@ public class TestDataUtil {
                 .id(null)
                 .username("usernameD")
                 .gameLobbyEntity(gameLobbyEntity)
+                .playerColour(null)
                 .build();
     }
     public static PlayerEntity createTestPlayerEntityE(final GameLobbyEntity gameLobbyEntity){
@@ -63,6 +68,7 @@ public class TestDataUtil {
                 .id(null)
                 .username("usernameE")
                 .gameLobbyEntity(gameLobbyEntity)
+                .playerColour(null)
                 .build();
     }
     public static PlayerEntity createTestPlayerEntityF(final GameLobbyEntity gameLobbyEntity){
@@ -70,6 +76,7 @@ public class TestDataUtil {
                 .id(null)
                 .username("usernameF")
                 .gameLobbyEntity(gameLobbyEntity)
+                .playerColour(null)
                 .build();
     }
 
@@ -78,6 +85,7 @@ public class TestDataUtil {
                 .id(null)
                 .username("usernameG")
                 .gameLobbyEntity(gameLobbyEntity)
+                .playerColour(null)
                 .build();
     }
 
@@ -90,6 +98,7 @@ public class TestDataUtil {
                 .gameStartTimestamp(timeStamp)
                 .gameState(GameState.LOBBY.toString())
                 .numPlayers(0)
+                .availableColours(getTestPlayerColoursAsStringList())
                 .build();
     }
 
@@ -101,6 +110,7 @@ public class TestDataUtil {
                 .gameStartTimestamp(timeStamp)
                 .gameState(GameState.LOBBY.toString())
                 .numPlayers(0)
+                .availableColours(getTestPlayerColoursAsStringList())
                 .build();
     }
 
@@ -112,6 +122,7 @@ public class TestDataUtil {
                 .gameStartTimestamp(timeStamp)
                 .gameState(GameState.LOBBY.toString())
                 .numPlayers(0)
+                .availableColours(getTestPlayerColoursAsStringList())
                 .build();
     }
 
@@ -121,6 +132,7 @@ public class TestDataUtil {
                 .id(1L)
                 .username("usernameA")
                 .gameLobbyId(gameLobbyId)
+                .playerColour(null)
                 .build();
     }
 
@@ -132,6 +144,7 @@ public class TestDataUtil {
                 .gameStartTimestamp(timeStamp)
                 .gameState(GameState.LOBBY)
                 .numPlayers(0)
+                .availableColours(getTestPlayerColoursAsEnumList())
                 .build();
     }
 
@@ -143,6 +156,7 @@ public class TestDataUtil {
                 .gameStartTimestamp(timeStamp)
                 .gameState(GameState.LOBBY)
                 .numPlayers(0)
+                .availableColours(getTestPlayerColoursAsEnumList())
                 .build();
     }
 
@@ -195,5 +209,50 @@ public class TestDataUtil {
                 .coordinates(new Coordinates(12,12))
                 .rotation(1)
                 .build();
+    }
+
+    public static List<String> getTestPlayerColoursAsStringList() {
+        List<String> playerColours = new ArrayList<>();
+        playerColours.add(PlayerColour.BLACK.name());
+        playerColours.add(PlayerColour.BLUE.name());
+        playerColours.add(PlayerColour.GREEN.name());
+        playerColours.add(PlayerColour.RED.name());
+        playerColours.add(PlayerColour.YELLOW.name());
+
+        return playerColours;
+    }
+
+    public static List<PlayerColour> getTestPlayerColoursAsEnumList() {
+        List<PlayerColour> playerColours = new ArrayList<>();
+        playerColours.add(PlayerColour.BLACK);
+        playerColours.add(PlayerColour.BLUE);
+        playerColours.add(PlayerColour.GREEN);
+        playerColours.add(PlayerColour.RED);
+        playerColours.add(PlayerColour.YELLOW);
+
+        return playerColours;
+    }
+
+    public static List<String> getTestPlayerColoursAsStringListRemoveValue(String playerColour) {
+        List<String> playerColours = getTestPlayerColoursAsStringList();
+        playerColours.remove(playerColour);
+        return playerColours;
+    }
+
+    public static List<String> getTestPlayerColoursAsStringListRemoveValue(List<String> playerColours, String playerColour) {
+        playerColours.remove(playerColour);
+        return playerColours;
+    }
+
+    public static List<PlayerColour> getTestPlayerColoursAsEnumListRemoveValue(PlayerColour playerColour) {
+        List<PlayerColour> playerColours = getTestPlayerColoursAsEnumList();
+        playerColours.remove(playerColour);
+
+        return playerColours;
+    }
+
+    public static List<PlayerColour> getTestPlayerColoursAsEnumListRemoveValue(List<PlayerColour> playerColours, PlayerColour playerColour) {
+        playerColours.remove(playerColour);
+        return playerColours;
     }
 }

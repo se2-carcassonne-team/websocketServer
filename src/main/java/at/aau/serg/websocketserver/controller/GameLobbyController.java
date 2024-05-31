@@ -19,7 +19,6 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import static at.aau.serg.websocketserver.controller.helper.HelperMethods.getGameLobbyDtoList;
@@ -78,20 +77,23 @@ public class GameLobbyController {
                 String updatedLobbyList = objectMapper.writeValueAsString(getGameLobbyDtoList(gameLobbyEntityService, gameLobbyMapper));
                 this.template.convertAndSend("/topic/lobby-list", updatedLobbyList);
 
+                // TODO
                 // send updated list of players in lobby to /topic/lobby-$id
                 // IMPORTANT: not relevant, as player does not know the lobby id when calling lobby-create
                 String updatedPlayerList = objectMapper.writeValueAsString(getPlayerDtosInLobbyList(createdGameLobbyEntity.getId(), gameLobbyEntityService, playerEntityService, playerMapper));
                 this.template.convertAndSend("/topic/lobby-" + createdGameLobbyEntity.getId(), updatedPlayerList);
 
-                // return updated playerDto to queue
+                // TODO: Add gamelobbyId in the future
+                this.template.convertAndSend("/topic/lobby-creator", objectMapper.writeValueAsString(playerMapper.mapToDto(playerEntity)));
+
                 return objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(playerEntity.getGameLobbyEntity()));
             } catch (JsonProcessingException e) {
-                throw new RuntimeException(ErrorCode.ERROR_2004.getErrorCode());
+                throw new RuntimeException(ErrorCode.ERROR_2004.getCode());
             }
 
             // TODO: check if backend updates the gameLobbyDto Id to the one contained in the returned PlayerDto Object
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(ErrorCode.ERROR_1006.getErrorCode());
+            throw new RuntimeException(ErrorCode.ERROR_1006.getCode());
         }
     }
 

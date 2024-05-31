@@ -1,5 +1,6 @@
 package at.aau.serg.websocketserver.domain.dto;
 
+import at.aau.serg.websocketserver.domain.pojo.PlayerColour;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,8 +15,8 @@ public class PlayerDto {
 
     private String username;
 
-    //private GameLobbyDto gameLobbyDto;
     private Long gameLobbyId;
+    private PlayerColour playerColour;
 
     private Long gameSessionId;
 }

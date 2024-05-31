@@ -1,10 +1,8 @@
 package at.aau.serg.websocketserver.service.impl;
 
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
-import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
 import at.aau.serg.websocketserver.domain.entity.repository.GameLobbyEntityRepository;
-import at.aau.serg.websocketserver.domain.entity.repository.GameSessionEntityRepository;
 import at.aau.serg.websocketserver.domain.entity.repository.PlayerEntityRepository;
 import at.aau.serg.websocketserver.statuscode.ErrorCode;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
@@ -17,22 +15,17 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 
-
 @Service
 public class PlayerEntityServiceImpl implements PlayerEntityService {
 
     PlayerEntityRepository playerEntityRepository;
     GameLobbyEntityRepository gameLobbyEntityRepository;
-    GameSessionEntityRepository gameSessionEntityRepository;
     GameLobbyMapper gameLobbyMapper;
     PlayerMapper playerMapper;
-
-
 
     public PlayerEntityServiceImpl(
             PlayerEntityRepository playerEntityRepository,
             GameLobbyEntityRepository gameLobbyEntityRepository,
-            GameSessionEntityRepository gameSessionEntityRepository,
             GameLobbyMapper gameLobbyMapper,
             PlayerMapper playerMapper)
     {
@@ -40,7 +33,6 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
         this.gameLobbyEntityRepository = gameLobbyEntityRepository;
         this.gameLobbyMapper = gameLobbyMapper;
         this.playerMapper = playerMapper;
-        this.gameSessionEntityRepository = gameSessionEntityRepository;
     }
 
     // @Dominik: slightly different approach: expose only entity objects to the service
@@ -121,7 +113,6 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
         }
 
         GameLobbyEntity gameLobbyEntity = playerEntity.getGameLobbyEntity();
-        System.out.println("hier steht die lobby id:" + gameLobbyEntity);
 
         if (gameLobbyEntity == null) {
             throw new EntityNotFoundException(ErrorCode.ERROR_2005.getErrorCode());
@@ -148,40 +139,6 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
         }
         return updatedPlayerEntity;
     }
-
-    @Override
-    public PlayerEntity leaveGameSession(PlayerEntity playerEntity){
-
-        if (playerEntityRepository.findById(playerEntity.getId()).isEmpty()) {
-            throw new EntityNotFoundException(ErrorCode.ERROR_2001.getErrorCode());
-        }
-
-        GameSessionEntity gameSessionEntity = playerEntity.getGameSessionEntity();
-
-        if (gameSessionEntity == null) {
-            throw new EntityNotFoundException(ErrorCode.ERROR_3003.getErrorCode());
-        }
-
-        // Entfernen der Spieler-ID aus der Liste playerIds der GameSessionEntity
-        List<Long> playerIds = gameSessionEntity.getPlayerIds();
-        playerIds.remove(playerEntity.getId());
-        gameSessionEntity.setPlayerIds(playerIds);
-
-        playerEntity.setGameSessionEntity(null);
-        PlayerEntity updatedPlayerEntity =  playerEntityRepository.save(playerEntity);
-
-        int numberOfPlayers = gameSessionEntity.getNumPlayers();
-        if(numberOfPlayers > 1) {
-            gameSessionEntity.setNumPlayers(gameSessionEntity.getNumPlayers()-1);
-        } else {
-            gameSessionEntityRepository.deleteById(gameSessionEntity.getId());
-
-        }
-
-        return updatedPlayerEntity;
-    }
-
-
 
     @Override
     public void deletePlayer(Long id) {

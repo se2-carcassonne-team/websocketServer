@@ -14,6 +14,10 @@ import java.util.List;
 
 public class HelperMethods {
 
+    private HelperMethods() {
+        throw new IllegalStateException("Utility class");
+    }
+
 
     public static List<PlayerDto> getPlayerDtosInLobbyList(Long gameLobbyId, GameLobbyEntityService gameLobbyEntityService, PlayerEntityService playerEntityService, PlayerMapper playerMapper) {
         List<PlayerDto> playerDtos = new ArrayList<>();

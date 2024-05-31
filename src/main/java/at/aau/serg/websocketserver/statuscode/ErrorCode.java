@@ -16,24 +16,24 @@ public enum ErrorCode {
     ERROR_3003("gameSession with the id does not exist", "3003");
 
     private final String errorDescription;
-    private final String errorCode;
+    private final String code;
 
 
     /**
      * Enum of standardized custom response codes.
      * @param errorDescription short description of the error associated with the error code
-     * @param errorCode error codes: 100X for gameLobby errors, 200X for PlayerDto errors
+     * @param code error codes: 100X for gameLobby errors, 200X for PlayerDto errors
      */
-    ErrorCode(String errorDescription, String errorCode) {
+    ErrorCode(String errorDescription, String code) {
         this.errorDescription = errorDescription;
-        this.errorCode = errorCode;
+        this.code = code;
     }
 
     public String getErrorDescription() {
         return errorDescription;
     }
 
-    public String getErrorCode() {
-        return errorCode;
+    public String getCode() {
+        return code;
     }
 }

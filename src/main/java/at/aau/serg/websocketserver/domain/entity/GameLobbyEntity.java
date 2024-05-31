@@ -1,10 +1,13 @@
 package at.aau.serg.websocketserver.domain.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -30,4 +33,6 @@ public class GameLobbyEntity {
     private Integer numPlayers;
 
     private Long lobbyAdminId;
+
+    private List<String> availableColours;
 }

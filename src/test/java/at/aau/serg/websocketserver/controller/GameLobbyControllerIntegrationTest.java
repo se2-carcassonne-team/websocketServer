@@ -6,6 +6,7 @@ import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketserver.domain.dto.PlayerDto;
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
+import at.aau.serg.websocketserver.domain.pojo.PlayerColour;
 import at.aau.serg.websocketserver.statuscode.ErrorCode;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
 import at.aau.serg.websocketserver.mapper.PlayerMapper;
@@ -120,14 +121,21 @@ public class GameLobbyControllerIntegrationTest {
         session.send("/app/lobby-create", payload);
 
         gameLobbyDto.setNumPlayers(gameLobbyDto.getNumPlayers() + 1);
+        //gameLobbyDto.setAvailableColours(TestDataUtil.getTestPlayerColoursAsEnumList());
         playerDto.setGameLobbyId(gameLobbyDto.getId());
 
-        String expectedResponse = objectMapper.writeValueAsString(gameLobbyDto);
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
 
         Optional<PlayerEntity> updatedPlayerEntityOptional = playerEntityService.findPlayerById(playerDto.getId());
         assertTrue(updatedPlayerEntityOptional.isPresent());
         PlayerEntity updatedPlayerEntity = updatedPlayerEntityOptional.get();
+
+        // Randomness-Workaround: Get colour from player, set all colours to lobby and remove the color from the list
+        String playerColour = updatedPlayerEntity.getPlayerColour();
+        PlayerColour playerColorEnum = PlayerColour.valueOf(playerColour);
+        gameLobbyDto.setAvailableColours(TestDataUtil.getTestPlayerColoursAsEnumListRemoveValue(playerColorEnum));
+        String expectedResponse = objectMapper.writeValueAsString(gameLobbyDto);
+
         assertThat(updatedPlayerEntity.getGameLobbyEntity()).isEqualTo(gameLobbyMapper.mapToEntity(gameLobbyDto));
 
         assertThat(actualResponse).isEqualTo(expectedResponse);
@@ -161,6 +169,12 @@ public class GameLobbyControllerIntegrationTest {
         Optional<PlayerEntity> updatedPlayerEntityOptional = playerEntityService.findPlayerById(playerDto.getId());
         assertTrue(updatedPlayerEntityOptional.isPresent());
         PlayerEntity updatedPlayerEntity = updatedPlayerEntityOptional.get();
+
+        // Randomness-Workaround: Get colour from player, set all colours to lobby and remove the color from the list
+        String playerColour = updatedPlayerEntity.getPlayerColour();
+        PlayerColour playerColorEnum = PlayerColour.valueOf(playerColour);
+        gameLobbyDto.setAvailableColours(TestDataUtil.getTestPlayerColoursAsEnumListRemoveValue(playerColorEnum));
+
         assertThat(updatedPlayerEntity.getGameLobbyEntity()).isEqualTo(gameLobbyMapper.mapToEntity(gameLobbyDto));
 
         String expectedResponse = objectMapper.writeValueAsString(getGameLobbyDtoList());
@@ -197,6 +211,12 @@ public class GameLobbyControllerIntegrationTest {
         Optional<PlayerEntity> updatedPlayerEntityOptional = playerEntityService.findPlayerById(playerDto.getId());
         assertTrue(updatedPlayerEntityOptional.isPresent());
         PlayerEntity updatedPlayerEntity = updatedPlayerEntityOptional.get();
+
+        // Randomness-Workaround: Get colour from player, set all colours to lobby and remove the color from the list
+        String playerColour = updatedPlayerEntity.getPlayerColour();
+        PlayerColour playerColorEnum = PlayerColour.valueOf(playerColour);
+        gameLobbyDto.setAvailableColours(TestDataUtil.getTestPlayerColoursAsEnumListRemoveValue(playerColorEnum));
+
         assertThat(updatedPlayerEntity.getGameLobbyEntity()).isEqualTo(gameLobbyMapper.mapToEntity(gameLobbyDto));
 
         String expectedResponse = objectMapper.writeValueAsString(getPlayerDtosInLobbyList(gameLobbyDto.getId()));
@@ -204,6 +224,45 @@ public class GameLobbyControllerIntegrationTest {
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
+    @Test
+    void testThatCreateLobbyReturnsUpdatedPlayerToTopic() throws Exception {
+        StompSession session = initStompSession("/topic/lobby-creator", messages);
+
+        PlayerEntity playerEntity = TestDataUtil.createTestPlayerEntityA(null);
+        playerEntityService.createPlayer(playerEntity);
+
+        PlayerDto playerDto = playerMapper.mapToDto(playerEntity);
+        GameLobbyDto gameLobbyDto = TestDataUtil.createTestGameLobbyDtoA();
+        gameLobbyDto.setLobbyAdminId(playerEntity.getId());
+
+        String playerDtoJson = objectMapper.writeValueAsString(playerDto);
+        String gameLobbyDtoJson = objectMapper.writeValueAsString(gameLobbyDto);
+
+        String payload = gameLobbyDtoJson + "|" + playerDtoJson;
+
+        assertThat(gameLobbyEntityService.findById(gameLobbyDto.getId()).isEmpty()).isTrue();
+        assertThat(playerEntityService.findPlayerById(playerDto.getId()).isPresent()).isTrue();
+        session.send("/app/lobby-create", payload);
+
+        gameLobbyDto.setNumPlayers(gameLobbyDto.getNumPlayers() + 1);
+        playerDto.setGameLobbyId(gameLobbyDto.getId());
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        Optional<PlayerEntity> updatedPlayerEntityOptional = playerEntityService.findPlayerById(playerDto.getId());
+        assertTrue(updatedPlayerEntityOptional.isPresent());
+        PlayerEntity updatedPlayerEntity = updatedPlayerEntityOptional.get();
+
+        // Randomness-Workaround: Get colour from player entity and set it to player dto
+        String playerColour = updatedPlayerEntity.getPlayerColour();
+        PlayerColour playerColorEnum = PlayerColour.valueOf(playerColour);
+        playerDto.setPlayerColour(playerColorEnum);
+        String expectedResponse = objectMapper.writeValueAsString(playerDto);
+
+        assertThat(updatedPlayerEntity).isEqualTo(playerMapper.mapToEntity(playerDto));
+
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+    }
 
     @Test
     void testThatCreateLobbyWithDuplicateLobbyIdFails() throws Exception {
@@ -222,7 +281,7 @@ public class GameLobbyControllerIntegrationTest {
         session.send("/app/lobby-create", payload);
 
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
-        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_1001.getErrorCode());
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_1001.getCode());
     }
 
     @Test
@@ -246,7 +305,7 @@ public class GameLobbyControllerIntegrationTest {
         session.send("/app/lobby-create", payload);
 
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
-        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_1002.getErrorCode());
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_1002.getCode());
     }
 
     @Test
@@ -267,7 +326,7 @@ public class GameLobbyControllerIntegrationTest {
         session.send("/app/lobby-create", payload);
 
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
-        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_2001.getErrorCode());
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_2001.getCode());
     }
 
     @Test
@@ -282,7 +341,7 @@ public class GameLobbyControllerIntegrationTest {
         session.send("/app/lobby-create", payload);
 
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
-        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_1006.getErrorCode());
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_1006.getCode());
     }
 
     @Test
@@ -297,7 +356,7 @@ public class GameLobbyControllerIntegrationTest {
         session.send("/app/lobby-create", payload);
 
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
-        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_2004.getErrorCode());
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_2004.getCode());
     }
 
     @Test
@@ -334,7 +393,7 @@ public class GameLobbyControllerIntegrationTest {
         session.send("/app/lobby-name-update", objectMapper.writeValueAsString(gameLobbyDto));
 
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
-        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_1003.getErrorCode());
+        assertThat(actualResponse).isEqualTo("ERROR: " + ErrorCode.ERROR_1003.getCode());
     }
 
     @Test

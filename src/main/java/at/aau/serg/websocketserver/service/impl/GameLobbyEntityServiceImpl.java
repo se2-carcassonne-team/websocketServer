@@ -3,6 +3,7 @@ package at.aau.serg.websocketserver.service.impl;
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketserver.domain.entity.repository.GameLobbyEntityRepository;
 import at.aau.serg.websocketserver.domain.entity.repository.PlayerEntityRepository;
+import at.aau.serg.websocketserver.domain.pojo.PlayerColour;
 import at.aau.serg.websocketserver.statuscode.ErrorCode;
 import at.aau.serg.websocketserver.service.GameLobbyEntityService;
 import jakarta.persistence.EntityExistsException;
@@ -27,18 +28,19 @@ public class GameLobbyEntityServiceImpl implements GameLobbyEntityService {
     public GameLobbyEntity createLobby(GameLobbyEntity gameLobbyEntity) {
 
         if(gameLobbyEntity.getId() != null && gameLobbyEntityRepository.findById(gameLobbyEntity.getId()).isPresent()) {
-            throw new EntityExistsException(ErrorCode.ERROR_1001.getErrorCode());
+            throw new EntityExistsException(ErrorCode.ERROR_1001.getCode());
         }
 
         if(gameLobbyEntity.getName() != null && gameLobbyEntityRepository.findByName(gameLobbyEntity.getName()).isPresent()) {
-            throw new EntityExistsException(ErrorCode.ERROR_1002.getErrorCode());
+            throw new EntityExistsException(ErrorCode.ERROR_1002.getCode());
         }
 
         if(gameLobbyEntity.getLobbyAdminId() != null && playerEntityRepository.findById(gameLobbyEntity.getLobbyAdminId()).isEmpty()) {
-            throw new RuntimeException(ErrorCode.ERROR_2001.getErrorCode());
+            throw new RuntimeException(ErrorCode.ERROR_2001.getCode());
         }
 
         gameLobbyEntity.setNumPlayers(0);
+        gameLobbyEntity.setAvailableColours(PlayerColour.getColoursAsList());
         return gameLobbyEntityRepository.save(gameLobbyEntity);
     }
 
@@ -51,7 +53,7 @@ public class GameLobbyEntityServiceImpl implements GameLobbyEntityService {
             gameLobbyToUpdate.setName(gameLobbyEntity.getName());
             return gameLobbyEntityRepository.save(gameLobbyToUpdate);
         } else {
-            throw new RuntimeException(ErrorCode.ERROR_1003.getErrorCode());
+            throw new RuntimeException(ErrorCode.ERROR_1003.getCode());
         }
     }
 

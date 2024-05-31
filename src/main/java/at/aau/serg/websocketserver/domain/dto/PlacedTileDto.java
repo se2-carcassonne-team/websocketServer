@@ -27,4 +27,7 @@ public class PlacedTileDto {
 
     // tile rotation
     private Integer rotation;
+
+    // Meeple
+    private Meeple placedMeeple;
 }

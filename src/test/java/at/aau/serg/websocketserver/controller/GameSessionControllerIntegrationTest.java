@@ -14,6 +14,7 @@ import at.aau.serg.websocketserver.domain.entity.TileDeckEntity;
 import at.aau.serg.websocketserver.domain.entity.repository.GameLobbyEntityRepository;
 import at.aau.serg.websocketserver.domain.entity.repository.GameSessionEntityRepository;
 import at.aau.serg.websocketserver.domain.entity.repository.TileDeckRepository;
+import at.aau.serg.websocketserver.domain.pojo.PlayerColour;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
 import at.aau.serg.websocketserver.mapper.GameSessionMapper;
 import at.aau.serg.websocketserver.mapper.PlayerMapper;
@@ -40,7 +41,6 @@ import org.springframework.web.socket.messaging.WebSocketStompClient;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
@@ -132,13 +132,19 @@ public class GameSessionControllerIntegrationTest {
         assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isEmpty();
 
         StompSession session = initStompSession("/topic/lobby-" + gameLobbyDtoA.getId() + "/game-start", messages);
+        StompSession session2 = initStompSession("/topic/lobby-list", messages2);
         session.send("/app/game-start", gameLobbyDtoA.getId() + "");
 
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+        String actualResponse2 = messages2.poll(1, TimeUnit.SECONDS);
 
         assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isPresent();
         assertThat(actualResponse).isEqualTo(gameSessionDtoA.getId() + "");
+
+        assertThat(actualResponse2).isNotNull();
+
     }
+
 
     @Test
     void testThatCreateGameSessionReturnsUpdatedLobbyListToQueue() throws Exception {
@@ -166,6 +172,10 @@ public class GameSessionControllerIntegrationTest {
         playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityB);
         playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityC);
 
+        String playerEntityAColour = playerEntityService.findPlayerById(playerEntityA.getId()).get().getPlayerColour();
+        String playerEntityBColour = playerEntityService.findPlayerById(playerEntityB.getId()).get().getPlayerColour();
+        String playerEntityCColour = playerEntityService.findPlayerById(playerEntityC.getId()).get().getPlayerColour();
+
         GameSessionDto gameSessionDtoA = TestDataUtil.createTestGameSessionDtoA(playerMapper.mapToDto(playerEntityA));
         assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isEmpty();
 
@@ -176,6 +186,10 @@ public class GameSessionControllerIntegrationTest {
         gameLobbyDtoA.setGameState(GameState.IN_GAME);
         gameLobbyDtoA.setLobbyAdminId(playerEntityA.getId());
         gameLobbyDtoA.setNumPlayers(3);
+
+        gameLobbyDtoA.setAvailableColours(TestDataUtil.getTestPlayerColoursAsEnumListRemoveValue(gameLobbyDtoA.getAvailableColours(), PlayerColour.valueOf(playerEntityAColour)));
+        gameLobbyDtoA.setAvailableColours(TestDataUtil.getTestPlayerColoursAsEnumListRemoveValue(gameLobbyDtoA.getAvailableColours(), PlayerColour.valueOf(playerEntityBColour)));
+        gameLobbyDtoA.setAvailableColours(TestDataUtil.getTestPlayerColoursAsEnumListRemoveValue(gameLobbyDtoA.getAvailableColours(), PlayerColour.valueOf(playerEntityCColour)));
         gameLobbyDtoList.add(gameLobbyDtoA);
 
         gameLobbyDtoB.setLobbyAdminId(playerEntityA.getId());
@@ -187,6 +201,7 @@ public class GameSessionControllerIntegrationTest {
         assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isPresent();
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
+
     @Test
     void testThatFindByGameIdQueryInTileDeckEntityExecutesRight() throws Exception {
         GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
@@ -257,6 +272,10 @@ public class GameSessionControllerIntegrationTest {
         playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityB);
         playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityC);
 
+        String playerEntityAColour = playerEntityService.findPlayerById(playerEntityA.getId()).get().getPlayerColour();
+        String playerEntityBColour = playerEntityService.findPlayerById(playerEntityB.getId()).get().getPlayerColour();
+        String playerEntityCColour = playerEntityService.findPlayerById(playerEntityC.getId()).get().getPlayerColour();
+
         GameSessionDto gameSessionDtoA = TestDataUtil.createTestGameSessionDtoA(playerMapper.mapToDto(playerEntityA));
         assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isEmpty();
 
@@ -268,6 +287,10 @@ public class GameSessionControllerIntegrationTest {
         gameLobbyDtoA.setGameState(GameState.IN_GAME);
         gameLobbyDtoA.setLobbyAdminId(playerEntityA.getId());
         gameLobbyDtoA.setNumPlayers(3);
+
+        gameLobbyDtoA.setAvailableColours(TestDataUtil.getTestPlayerColoursAsEnumListRemoveValue(gameLobbyDtoA.getAvailableColours(), PlayerColour.valueOf(playerEntityAColour)));
+        gameLobbyDtoA.setAvailableColours(TestDataUtil.getTestPlayerColoursAsEnumListRemoveValue(gameLobbyDtoA.getAvailableColours(), PlayerColour.valueOf(playerEntityBColour)));
+        gameLobbyDtoA.setAvailableColours(TestDataUtil.getTestPlayerColoursAsEnumListRemoveValue(gameLobbyDtoA.getAvailableColours(), PlayerColour.valueOf(playerEntityCColour)));
         gameLobbyDtoList.add(gameLobbyDtoA);
 
         gameLobbyDtoB.setLobbyAdminId(playerEntityA.getId());
@@ -294,6 +317,7 @@ public class GameSessionControllerIntegrationTest {
 
         assertThat(result.getPlayerId()).isEqualTo(expectedResponseNextPlayerId);
     }
+
     @Test
     void testThatGetNextPlayerIdAndNextTileIdReturnsTheRightNextTile() throws Exception {
         GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
@@ -399,6 +423,7 @@ public class GameSessionControllerIntegrationTest {
 
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
+
     @Test
     void testThatGameSessionControllerThrowsExceptionIfTheGameSessionIsDeleted() throws Exception {
         GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
@@ -446,6 +471,7 @@ public class GameSessionControllerIntegrationTest {
 
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
+
     @Test
     void testThatGameSessionControllerThrowsExceptionIfTheWrongGameSessionIdIsSupplied() throws Exception {
         GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
@@ -701,7 +727,7 @@ public class GameSessionControllerIntegrationTest {
         StompSession session = initStompSession("/user/queue/errors", messages);
         session.send("/app/game-start", gameLobbyDtoA.getId() + "");
 
-        String expectedResponse = "ERROR: " + ErrorCode.ERROR_1003.getErrorCode();
+        String expectedResponse = "ERROR: " + ErrorCode.ERROR_1003.getCode();
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
 
         assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isEmpty();
