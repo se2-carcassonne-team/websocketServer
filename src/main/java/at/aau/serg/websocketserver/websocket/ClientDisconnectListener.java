@@ -87,10 +87,9 @@ public class ClientDisconnectListener {
                 gameSessionEntityRepository.save(gameSessionEntity);
 
                 // Check if gameSession can be terminated
-                if (playerIds.isEmpty()) {
+                if (playerIds.size() == 1) {
                     gameSessionEntityService.terminateGameSession(gameSessionEntity.getId());
                 }
-
             }
 
         }

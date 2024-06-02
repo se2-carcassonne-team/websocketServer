@@ -103,7 +103,7 @@ public class ClientDisconnectListenerIntegrationTest {
     }
 
     @Test
-    void testThatDisconnectWithPlayerInLobbyAndSessionSuccessfullyRemovesPlayerFromLobbyAndSessionAndDeletesExistingPlayer() throws Exception {
+    void testThatDisconnectWithTwoPlayersInLobbyButNotInSessionSuccessfullyRemovesPlayerFromLobbyAndDeletesExistingPlayer() throws Exception {
         GameLobbyEntity gameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
         StompSession session = initStompSession();
         session.subscribe("/topic/lobby-" + gameLobbyEntityA.getId(), new StompFrameHandlerClientImpl(messages));
@@ -158,7 +158,63 @@ public class ClientDisconnectListenerIntegrationTest {
     }
 
     @Test
-    void testThatDisconnectWithPlayerOnlyPlayerInLobbyAndSessionSuccessfullyTerminatesSessionAndDeletesLobbyAndPlayer() throws Exception {
+    void testThatDisconnectWithTwoPlayersInLobbyAndInSessionSuccessfullyRemovesOnePlayerFromLobbyAndTerminatesSessionAndDeletesExistingPlayer() throws Exception {
+        GameLobbyEntity gameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
+        StompSession session = initStompSession();
+        session.subscribe("/topic/lobby-" + gameLobbyEntityA.getId(), new StompFrameHandlerClientImpl(messages));
+
+        PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        PlayerEntity testPlayerEntityB = TestDataUtil.createTestPlayerEntityB(null);
+
+        GameLobbyDto gameLobbyDtoA = gameLobbyMapper.mapToDto(gameLobbyEntityA);
+        gameLobbyDtoA.setNumPlayers(2);
+
+        PlayerDto playerDtoB = playerMapper.mapToDto(testPlayerEntityB);
+        playerDtoB.setGameLobbyId(gameLobbyEntityA.getId());
+        List<PlayerDto> playerDtoList = new ArrayList<>();
+
+        playerEntityService.createPlayer(testPlayerEntityA, session.getSessionId());
+        playerEntityService.createPlayer(testPlayerEntityB);
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId()).get()).isEqualTo(testPlayerEntityA);
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityB.getId()).get()).isEqualTo(testPlayerEntityB);
+
+        gameLobbyEntityService.createLobby(gameLobbyEntityA);
+        assertThat(gameLobbyEntityService.findById(gameLobbyEntityA.getId())).isPresent();
+
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), testPlayerEntityA);
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), testPlayerEntityB);
+
+        GameSessionEntity createdGameSessionEntity = gameSessionEntityService.createGameSession(gameLobbyEntityA.getId());
+        assertThat(createdGameSessionEntity).isNotNull();
+
+        // Simulate a session disconnect event and publish it
+        SessionDisconnectEvent event = createSessionDisconnectEvent(this,session.getSessionId());
+        eventPublisher.publishEvent(event);
+
+        // Randomness-Workaround
+        playerDtoB.setPlayerColour(PlayerColour.valueOf(playerEntityService.findPlayerById(testPlayerEntityB.getId()).get().getPlayerColour()));
+        playerDtoList.add(playerDtoB);
+
+        String expectedResponse = objectMapper.writeValueAsString(playerDtoList);
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
+        assertThat(gameLobbyEntityService.findById(gameLobbyEntityA.getId())).isPresent();
+
+        List<PlayerEntity> playerEntityList = playerEntityService.getAllPlayersForLobby(gameLobbyEntityA.getId());
+        gameLobbyDtoA.setNumPlayers(gameLobbyDtoA.getNumPlayers() - 1);
+
+        List<Long> playerIdList = gameSessionEntityService.findById(createdGameSessionEntity.getId()).get().getPlayerIds();
+        assertThat(playerIdList).hasSize(1);
+        assertThat(playerIdList.get(0)).isEqualTo(playerDtoB.getId());
+        assertThat(gameSessionEntityService.findById(createdGameSessionEntity.getId()).get().getGameState()).isEqualTo(GameState.FINISHED.name());
+
+        assertThat(playerEntityList.size()).isEqualTo(gameLobbyDtoA.getNumPlayers());
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+    }
+
+    @Test
+    void testThatDisconnectOnePlayerInLobbySuccessfullyDeletesLobbyAndPlayer() throws Exception {
         GameLobbyEntity gameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
         GameLobbyEntity gameLobbyEntityB = TestDataUtil.createTestGameLobbyEntityB();
         GameLobbyDto gameLobbyDtoA = gameLobbyMapper.mapToDto(gameLobbyEntityA);
@@ -182,9 +238,6 @@ public class ClientDisconnectListenerIntegrationTest {
 
         playerEntityService.joinLobby(gameLobbyEntityA.getId(), testPlayerEntityA);
 
-        GameSessionEntity createdGameSessionEntity = gameSessionEntityService.createGameSession(gameLobbyEntityA.getId());
-        assertThat(createdGameSessionEntity).isNotNull();
-
         // Simulate a session disconnect event and publish it
         SessionDisconnectEvent event = createSessionDisconnectEvent(this,session.getSessionId());
         eventPublisher.publishEvent(event);
@@ -194,10 +247,6 @@ public class ClientDisconnectListenerIntegrationTest {
 
         assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
         assertThat(gameLobbyEntityService.findById(gameLobbyEntityA.getId())).isEmpty();
-
-        List<Long> playerIdList = gameSessionEntityService.findById(createdGameSessionEntity.getId()).get().getPlayerIds();
-        assertThat(playerIdList).hasSize(0);
-        assertThat(gameSessionEntityService.findById(createdGameSessionEntity.getId()).get().getGameState()).isEqualTo(GameState.FINISHED.name());
 
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
