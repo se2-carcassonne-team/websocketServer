@@ -83,7 +83,7 @@ public class GameSessionController {
     }
 
     @MessageMapping("/scoreboard")
-    public String forwardScoreboard(String scoreboardDtoAsString) throws JsonProcessingException {
+    public void forwardScoreboard(String scoreboardDtoAsString) throws JsonProcessingException {
         ScoreboardDto scoreboardDto = objectMapper.readValue(scoreboardDtoAsString, ScoreboardDto.class);
 
         Optional<GameSessionEntity> gameSession = gameSessionEntityService.findById(scoreboardDto.getGameSessionId());
@@ -100,8 +100,6 @@ public class GameSessionController {
 
             scoreboardDto.setPlayerNames(playerNames);
             this.template.convertAndSend("/topic/game-end-" + scoreboardDto.getGameSessionId() + "/scoreboard", objectMapper.writeValueAsString(scoreboardDto));
-
-            return objectMapper.writeValueAsString(scoreboardDto);
         } else {
             throw new IllegalStateException("GameSession not found.");
         }
@@ -117,7 +115,7 @@ public class GameSessionController {
      * @throws JsonProcessingException
      */
     @MessageMapping("/next-turn")
-    public String getNextPlayerIdAndNextCardId(String gameSessionId) throws JsonProcessingException {
+    public void getNextPlayerIdAndNextCardId(String gameSessionId) throws JsonProcessingException {
 
         Long gameSessionIdLong = Long.parseLong(gameSessionId);
 
@@ -140,14 +138,12 @@ public class GameSessionController {
                     NextTurnDto nextTurnDto = new NextTurnDto(playerId, drawnCardId);
 //                    Send the nextTurnDto to the user to specific gameSession
                     this.template.convertAndSend(GAME_SESSION_TOPIC + gameSessionId + "/next-turn-response", objectMapper.writeValueAsString(nextTurnDto));
-                    return objectMapper.writeValueAsString(nextTurnDto);
                 } else {
 //                    If the deck is empty finish the game
                     gameSessionEntityService.terminateGameSession(gameSessionIdLong);
 //                    Send the finish game message to all users when the game is finished
                     String currentGameState = gameSessionEntityService.findById(gameSessionIdLong).get().getGameState();
                     this.template.convertAndSend(GAME_SESSION_TOPIC + gameSessionId + "/game-finished", currentGameState);
-                    return GameState.FINISHED.name();
                 }
             } else {
                 throw new IllegalStateException("Game is already finished.");
