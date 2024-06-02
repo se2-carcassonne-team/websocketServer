@@ -11,6 +11,7 @@ import java.util.Optional;
 public interface PlayerEntityService {
 
     PlayerEntity createPlayer(PlayerEntity playerEntity) throws EntityExistsException;
+    PlayerEntity createPlayer(PlayerEntity playerEntity, String sessionId) throws EntityExistsException;
     PlayerEntity updateUsername(PlayerEntity playerEntity) throws EntityNotFoundException;
     PlayerEntity joinLobby(Long gameLobbyId, PlayerEntity playerEntity) throws RuntimeException;
     List<PlayerEntity> getAllPlayersForLobby(Long gameLobbyId);
@@ -19,4 +20,5 @@ public interface PlayerEntityService {
     boolean exists(Long id);
 
     Optional<PlayerEntity> findPlayerById(Long id);
+    Optional<PlayerEntity> findPlayerBySessionId(String sessionId);
 }

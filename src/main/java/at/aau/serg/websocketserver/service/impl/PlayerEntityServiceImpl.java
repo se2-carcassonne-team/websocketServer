@@ -47,10 +47,14 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
         gameLobbyEntity.setAvailableColours(colours);
     }
 
-    // @Dominik: slightly different approach: expose only entity objects to the service
+    // Only used for integration tests
     @Override
     public PlayerEntity createPlayer(PlayerEntity playerEntity) throws EntityExistsException {
+        return createPlayer(playerEntity, null);
+    }
 
+    @Override
+    public PlayerEntity createPlayer(PlayerEntity playerEntity, String sessionId) throws EntityExistsException {
         // check if player with id already exists
         if(playerEntity.getId() != null && playerEntityRepository.findById(playerEntity.getId()).isPresent()) {
             throw new EntityExistsException(ErrorCode.ERROR_2002.getCode());
@@ -61,6 +65,7 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
             throw new EntityExistsException(ErrorCode.ERROR_2003.getCode());
         }
 
+        if(sessionId != null && !sessionId.isEmpty()) playerEntity.setSessionId(sessionId);
         return playerEntityRepository.save(playerEntity);
     }
 
@@ -191,5 +196,10 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
     @Override
     public Optional<PlayerEntity> findPlayerById(Long id) {
         return playerEntityRepository.findById(id);
+    }
+
+    @Override
+    public Optional<PlayerEntity> findPlayerBySessionId(String sessionId) {
+        return playerEntityRepository.findBySessionId(sessionId);
     }
 }

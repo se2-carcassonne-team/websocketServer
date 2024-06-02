@@ -1,4 +1,4 @@
-package at.aau.serg.websocketserver.websocketConfig;
+package at.aau.serg.websocketserver.websocket;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;

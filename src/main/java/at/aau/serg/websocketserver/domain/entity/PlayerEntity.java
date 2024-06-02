@@ -19,6 +19,8 @@ public class PlayerEntity {
 
     private String username;
 
+    private String sessionId;
+
     // 0..1 : n relationship betw. lobby and player
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name="gamelobby_id")
