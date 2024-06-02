@@ -5,16 +5,20 @@ import at.aau.serg.websocketserver.demo.websocket.StompFrameHandlerClientImpl;
 import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketserver.domain.dto.PlayerDto;
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
+import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
+import at.aau.serg.websocketserver.domain.pojo.GameState;
 import at.aau.serg.websocketserver.domain.pojo.PlayerColour;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
 import at.aau.serg.websocketserver.mapper.PlayerMapper;
 import at.aau.serg.websocketserver.service.GameLobbyEntityService;
+import at.aau.serg.websocketserver.service.GameSessionEntityService;
 import at.aau.serg.websocketserver.service.PlayerEntityService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestTemplate;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -48,6 +52,7 @@ public class ClientDisconnectListenerIntegrationTest {
 
     PlayerEntityService playerEntityService;
     GameLobbyEntityService gameLobbyEntityService;
+    GameSessionEntityService gameSessionEntityService;
     PlayerMapper playerMapper;
     GameLobbyMapper gameLobbyMapper;
     ObjectMapper objectMapper;
@@ -59,9 +64,10 @@ public class ClientDisconnectListenerIntegrationTest {
     BlockingQueue<String> messages;
 
     @Autowired
-    public ClientDisconnectListenerIntegrationTest(PlayerEntityService playerEntityService, GameLobbyEntityService gameLobbyEntityService, PlayerMapper playerMapper, GameLobbyMapper gameLobbyMapper, ObjectMapper objectMapper, ApplicationEventPublisher eventPublisher) {
+    public ClientDisconnectListenerIntegrationTest(PlayerEntityService playerEntityService, GameLobbyEntityService gameLobbyEntityService, GameSessionEntityService gameSessionEntityService, PlayerMapper playerMapper, GameLobbyMapper gameLobbyMapper, ObjectMapper objectMapper, ApplicationEventPublisher eventPublisher) {
         this.playerEntityService = playerEntityService;
         this.gameLobbyEntityService = gameLobbyEntityService;
+        this.gameSessionEntityService = gameSessionEntityService;
         this.playerMapper = playerMapper;
         this.gameLobbyMapper = gameLobbyMapper;
         this.objectMapper = objectMapper;
@@ -97,7 +103,7 @@ public class ClientDisconnectListenerIntegrationTest {
     }
 
     @Test
-    void testThatDisconnectWithPlayerInLobbySuccessfullyRemovesPlayerFromLobbyAndDeletesExistingPlayer() throws Exception {
+    void testThatDisconnectWithPlayerInLobbyAndSessionSuccessfullyRemovesPlayerFromLobbyAndSessionAndDeletesExistingPlayer() throws Exception {
         GameLobbyEntity gameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
         StompSession session = initStompSession();
         session.subscribe("/topic/lobby-" + gameLobbyEntityA.getId(), new StompFrameHandlerClientImpl(messages));
@@ -123,6 +129,9 @@ public class ClientDisconnectListenerIntegrationTest {
         playerEntityService.joinLobby(gameLobbyEntityA.getId(), testPlayerEntityA);
         playerEntityService.joinLobby(gameLobbyEntityA.getId(), testPlayerEntityB);
 
+        GameSessionEntity createdGameSessionEntity = gameSessionEntityService.createGameSession(gameLobbyEntityA.getId());
+        assertThat(createdGameSessionEntity).isNotNull();
+
         // Simulate a session disconnect event and publish it
         SessionDisconnectEvent event = createSessionDisconnectEvent(this,session.getSessionId());
         eventPublisher.publishEvent(event);
@@ -140,12 +149,16 @@ public class ClientDisconnectListenerIntegrationTest {
         List<PlayerEntity> playerEntityList = playerEntityService.getAllPlayersForLobby(gameLobbyEntityA.getId());
         gameLobbyDtoA.setNumPlayers(gameLobbyDtoA.getNumPlayers() - 1);
 
+        List<Long> playerIdList = gameSessionEntityService.findById(createdGameSessionEntity.getId()).get().getPlayerIds();
+        assertThat(playerIdList).hasSize(1);
+        assertThat(playerIdList.get(0)).isEqualTo(playerDtoB.getId());
+
         assertThat(playerEntityList.size()).isEqualTo(gameLobbyDtoA.getNumPlayers());
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
     @Test
-    void testThatDisconnectWithPlayerOnlyPlayerInLobbySuccessfullyDeletesLobbyAndPlayer() throws Exception {
+    void testThatDisconnectWithPlayerOnlyPlayerInLobbyAndSessionSuccessfullyTerminatesSessionAndDeletesLobbyAndPlayer() throws Exception {
         GameLobbyEntity gameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
         GameLobbyEntity gameLobbyEntityB = TestDataUtil.createTestGameLobbyEntityB();
         GameLobbyDto gameLobbyDtoA = gameLobbyMapper.mapToDto(gameLobbyEntityA);
@@ -169,6 +182,9 @@ public class ClientDisconnectListenerIntegrationTest {
 
         playerEntityService.joinLobby(gameLobbyEntityA.getId(), testPlayerEntityA);
 
+        GameSessionEntity createdGameSessionEntity = gameSessionEntityService.createGameSession(gameLobbyEntityA.getId());
+        assertThat(createdGameSessionEntity).isNotNull();
+
         // Simulate a session disconnect event and publish it
         SessionDisconnectEvent event = createSessionDisconnectEvent(this,session.getSessionId());
         eventPublisher.publishEvent(event);
@@ -178,6 +194,11 @@ public class ClientDisconnectListenerIntegrationTest {
 
         assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isEmpty();
         assertThat(gameLobbyEntityService.findById(gameLobbyEntityA.getId())).isEmpty();
+
+        List<Long> playerIdList = gameSessionEntityService.findById(createdGameSessionEntity.getId()).get().getPlayerIds();
+        assertThat(playerIdList).hasSize(0);
+        assertThat(gameSessionEntityService.findById(createdGameSessionEntity.getId()).get().getGameState()).isEqualTo(GameState.FINISHED.name());
+
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
