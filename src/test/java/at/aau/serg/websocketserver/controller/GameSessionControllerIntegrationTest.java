@@ -58,7 +58,6 @@ public class GameSessionControllerIntegrationTest {
     private final TileDeckEntityServiceImpl tileDeckEntityService;
     private final TileDeckRepository tileDeckRepository;
 
-
     @Autowired
     public GameSessionControllerIntegrationTest(ObjectMapper objectMapper, GameLobbyMapper gameLobbyMapper, PlayerMapper playerMapper, GameSessionEntityService gameSessionEntityService, GameLobbyEntityService gameLobbyEntityService, PlayerEntityService playerEntityService, TileDeckEntityServiceImpl tileDeckEntityService, TileDeckRepository tileDeckRepository) {
         this.objectMapper = objectMapper;
@@ -727,7 +726,6 @@ public class GameSessionControllerIntegrationTest {
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
-    // test forwarding of a placed GameBoardTileDto to all players in the game session
     @Test
     void testThatPlaceTileForwardsPlacedTileDtoToAllPlayers() throws Exception {
 
@@ -806,6 +804,225 @@ public class GameSessionControllerIntegrationTest {
 
     }
 
+    @Test
+    void testForwardScoreboardWithValidGameSession() throws Exception {
+        GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
+        GameLobbyEntity gameLobbyEntityA = gameLobbyMapper.mapToEntity(gameLobbyDtoA);
+
+        PlayerEntity playerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        PlayerEntity playerEntityB = TestDataUtil.createTestPlayerEntityB(null);
+        PlayerEntity playerEntityC = TestDataUtil.createTestPlayerEntityC(null);
+        gameLobbyEntityA.setLobbyAdminId(playerEntityA.getId());
+
+        playerEntityService.createPlayer(playerEntityA);
+        playerEntityService.createPlayer(playerEntityB);
+        playerEntityService.createPlayer(playerEntityC);
+
+        gameLobbyEntityService.createLobby(gameLobbyEntityA);
+        assertThat(gameLobbyEntityService.findById(gameLobbyDtoA.getId())).isPresent();
+
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityA);
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityB);
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityC);
+
+        GameSessionDto gameSessionDtoA = TestDataUtil.createTestGameSessionDtoA(playerMapper.mapToDto(playerEntityA));
+        assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isEmpty();
+
+        StompSession session = initStompSession("/topic/lobby-" + gameLobbyDtoA.getId() + "/game-start", messages);
+        session.send("/app/game-start", gameLobbyDtoA.getId() + "");
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isPresent();
+        assertThat(actualResponse).isEqualTo(gameSessionDtoA.getId() + "");
+
+        List<Long> playerIds = new ArrayList<>();
+        playerIds.add(playerEntityA.getId());
+        playerIds.add(playerEntityB.getId());
+        playerIds.add(playerEntityC.getId());
+
+        ScoreboardDto scoreboardDto = new ScoreboardDto(gameSessionDtoA.getId(), gameLobbyDtoA.getId(), playerIds, null);
+        session = initStompSession("/topic/game-end-" + gameSessionDtoA.getId() + "/scoreboard", messages);
+        session.send("/app/scoreboard", objectMapper.writeValueAsString(scoreboardDto));
+
+        String actualResponse2 = messages.poll(3, TimeUnit.SECONDS);
+        assertThat(actualResponse2).isNotNull();
+
+        ScoreboardDto responseDto = objectMapper.readValue(actualResponse2, ScoreboardDto.class);
+
+        List<String> expectedPlayerNames = new ArrayList<>();
+        expectedPlayerNames.add(playerEntityA.getUsername());
+        expectedPlayerNames.add(playerEntityB.getUsername());
+        expectedPlayerNames.add(playerEntityC.getUsername());
+
+        assertThat(responseDto.getPlayerNames()).containsExactlyInAnyOrderElementsOf(expectedPlayerNames);
+    }
+
+
+    @Test
+    void testForwardScoreboardWithNonExistentGameSession() throws Exception {
+        StompSession session = initStompSession("/user/queue/errors", messages);
+
+        ScoreboardDto scoreboardDto = new ScoreboardDto();
+        scoreboardDto.setGameSessionId(999L); // Non-existent game session ID
+        scoreboardDto.setGameLobbyId(1L);
+        scoreboardDto.setPlayerIds(List.of(1L, 2L, 3L));
+
+        session.send("/app/scoreboard", objectMapper.writeValueAsString(scoreboardDto));
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+        String expectedResponse = "ERROR: GameSession not found.";
+
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+    }
+
+    @Test
+    void testForwardScoreboardWithPlayersInDifferentLobby() throws Exception {
+        GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
+        GameLobbyEntity gameLobbyEntityA = gameLobbyMapper.mapToEntity(gameLobbyDtoA);
+
+        PlayerEntity playerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        PlayerEntity playerEntityB = TestDataUtil.createTestPlayerEntityB(null);
+        PlayerEntity playerEntityC = TestDataUtil.createTestPlayerEntityC(null);
+        gameLobbyEntityA.setLobbyAdminId(playerEntityA.getId());
+
+        playerEntityService.createPlayer(playerEntityA);
+        playerEntityService.createPlayer(playerEntityB);
+        playerEntityService.createPlayer(playerEntityC);
+
+        gameLobbyEntityService.createLobby(gameLobbyEntityA);
+        assertThat(gameLobbyEntityService.findById(gameLobbyDtoA.getId())).isPresent();
+
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityA);
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityB);
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityC);
+
+        GameSessionDto gameSessionDtoA = TestDataUtil.createTestGameSessionDtoA(playerMapper.mapToDto(playerEntityA));
+        assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isEmpty();
+
+        StompSession session = initStompSession("/topic/lobby-" + gameLobbyDtoA.getId() + "/game-start", messages);
+        session.send("/app/game-start", gameLobbyDtoA.getId() + "");
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isPresent();
+        assertThat(actualResponse).isEqualTo(gameSessionDtoA.getId() + "");
+
+        PlayerEntity playerEntityD = TestDataUtil.createTestPlayerEntityD(null);
+        playerEntityService.createPlayer(playerEntityD);
+
+        List<Long> playerIds = new ArrayList<>();
+        playerIds.add(playerEntityD.getId());
+
+        ScoreboardDto scoreboardDto = new ScoreboardDto(gameSessionDtoA.getId(), gameLobbyDtoA.getId(), playerIds, null);
+        session = initStompSession("/topic/game-end-" + gameSessionDtoA.getId() + "/scoreboard", messages);
+        session.send("/app/scoreboard", objectMapper.writeValueAsString(scoreboardDto));
+
+        String actualResponse2 = messages.poll(3, TimeUnit.SECONDS);
+        assertThat(actualResponse2).isNotNull();
+
+        ScoreboardDto responseDto = objectMapper.readValue(actualResponse2, ScoreboardDto.class);
+
+        assertThat(responseDto.getPlayerNames()).isEmpty();
+
+    }
+
+    @Test
+    void testForwardScoreboardWithPartialPlayersInLobby() throws Exception {
+        GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
+        GameLobbyEntity gameLobbyEntityA = gameLobbyMapper.mapToEntity(gameLobbyDtoA);
+
+        PlayerEntity playerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        PlayerEntity playerEntityB = TestDataUtil.createTestPlayerEntityB(null);
+        PlayerEntity playerEntityC = TestDataUtil.createTestPlayerEntityC(null);
+        gameLobbyEntityA.setLobbyAdminId(playerEntityA.getId());
+
+        playerEntityService.createPlayer(playerEntityA);
+        playerEntityService.createPlayer(playerEntityB);
+        playerEntityService.createPlayer(playerEntityC);
+
+        gameLobbyEntityService.createLobby(gameLobbyEntityA);
+        assertThat(gameLobbyEntityService.findById(gameLobbyDtoA.getId())).isPresent();
+
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityA);
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityB);
+
+        GameSessionDto gameSessionDtoA = TestDataUtil.createTestGameSessionDtoA(playerMapper.mapToDto(playerEntityA));
+        assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isEmpty();
+
+        StompSession session = initStompSession("/topic/lobby-" + gameLobbyDtoA.getId() + "/game-start", messages);
+        session.send("/app/game-start", gameLobbyDtoA.getId() + "");
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isPresent();
+        assertThat(actualResponse).isEqualTo(gameSessionDtoA.getId() + "");
+
+        List<Long> playerIds = new ArrayList<>();
+        playerIds.add(playerEntityA.getId());
+        playerIds.add(playerEntityC.getId()); // playerEntityC is not in the lobby
+
+        ScoreboardDto scoreboardDto = new ScoreboardDto(gameSessionDtoA.getId(), gameLobbyDtoA.getId(), playerIds, null);
+        session = initStompSession("/topic/game-end-" + gameSessionDtoA.getId() + "/scoreboard", messages);
+        session.send("/app/scoreboard", objectMapper.writeValueAsString(scoreboardDto));
+
+        String actualResponse2 = messages.poll(3, TimeUnit.SECONDS);
+        assertThat(actualResponse2).isNotNull();
+
+        ScoreboardDto responseDto = objectMapper.readValue(actualResponse2, ScoreboardDto.class);
+
+        List<String> expectedPlayerNames = new ArrayList<>();
+        expectedPlayerNames.add(playerEntityA.getUsername());
+
+        assertThat(responseDto.getPlayerNames()).containsExactlyInAnyOrderElementsOf(expectedPlayerNames);
+    }
+
+    @Test
+    void testForwardScoreboardWithEmptyPlayerIds() throws Exception {
+        GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
+        GameLobbyEntity gameLobbyEntityA = gameLobbyMapper.mapToEntity(gameLobbyDtoA);
+
+        PlayerEntity playerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        PlayerEntity playerEntityB = TestDataUtil.createTestPlayerEntityB(null);
+        PlayerEntity playerEntityC = TestDataUtil.createTestPlayerEntityC(null);
+        gameLobbyEntityA.setLobbyAdminId(playerEntityA.getId());
+
+        playerEntityService.createPlayer(playerEntityA);
+        playerEntityService.createPlayer(playerEntityB);
+        playerEntityService.createPlayer(playerEntityC);
+
+        gameLobbyEntityService.createLobby(gameLobbyEntityA);
+        assertThat(gameLobbyEntityService.findById(gameLobbyDtoA.getId())).isPresent();
+
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityA);
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityB);
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityC);
+
+        GameSessionDto gameSessionDtoA = TestDataUtil.createTestGameSessionDtoA(playerMapper.mapToDto(playerEntityA));
+        assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isEmpty();
+
+        StompSession session = initStompSession("/topic/lobby-" + gameLobbyDtoA.getId() + "/game-start", messages);
+        session.send("/app/game-start", gameLobbyDtoA.getId() + "");
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isPresent();
+        assertThat(actualResponse).isEqualTo(gameSessionDtoA.getId() + "");
+
+        List<Long> playerIds = new ArrayList<>();
+
+        ScoreboardDto scoreboardDto = new ScoreboardDto(gameSessionDtoA.getId(), gameLobbyDtoA.getId(), playerIds, null);
+        session = initStompSession("/topic/game-end-" + gameSessionDtoA.getId() + "/scoreboard", messages);
+        session.send("/app/scoreboard", objectMapper.writeValueAsString(scoreboardDto));
+
+        String actualResponse2 = messages.poll(3, TimeUnit.SECONDS);
+        assertThat(actualResponse2).isNotNull();
+
+        ScoreboardDto responseDto = objectMapper.readValue(actualResponse2, ScoreboardDto.class);
+
+        assertThat(responseDto.getPlayerNames()).isEmpty();
+    }
+
     public StompSession initStompSession(String topic, BlockingQueue<String> messages) throws Exception {
         WebSocketStompClient stompClient = new WebSocketStompClient(new StandardWebSocketClient());
         stompClient.setMessageConverter(new StringMessageConverter());
@@ -821,4 +1038,7 @@ public class GameSessionControllerIntegrationTest {
 
         return session;
     }
+
+
+
 }

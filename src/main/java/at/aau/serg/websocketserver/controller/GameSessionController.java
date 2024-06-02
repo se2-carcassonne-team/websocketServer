@@ -1,18 +1,17 @@
 package at.aau.serg.websocketserver.controller;
 
 import at.aau.serg.websocketserver.controller.helper.HelperMethods;
-import at.aau.serg.websocketserver.domain.dto.FinishedTurnDto;
-import at.aau.serg.websocketserver.domain.dto.PlacedTileDto;
-import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
+import at.aau.serg.websocketserver.domain.dto.*;
+import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
+import at.aau.serg.websocketserver.domain.entity.repository.GameSessionEntityRepository;
 import at.aau.serg.websocketserver.domain.pojo.GameState;
-import at.aau.serg.websocketserver.domain.dto.NextTurnDto;
 import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
 import at.aau.serg.websocketserver.domain.entity.TileDeckEntity;
 import at.aau.serg.websocketserver.domain.entity.repository.TileDeckRepository;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
-import at.aau.serg.websocketserver.mapper.GameSessionMapper;
 import at.aau.serg.websocketserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketserver.service.GameSessionEntityService;
+import at.aau.serg.websocketserver.service.PlayerEntityService;
 import at.aau.serg.websocketserver.service.impl.TileDeckEntityServiceImpl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,6 +21,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,21 +33,24 @@ public class GameSessionController {
     private final ObjectMapper objectMapper;
     private GameLobbyMapper gameLobbyMapper;
     private GameLobbyEntityService gameLobbyEntityService;
-
+    private final PlayerEntityService playerEntityService;
     private TileDeckRepository tileDeckRepository;
-
     private TileDeckEntityServiceImpl tileDeckEntityServiceImpl;
     private static final String GAME_SESSION_TOPIC = "/topic/game-session-";
+    private final GameSessionEntityRepository gameSessionEntityRepository;
 
 
-    public GameSessionController(SimpMessagingTemplate template, GameSessionEntityService gameSessionEntityService, ObjectMapper objectMapper, GameLobbyMapper gameLobbyMapper, GameLobbyEntityService gameLobbyEntityService, TileDeckRepository tileDeckRepository, TileDeckEntityServiceImpl tileDeckEntityServiceImpl) {
+    public GameSessionController(SimpMessagingTemplate template, GameSessionEntityService gameSessionEntityService, ObjectMapper objectMapper, GameLobbyMapper gameLobbyMapper, GameLobbyEntityService gameLobbyEntityService, PlayerEntityService playerEntityService, TileDeckRepository tileDeckRepository, TileDeckEntityServiceImpl tileDeckEntityServiceImpl,
+                                 GameSessionEntityRepository gameSessionEntityRepository) {
         this.template = template;
         this.gameSessionEntityService = gameSessionEntityService;
         this.objectMapper = objectMapper;
         this.gameLobbyMapper = gameLobbyMapper;
         this.gameLobbyEntityService = gameLobbyEntityService;
+        this.playerEntityService = playerEntityService;
         this.tileDeckRepository = tileDeckRepository;
         this.tileDeckEntityServiceImpl = tileDeckEntityServiceImpl;
+        this.gameSessionEntityRepository = gameSessionEntityRepository;
     }
 
     /**
@@ -77,6 +80,31 @@ public class GameSessionController {
         this.template.convertAndSend("/topic/lobby-list", objectMapper.writeValueAsString(gameLobbyDtoList));
 
         return objectMapper.writeValueAsString(gameLobbyDtoList);
+    }
+
+    @MessageMapping("/scoreboard")
+    public String forwardScoreboard(String scoreboardDtoAsString) throws JsonProcessingException {
+        ScoreboardDto scoreboardDto = objectMapper.readValue(scoreboardDtoAsString, ScoreboardDto.class);
+
+        Optional<GameSessionEntity> gameSession = gameSessionEntityService.findById(scoreboardDto.getGameSessionId());
+
+        if (gameSession.isPresent()) {
+            List<PlayerEntity> allPlayersInLobby = playerEntityService.getAllPlayersForLobby(scoreboardDto.getGameLobbyId());
+            List<String> playerNames = new ArrayList<>();
+
+            for (PlayerEntity playerEntity : allPlayersInLobby) {
+                if (scoreboardDto.getPlayerIds().contains(playerEntity.getId())){
+                    playerNames.add(playerEntity.getUsername());
+                }
+            }
+
+            scoreboardDto.setPlayerNames(playerNames);
+            this.template.convertAndSend("/topic/game-end-" + scoreboardDto.getGameSessionId() + "/scoreboard", objectMapper.writeValueAsString(scoreboardDto));
+
+            return objectMapper.writeValueAsString(scoreboardDto);
+        } else {
+            throw new IllegalStateException("GameSession not found.");
+        }
     }
 
     /**
