@@ -2,10 +2,13 @@ package at.aau.serg.websocketserver.websocket;
 
 import at.aau.serg.websocketserver.domain.dto.PlayerDto;
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
+import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
+import at.aau.serg.websocketserver.domain.entity.repository.GameSessionEntityRepository;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
 import at.aau.serg.websocketserver.mapper.PlayerMapper;
 import at.aau.serg.websocketserver.service.GameLobbyEntityService;
+import at.aau.serg.websocketserver.service.GameSessionEntityService;
 import at.aau.serg.websocketserver.service.PlayerEntityService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -15,6 +18,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
+import java.util.List;
 import java.util.Optional;
 
 import static at.aau.serg.websocketserver.controller.helper.HelperMethods.getGameLobbyDtoList;
@@ -25,17 +29,21 @@ public class ClientDisconnectListener {
     private final SimpMessagingTemplate template;
     private final PlayerEntityService playerEntityService;
     private final GameLobbyEntityService gameLobbyEntityService;
+    private final GameSessionEntityService gameSessionEntityService;
     private final ObjectMapper objectMapper;
     private final PlayerMapper playerMapper;
     private final GameLobbyMapper gameLobbyMapper;
+    private final GameSessionEntityRepository gameSessionEntityRepository;
 
-    public ClientDisconnectListener(SimpMessagingTemplate template, PlayerEntityService playerEntityServiceImpl, GameLobbyEntityService gameLobbyEntityService, ObjectMapper objectMapper, PlayerMapper playerMapper, GameLobbyMapper gameLobbyMapper) {
+    public ClientDisconnectListener(SimpMessagingTemplate template, PlayerEntityService playerEntityServiceImpl, GameLobbyEntityService gameLobbyEntityService, GameSessionEntityService gameSessionEntityService, ObjectMapper objectMapper, PlayerMapper playerMapper, GameLobbyMapper gameLobbyMapper, GameSessionEntityRepository gameSessionEntityRepository) {
         this.template = template;
         this.playerEntityService = playerEntityServiceImpl;
         this.gameLobbyEntityService = gameLobbyEntityService;
+        this.gameSessionEntityService = gameSessionEntityService;
         this.objectMapper = objectMapper;
         this.playerMapper = playerMapper;
         this.gameLobbyMapper = gameLobbyMapper;
+        this.gameSessionEntityRepository = gameSessionEntityRepository;
     }
 
     @EventListener
@@ -68,6 +76,23 @@ public class ClientDisconnectListener {
                     );
                 }
             }
+
+            Optional<GameSessionEntity> gameSessionEntityOptional = gameSessionEntityRepository.findByPlayerId(playerDto.getId());
+            if(gameSessionEntityOptional.isPresent()) {
+                GameSessionEntity gameSessionEntity = gameSessionEntityOptional.get();
+                List<Long> playerIds = gameSessionEntity.getPlayerIds();
+
+                playerIds.remove(playerDto.getId());
+                gameSessionEntity.setPlayerIds(playerIds);
+                gameSessionEntityRepository.save(gameSessionEntity);
+
+                // Check if gameSession can be terminated
+                if (playerIds.isEmpty()) {
+                    gameSessionEntityService.terminateGameSession(gameSessionEntity.getId());
+                }
+
+            }
+
         }
 
     }
