@@ -11,6 +11,7 @@ import at.aau.serg.websocketserver.domain.pojo.PlayerColour;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 
 public class TestDataUtil {
@@ -253,5 +254,13 @@ public class TestDataUtil {
     public static List<PlayerColour> getTestPlayerColoursAsEnumListRemoveValue(List<PlayerColour> playerColours, PlayerColour playerColour) {
         playerColours.remove(playerColour);
         return playerColours;
+    }
+
+    public static FinishedTurnDto getTestFinishedTurnDto() {
+        FinishedTurnDto finishedTurnDto = new FinishedTurnDto();
+        finishedTurnDto.setGameSessionId(1L);
+        finishedTurnDto.setPoints(Map.of(1L, 0));
+        finishedTurnDto.setPlayersWithMeeples(Map.of(1L, new ArrayList<>()));
+        return finishedTurnDto;
     }
 }
