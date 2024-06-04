@@ -12,6 +12,7 @@ import at.aau.serg.websocketserver.service.PlayerEntityService;
 import java.util.ArrayList;
 import java.util.List;
 
+// fixme avoid using static methods in oop, use objects instead
 public class HelperMethods {
 
     private HelperMethods() {

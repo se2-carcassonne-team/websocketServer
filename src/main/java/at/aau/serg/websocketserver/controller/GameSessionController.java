@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+// fixme avoid making this class a god class, the constr already requires many parameters
 @Controller
 public class GameSessionController {
 

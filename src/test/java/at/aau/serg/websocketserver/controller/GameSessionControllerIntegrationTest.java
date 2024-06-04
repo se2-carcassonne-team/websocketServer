@@ -44,6 +44,7 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
+// fixme split all the tests into smaller units and extract the setup (until is present?) into a method
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ExtendWith(SpringExtension.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
@@ -99,6 +100,7 @@ public class GameSessionControllerIntegrationTest {
         messages4 = null;
     }
 
+    // fixme split into multiple tests
     @Test
     void testThatCreateGameSessionReturnsCreatedGameSessionIdToTopic() throws Exception {
         GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
@@ -137,7 +139,7 @@ public class GameSessionControllerIntegrationTest {
 
     }
 
-
+    // fixme split into multiple tests
     @Test
     void testThatCreateGameSessionReturnsUpdatedLobbyListToQueue() throws Exception {
         GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
@@ -194,6 +196,7 @@ public class GameSessionControllerIntegrationTest {
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
+    // fixme split into multiple tests
     @Test
     void testThatFindByGameIdQueryInTileDeckEntityExecutesRight() throws Exception {
         GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
@@ -238,6 +241,7 @@ public class GameSessionControllerIntegrationTest {
         assertThat(actualResponseGameSessionEntity).isEqualTo(expectedResponse.toString());
     }
 
+    // fixme split into multiple tests!
     @Test
     void testThatGetNextPlayerIdAndNextTileIdReturnsTheRightNextPlayerId() throws Exception {
         GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
@@ -310,6 +314,7 @@ public class GameSessionControllerIntegrationTest {
         assertThat(result.getPlayerId()).isEqualTo(expectedResponseNextPlayerId);
     }
 
+    // fixme split into multiple tests!
     @Test
     void testThatGetNextPlayerIdAndNextTileIdReturnsTheRightNextTile() throws Exception {
         GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
@@ -366,6 +371,7 @@ public class GameSessionControllerIntegrationTest {
         assertThat(result.getTileId()).isEqualTo(expectedFirstTile);
     }
 
+    // fixme split into multiple tests!
     @Test
     void testThatGameInFinishedStateThrowsException() throws Exception {
         GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
@@ -416,6 +422,7 @@ public class GameSessionControllerIntegrationTest {
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
+    // fixme split into multiple tests
     @Test
     void testThatGameSessionControllerThrowsExceptionIfTheGameSessionIsDeleted() throws Exception {
         GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
@@ -464,6 +471,7 @@ public class GameSessionControllerIntegrationTest {
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
+    // fixme split into multiple tests!
     @Test
     void testThatGameSessionControllerThrowsExceptionIfTheWrongGameSessionIdIsSupplied() throws Exception {
         GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
