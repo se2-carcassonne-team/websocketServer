@@ -160,8 +160,6 @@ public class GameLobbyController {
         return "deleted";
     }
 
-
-
     @MessageExceptionHandler
     @SendToUser("/queue/errors")
     public String handleException(Throwable exception) {

@@ -33,6 +33,7 @@ public class PlayerMapper {
     public PlayerEntity mapToEntity(PlayerDto playerDto) {
         PlayerEntity playerEntity = modelMapper.map(playerDto, PlayerEntity.class);
 
+        // find and assign the GameLobbyEntity based on the ID from the DTO
         if(playerDto.getGameLobbyId() != null) {
             Optional<GameLobbyEntity> gameLobbyEntityOptional = gameLobbyEntityRepository.findById(playerDto.getGameLobbyId());
 
@@ -46,7 +47,7 @@ public class PlayerMapper {
             playerEntity.setGameLobbyEntity(null);
         }
 
-        // Laden und Zuweisen der GameSessionEntity basierend auf der ID aus dem DTO
+        // find and assign the GameSessionEntity based on the ID from the DTO (same procedure as above)
         if (playerDto.getGameSessionId() != null) {
             Optional<GameSessionEntity> gameSessionEntityOptional = gameSessionEntityRepository.findById(playerDto.getGameSessionId());
 

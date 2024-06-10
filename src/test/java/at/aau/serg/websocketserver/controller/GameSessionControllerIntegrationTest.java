@@ -785,19 +785,20 @@ public class GameSessionControllerIntegrationTest {
 
     @Test
     void testOnePlayerLeaveWhenMoreThanTwoPlayersRemain() throws Exception {
-        // Erstellen einer Spiellobby
+        // Create GameLobbyEntity
         GameLobbyEntity gameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
 
-        // Erstellen von 3 Spielern
+        // create 3 player entities
         PlayerEntity playerEntityA = TestDataUtil.createTestPlayerEntityA(null);
         PlayerEntity playerEntityB = TestDataUtil.createTestPlayerEntityB(null);
         PlayerEntity playerEntityC = TestDataUtil.createTestPlayerEntityC(null);
         gameLobbyEntityA.setLobbyAdminId(playerEntityA.getId());
 
+        // save player entities to database
         playerEntityService.createPlayer(playerEntityA);
         playerEntityService.createPlayer(playerEntityB);
         playerEntityService.createPlayer(playerEntityC);
-
+        // save gameLobbyEntity to database
         gameLobbyEntityService.createLobby(gameLobbyEntityA);
 
         GameLobbyDto gameLobbyDtoA = gameLobbyMapper.mapToDto(gameLobbyEntityA);
@@ -822,7 +823,6 @@ public class GameSessionControllerIntegrationTest {
 
         session.send("/app/player-leave-gamesession", objectMapper.writeValueAsString(playerMapper.mapToDto(playerEntityA)));
 
-        // TODO: manipulate GameSessionEntity object to fit the expected state after player A left
         gameSessionEntityWith3Players.setNumPlayers(2);
         gameSessionEntityWith3Players.getPlayerIds().remove(playerEntityA.getId());
 
@@ -845,19 +845,20 @@ public class GameSessionControllerIntegrationTest {
 
     @Test
     void testTwoPlayersLeaveWhenMoreThanTwoPlayersRemain() throws Exception {
-        // Erstellen einer Spiellobby
+        // Create GameLobbyEntity
         GameLobbyEntity gameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
 
-        // Erstellen von 3 Spielern
+        // create 3 player entities
         PlayerEntity playerEntityA = TestDataUtil.createTestPlayerEntityA(null);
         PlayerEntity playerEntityB = TestDataUtil.createTestPlayerEntityB(null);
         PlayerEntity playerEntityC = TestDataUtil.createTestPlayerEntityC(null);
         gameLobbyEntityA.setLobbyAdminId(playerEntityA.getId());
 
+        // save player entities to database
         playerEntityService.createPlayer(playerEntityA);
         playerEntityService.createPlayer(playerEntityB);
         playerEntityService.createPlayer(playerEntityC);
-
+        // save gameLobbyEntity to database
         gameLobbyEntityService.createLobby(gameLobbyEntityA);
 
         GameLobbyDto gameLobbyDtoA = gameLobbyMapper.mapToDto(gameLobbyEntityA);
@@ -885,7 +886,6 @@ public class GameSessionControllerIntegrationTest {
         gameSessionEntityWith3Players.getPlayerIds().remove(playerEntityA.getId());
         session.send("/app/player-leave-gamesession", objectMapper.writeValueAsString(playerMapper.mapToDto(playerEntityB)));
 
-        // TODO: manipulate GameSessionEntity object to fit the expected state after players left
         gameSessionEntityWith3Players.setNumPlayers(1);
         gameSessionEntityWith3Players.getPlayerIds().remove(playerEntityB.getId());
 
