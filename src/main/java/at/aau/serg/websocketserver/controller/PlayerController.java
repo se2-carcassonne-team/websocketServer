@@ -2,13 +2,21 @@ package at.aau.serg.websocketserver.controller;
 
 import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketserver.domain.dto.PlayerDto;
+import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
+import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
+import at.aau.serg.websocketserver.domain.entity.repository.PlayerEntityRepository;
+
+import at.aau.serg.websocketserver.mapper.GameSessionMapper;
 import at.aau.serg.websocketserver.mapper.PlayerMapper;
 import at.aau.serg.websocketserver.service.GameLobbyEntityService;
+import at.aau.serg.websocketserver.service.GameSessionEntityService;
 import at.aau.serg.websocketserver.service.PlayerEntityService;
+import at.aau.serg.websocketserver.mapper.GameSessionMapper;
 import at.aau.serg.websocketserver.statuscode.ErrorCode;
 import at.aau.serg.websocketserver.statuscode.ResponseCode;
+import at.aau.serg.websocketserver.service.GameSessionEntityService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.messaging.handler.annotation.Header;
@@ -31,19 +39,25 @@ public class PlayerController {
     private final SimpMessagingTemplate template;
     private final PlayerEntityService playerEntityService;
     private final GameLobbyEntityService gameLobbyEntityService;
+    private final GameSessionEntityService gameSessionEntityService;
+    private final PlayerEntityRepository playerEntityRepository;
     private final ObjectMapper objectMapper;
     private final PlayerMapper playerMapper;
     private final GameLobbyMapper gameLobbyMapper;
+    private final GameSessionMapper gameSessionMapper;
     private static final String LOBBY_LIST_TOPIC = "/topic/lobby-list";
     private static final String UPDATE_TOPIC = "/update";
 
-    public PlayerController(SimpMessagingTemplate template, PlayerEntityService playerEntityService, GameLobbyEntityService gameLobbyEntityService, ObjectMapper objectMapper, PlayerMapper playerMapper, GameLobbyMapper gameLobbyMapper) {
+    public PlayerController(SimpMessagingTemplate template,PlayerEntityRepository playerEntityRepository, PlayerEntityService playerEntityService, GameLobbyEntityService gameLobbyEntityService, GameSessionEntityService gameSessionEntityService, ObjectMapper objectMapper, PlayerMapper playerMapper, GameLobbyMapper gameLobbyMapper, GameSessionMapper gameSessionMapper) {
         this.template = template;
         this.playerEntityService = playerEntityService;
+        this.playerEntityRepository= playerEntityRepository;
         this.gameLobbyEntityService = gameLobbyEntityService;
+        this.gameSessionEntityService = gameSessionEntityService;
         this.objectMapper = objectMapper;
         this.playerMapper = playerMapper;
         this.gameLobbyMapper = gameLobbyMapper;
+        this.gameSessionMapper = gameSessionMapper;
     }
 
     @MessageMapping("/player-create")
@@ -269,6 +283,55 @@ public class PlayerController {
         }*/
 
         return ResponseCode.RESPONSE_103.getCode();
+    }
+    @MessageMapping("/player-leave-gamesession")
+    @SendToUser("/queue/response")
+    public String handlePlayerLeaveGameSession(String playerDtoJson) throws RuntimeException {
+        try {
+
+            PlayerDto playerDto = objectMapper.readValue(playerDtoJson, PlayerDto.class);
+            PlayerEntity playerEntity = playerMapper.mapToEntity(playerDto);
+            GameSessionEntity gameSessionEntity= playerEntity.getGameSessionEntity();
+
+            long gameSessionId = playerDto.getGameSessionId();
+            long gameLobbyId= playerDto.getGameLobbyId();
+            playerEntityService.leaveGameSession(playerEntity);
+            playerEntityService.leaveLobby(playerEntity);
+            Optional<GameSessionEntity> optionalGameSession = gameSessionEntityService.findById(gameSessionId);
+
+
+            if (optionalGameSession.isPresent()) {
+                GameSessionEntity gameSession = optionalGameSession.get();
+                List <Long> numplayerlist= gameSession.getPlayerIds();
+
+                if(numplayerlist.size()<=1){
+                    gameSession = gameSessionEntityService.terminateGameSession(gameSessionId);
+
+                    return gameSession.getGameState();
+
+                }
+                else {
+
+                    //Send updated gameSessionDto to all players in the game session (relevant for game session creator)
+                    this.template.convertAndSend(
+                            "/topic/gamesession_" + gameSessionId + "/update",
+                            objectMapper.writeValueAsString(gameSessionMapper.mapToDto(gameSession))
+                    );
+
+                    return objectMapper.writeValueAsString(gameSessionMapper.mapToDto(gameSession));
+                }
+            }
+
+            else {
+
+                throw new RuntimeException("Game session not found.");
+            }
+
+        } catch (JsonProcessingException e) {
+
+            throw new RuntimeException(ErrorCode.ERROR_2004.getCode());
+        }
+
     }
 
     @MessageExceptionHandler

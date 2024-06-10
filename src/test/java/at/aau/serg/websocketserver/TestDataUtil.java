@@ -201,7 +201,20 @@ public class TestDataUtil {
                 .tileDeck(null)
                 .build();
     }
+    public static GameSessionEntity createTestGameSessionEntityWith2Players(){
+        List<Long> playerIds = new ArrayList<>();
+        playerIds.add(1L);
+        playerIds.add(2L);
 
+        return GameSessionEntity.builder()
+                .id(1L)
+                .turnPlayerId(1L)
+                .gameState(GameState.IN_GAME.toString())
+                .playerIds(playerIds)
+                .numPlayers(2)
+                .tileDeck(null)
+                .build();
+    }
     public static PlacedTileDto createTestPlacedTileDto(Long gameSessionId) {
         return PlacedTileDto.builder()
                 .gameSessionId(gameSessionId)

@@ -15,7 +15,7 @@ public class PlayerDto {
 
     private String username;
     private String sessionId;
-
+    private Long gameSessionId;
     private Long gameLobbyId;
     private PlayerColour playerColour;
 

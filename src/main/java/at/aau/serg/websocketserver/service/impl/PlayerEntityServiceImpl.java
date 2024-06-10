@@ -1,8 +1,10 @@
 package at.aau.serg.websocketserver.service.impl;
 
 import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
+import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
 import at.aau.serg.websocketserver.domain.entity.repository.GameLobbyEntityRepository;
+import at.aau.serg.websocketserver.domain.entity.repository.GameSessionEntityRepository;
 import at.aau.serg.websocketserver.domain.entity.repository.PlayerEntityRepository;
 import at.aau.serg.websocketserver.statuscode.ErrorCode;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
@@ -21,6 +23,7 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
 
     PlayerEntityRepository playerEntityRepository;
     GameLobbyEntityRepository gameLobbyEntityRepository;
+    GameSessionEntityRepository gameSessionEntityRepository;
     GameLobbyMapper gameLobbyMapper;
     PlayerMapper playerMapper;
     SecureRandom random;
@@ -28,6 +31,7 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
     public PlayerEntityServiceImpl(
             PlayerEntityRepository playerEntityRepository,
             GameLobbyEntityRepository gameLobbyEntityRepository,
+            GameSessionEntityRepository gameSessionEntityRepository,
             GameLobbyMapper gameLobbyMapper,
             PlayerMapper playerMapper)
     {
@@ -35,6 +39,7 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
         this.gameLobbyEntityRepository = gameLobbyEntityRepository;
         this.gameLobbyMapper = gameLobbyMapper;
         this.playerMapper = playerMapper;
+        this.gameSessionEntityRepository = gameSessionEntityRepository;
         this.random = new SecureRandom();
     }
 
@@ -169,7 +174,45 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
         }
         return updatedPlayerEntity;
     }
+    public PlayerEntity leaveGameSession(PlayerEntity playerEntity){
 
+
+        Optional<PlayerEntity> optionalPlayer = playerEntityRepository.findById(playerEntity.getId());
+        GameSessionEntity gameSessionEntity= playerEntity.getGameSessionEntity();
+
+
+        if (optionalPlayer.isEmpty()) {
+            throw new EntityNotFoundException(ErrorCode.ERROR_2001.getCode());
+        }
+        PlayerEntity existingPlayer = optionalPlayer.get();
+
+
+        // Überprüfen, ob der Spieler einer Spielsitzung zugeordnet ist
+        if (gameSessionEntity == null) {
+
+            throw new EntityNotFoundException(ErrorCode.ERROR_3003.getCode());
+        }
+
+        // Entfernen der Spieler-ID aus der Liste playerIds der GameSessionEntity
+        List<Long> playerIds = gameSessionEntity.getPlayerIds();
+
+        playerIds.remove(existingPlayer.getId());
+
+
+        // Aktualisieren der Anzahl der Spieler in der Spielsitzung
+
+        gameSessionEntity.setNumPlayers(playerIds.size());
+
+        // Speichern der aktualisierten Spielsitzung
+
+        gameSessionEntityRepository.save(gameSessionEntity);
+        // Optional: Setzen des Spielers auf null, um sicherzustellen, dass er nicht mehr in der Spielsitzung ist
+        if(playerIds.size()<=1){
+            existingPlayer.setGameSessionEntity(null);}
+        PlayerEntity updatedPlayerEntity = playerEntityRepository.save(existingPlayer);
+
+        return updatedPlayerEntity;
+    }
     @Override
     public void deletePlayer(Long id) {
         Optional<PlayerEntity> playerEntityOptional = playerEntityRepository.findById(id);

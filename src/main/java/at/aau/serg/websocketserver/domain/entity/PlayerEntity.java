@@ -25,6 +25,9 @@ public class PlayerEntity {
     @ManyToOne(cascade = CascadeType.ALL)
     @JoinColumn(name="gamelobby_id")
     private GameLobbyEntity gameLobbyEntity;
+    @ManyToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "gamesession_id")
+    private GameSessionEntity gameSessionEntity;
 
     private int points;
 
