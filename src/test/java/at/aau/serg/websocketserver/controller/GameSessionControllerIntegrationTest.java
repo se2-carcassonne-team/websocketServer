@@ -13,6 +13,7 @@ import at.aau.serg.websocketserver.domain.entity.repository.GameSessionEntityRep
 import at.aau.serg.websocketserver.domain.entity.repository.TileDeckRepository;
 import at.aau.serg.websocketserver.domain.pojo.PlayerColour;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
+import at.aau.serg.websocketserver.mapper.GameSessionMapper;
 import at.aau.serg.websocketserver.mapper.PlayerMapper;
 import at.aau.serg.websocketserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketserver.service.GameSessionEntityService;
@@ -52,6 +53,7 @@ public class GameSessionControllerIntegrationTest {
     private final ObjectMapper objectMapper;
     private final GameLobbyMapper gameLobbyMapper;
     private final PlayerMapper playerMapper;
+    private final GameSessionMapper gameSessionMapper;
     private final GameSessionEntityService gameSessionEntityService;
     private final GameLobbyEntityService gameLobbyEntityService;
     private final PlayerEntityService playerEntityService;
@@ -59,10 +61,11 @@ public class GameSessionControllerIntegrationTest {
     private final TileDeckRepository tileDeckRepository;
 
     @Autowired
-    public GameSessionControllerIntegrationTest(ObjectMapper objectMapper, GameLobbyMapper gameLobbyMapper, PlayerMapper playerMapper, GameSessionEntityService gameSessionEntityService, GameLobbyEntityService gameLobbyEntityService, PlayerEntityService playerEntityService, TileDeckEntityServiceImpl tileDeckEntityService, TileDeckRepository tileDeckRepository) {
+    public GameSessionControllerIntegrationTest(ObjectMapper objectMapper, GameLobbyMapper gameLobbyMapper, PlayerMapper playerMapper, GameSessionMapper gameSessionMapper, GameSessionEntityService gameSessionEntityService, GameLobbyEntityService gameLobbyEntityService, PlayerEntityService playerEntityService, TileDeckEntityServiceImpl tileDeckEntityService, TileDeckRepository tileDeckRepository) {
         this.objectMapper = objectMapper;
         this.gameLobbyMapper = gameLobbyMapper;
         this.playerMapper = playerMapper;
+        this.gameSessionMapper = gameSessionMapper;
         this.gameSessionEntityService = gameSessionEntityService;
         this.gameLobbyEntityService = gameLobbyEntityService;
         this.playerEntityService = playerEntityService;
@@ -1022,7 +1025,115 @@ public class GameSessionControllerIntegrationTest {
 
         assertThat(responseDto.getPlayerNames()).isEmpty();
     }
+    @Test
+    void testGameFinishesWhenOnlyOnePlayerRemainsInGameSession() throws Exception {
+        // Erstellen einer Spiellobby
+        GameLobbyEntity gameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
 
+        // Erstellen von 2 Spielern
+        PlayerEntity playerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        PlayerEntity playerEntityB = TestDataUtil.createTestPlayerEntityB(null);
+        gameLobbyEntityA.setLobbyAdminId(playerEntityA.getId());
+
+        playerEntityService.createPlayer(playerEntityA);
+        playerEntityService.createPlayer(playerEntityB);
+
+        gameLobbyEntityService.createLobby(gameLobbyEntityA);
+
+        GameLobbyDto gameLobbyDtoA = gameLobbyMapper.mapToDto(gameLobbyEntityA);
+        assertThat(gameLobbyEntityService.findById(gameLobbyDtoA.getId())).isPresent();
+
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityA);
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityB);
+
+        // save gameSession to database
+        GameSessionEntity gameSessionEntityWith2Players = TestDataUtil.createTestGameSessionEntityWith2Players();
+        gameSessionEntityService.createGameSession(gameLobbyEntityA.getId());
+
+        playerEntityA.setGameSessionEntity(gameSessionEntityWith2Players);
+        playerEntityB.setGameSessionEntity(gameSessionEntityWith2Players);
+
+        assertThat(gameSessionEntityService.findById(gameSessionEntityWith2Players.getId())).isPresent();
+
+        StompSession session = initStompSession("/user/queue/response", messages2);
+        StompSession session2 = initStompSession("/topic/game-session-" + gameSessionEntityWith2Players.getId() + "/update", messages);
+
+        session.send("/app/player-leave-gamesession", objectMapper.writeValueAsString(playerMapper.mapToDto(playerEntityB)));
+
+        gameSessionEntityWith2Players.setNumPlayers(1);
+        gameSessionEntityWith2Players.getPlayerIds().remove(playerEntityA.getId());
+
+        GameSessionDto updatedGameSessionDto = gameSessionMapper.mapToDto(gameSessionEntityWith2Players);
+        String payload = objectMapper.writeValueAsString(updatedGameSessionDto);
+
+        session2.send("/topic/game-session-" + gameSessionEntityWith2Players.getId() + "/update", payload);
+
+        // Überprüfen, ob das Spiel beendet wurde und der GameState auf "FINISHED" gesetzt wurde
+        String expectedGameState = "FINISHED";
+        String actualGameState =messages2.poll(1, TimeUnit.SECONDS);
+
+        assertThat(actualGameState).isEqualTo(expectedGameState);
+    }
+
+
+    @Test
+    void testOnePlayerLeaveWhenMoreThanTwoPlayersRemain3() throws Exception {
+        // Erstellen einer Spiellobby
+        GameLobbyEntity gameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
+
+        // Erstellen von 3 Spielern
+        PlayerEntity playerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        PlayerEntity playerEntityB = TestDataUtil.createTestPlayerEntityB(null);
+        PlayerEntity playerEntityC = TestDataUtil.createTestPlayerEntityC(null);
+        gameLobbyEntityA.setLobbyAdminId(playerEntityA.getId());
+
+        playerEntityService.createPlayer(playerEntityA);
+        playerEntityService.createPlayer(playerEntityB);
+        playerEntityService.createPlayer(playerEntityC);
+
+        gameLobbyEntityService.createLobby(gameLobbyEntityA);
+
+        GameLobbyDto gameLobbyDtoA = gameLobbyMapper.mapToDto(gameLobbyEntityA);
+        assertThat(gameLobbyEntityService.findById(gameLobbyDtoA.getId())).isPresent();
+
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityA);
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityB);
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityC);
+
+        // save gameSession to database
+        GameSessionEntity gameSessionEntityWith3Players = TestDataUtil.createTestGameSessionEntityWith3Players();
+        gameSessionEntityService.createGameSession(gameLobbyEntityA.getId());
+
+        playerEntityA.setGameSessionEntity(gameSessionEntityWith3Players);
+        playerEntityB.setGameSessionEntity(gameSessionEntityWith3Players);
+        playerEntityC.setGameSessionEntity(gameSessionEntityWith3Players);
+
+        //System.out.println("PLAYERIDS im TEST: "+gameSessionEntity.findById(gameSessionEntityWith3Players.getId()));
+        assertThat(gameSessionEntityService.findById(gameSessionEntityWith3Players.getId())).isPresent();
+
+        StompSession session = initStompSession("/user/queue/response", messages);
+        initStompSession("/topic/gamesession-" + gameSessionEntityWith3Players.getId() + "/update", messages2);
+
+        session.send("/app/player-leave-gamesession", objectMapper.writeValueAsString(playerMapper.mapToDto(playerEntityC)));
+
+        gameSessionEntityWith3Players.setNumPlayers(2);
+        gameSessionEntityWith3Players.getPlayerIds().remove(playerEntityC.getId());
+
+        GameSessionDto testGamesessionDtoA = gameSessionMapper.mapToDto(gameSessionEntityWith3Players);
+        String payload = objectMapper.writeValueAsString(testGamesessionDtoA);
+
+        session.send("/topic/gamesession-" + gameSessionEntityWith3Players.getId() + "/update", payload);
+
+        String expectedResponse = objectMapper.writeValueAsString(gameSessionMapper.mapToDto(gameSessionEntityWith3Players));
+
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        assertThat(gameSessionEntityService.findById(gameSessionEntityWith3Players.getId())).isPresent();
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+
+
+    }
     public StompSession initStompSession(String topic, BlockingQueue<String> messages) throws Exception {
         WebSocketStompClient stompClient = new WebSocketStompClient(new StandardWebSocketClient());
         stompClient.setMessageConverter(new StringMessageConverter());

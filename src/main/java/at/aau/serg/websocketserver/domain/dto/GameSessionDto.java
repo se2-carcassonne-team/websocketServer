@@ -16,5 +16,6 @@ public class GameSessionDto {
     private Long id;
     private Long turnPlayerId;
     private GameState gameState;
+    private Integer numPlayers;
     private List<Long> playerIds;
 }
