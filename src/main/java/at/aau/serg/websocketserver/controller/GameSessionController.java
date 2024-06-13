@@ -96,6 +96,8 @@ public class GameSessionController {
                 if (scoreboardDto.getPlayerIds().contains(playerEntity.getId())){
                     playerNames.add(playerEntity.getUsername());
                 }
+                // remove each player from the lobby
+                playerEntityService.leaveLobby(playerEntity);
             }
 
             scoreboardDto.setPlayerNames(playerNames);
