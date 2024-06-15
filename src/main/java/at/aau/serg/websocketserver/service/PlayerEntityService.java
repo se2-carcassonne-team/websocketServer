@@ -1,6 +1,5 @@
 package at.aau.serg.websocketserver.service;
 
-import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityNotFoundException;
