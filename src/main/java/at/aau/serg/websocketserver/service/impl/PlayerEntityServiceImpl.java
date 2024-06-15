@@ -209,9 +209,8 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
         // Optional: Setzen des Spielers auf null, um sicherzustellen, dass er nicht mehr in der Spielsitzung ist
         if(playerIds.size()<=1){
             existingPlayer.setGameSessionEntity(null);}
-        PlayerEntity updatedPlayerEntity = playerEntityRepository.save(existingPlayer);
 
-        return updatedPlayerEntity;
+        return playerEntityRepository.save(existingPlayer);
     }
     @Override
     public void deletePlayer(Long id) {

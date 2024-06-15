@@ -37,11 +37,9 @@ public class GameSessionController {
     private TileDeckRepository tileDeckRepository;
     private TileDeckEntityServiceImpl tileDeckEntityServiceImpl;
     private static final String GAME_SESSION_TOPIC = "/topic/game-session-";
-    private final GameSessionEntityRepository gameSessionEntityRepository;
 
 
-    public GameSessionController(SimpMessagingTemplate template, GameSessionEntityService gameSessionEntityService, ObjectMapper objectMapper, GameLobbyMapper gameLobbyMapper, GameLobbyEntityService gameLobbyEntityService, PlayerEntityService playerEntityService, TileDeckRepository tileDeckRepository, TileDeckEntityServiceImpl tileDeckEntityServiceImpl,
-                                 GameSessionEntityRepository gameSessionEntityRepository) {
+    public GameSessionController(SimpMessagingTemplate template, GameSessionEntityService gameSessionEntityService, ObjectMapper objectMapper, GameLobbyMapper gameLobbyMapper, GameLobbyEntityService gameLobbyEntityService, PlayerEntityService playerEntityService, TileDeckRepository tileDeckRepository, TileDeckEntityServiceImpl tileDeckEntityServiceImpl) {
         this.template = template;
         this.gameSessionEntityService = gameSessionEntityService;
         this.objectMapper = objectMapper;
@@ -50,7 +48,6 @@ public class GameSessionController {
         this.playerEntityService = playerEntityService;
         this.tileDeckRepository = tileDeckRepository;
         this.tileDeckEntityServiceImpl = tileDeckEntityServiceImpl;
-        this.gameSessionEntityRepository = gameSessionEntityRepository;
     }
 
     /**

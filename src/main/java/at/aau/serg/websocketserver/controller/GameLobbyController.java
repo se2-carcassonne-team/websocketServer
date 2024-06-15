@@ -77,13 +77,11 @@ public class GameLobbyController {
                 String updatedLobbyList = objectMapper.writeValueAsString(getGameLobbyDtoList(gameLobbyEntityService, gameLobbyMapper));
                 this.template.convertAndSend("/topic/lobby-list", updatedLobbyList);
 
-                // TODO
                 // send updated list of players in lobby to /topic/lobby-$id
                 // IMPORTANT: not relevant, as player does not know the lobby id when calling lobby-create
                 String updatedPlayerList = objectMapper.writeValueAsString(getPlayerDtosInLobbyList(createdGameLobbyEntity.getId(), gameLobbyEntityService, playerEntityService, playerMapper));
                 this.template.convertAndSend("/topic/lobby-" + createdGameLobbyEntity.getId(), updatedPlayerList);
 
-                // TODO: Add gamelobbyId in the future
                 this.template.convertAndSend("/topic/lobby-creator", objectMapper.writeValueAsString(playerMapper.mapToDto(playerEntity)));
 
                 return objectMapper.writeValueAsString(gameLobbyMapper.mapToDto(playerEntity.getGameLobbyEntity()));
@@ -91,14 +89,12 @@ public class GameLobbyController {
                 throw new RuntimeException(ErrorCode.ERROR_2004.getCode());
             }
 
-            // TODO: check if backend updates the gameLobbyDto Id to the one contained in the returned PlayerDto Object
         } catch (JsonProcessingException e) {
             throw new RuntimeException(ErrorCode.ERROR_1006.getCode());
         }
     }
 
 
-    // TODO: adapt + test
 
     /**
      * Ideas for the endpoint: /app/lobby-name-update
@@ -135,7 +131,6 @@ public class GameLobbyController {
     }
 
 
-    // TODO: adapt + test
 
     /**
      * Ideas for the endpoint: /app/lobby-delete

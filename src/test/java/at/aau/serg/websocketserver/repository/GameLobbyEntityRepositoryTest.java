@@ -18,7 +18,7 @@ import java.util.Optional;
 @SpringBootTest // starts up a test version of our app when the test runs
 @ExtendWith(SpringExtension.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)    // clean context changes after each test to avoid test pollution in database
-public class GameLobbyEntityRepositoryTest {
+class GameLobbyEntityRepositoryTest {
     private final GameLobbyEntityRepository underTest;
 
     @Autowired
@@ -72,7 +72,7 @@ public class GameLobbyEntityRepositoryTest {
         Optional<GameLobbyEntity> result = underTest.findById(gameLobbyEntity.getId());
 
         assertThat(result).isPresent();
-        assertThat(result.get()).isEqualTo(gameLobbyEntity);
+        assertThat(result).contains(gameLobbyEntity);
     }
 
     @Test

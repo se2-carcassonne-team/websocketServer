@@ -2,7 +2,6 @@ package at.aau.serg.websocketserver.domain.entity.repository;
 
 
 import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
-import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

@@ -8,7 +8,6 @@ import at.aau.serg.websocketserver.domain.entity.GameLobbyEntity;
 import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
 import at.aau.serg.websocketserver.domain.entity.TileDeckEntity;
-import at.aau.serg.websocketserver.domain.entity.repository.GameLobbyEntityRepository;
 import at.aau.serg.websocketserver.domain.entity.repository.GameSessionEntityRepository;
 import at.aau.serg.websocketserver.domain.entity.repository.TileDeckRepository;
 import at.aau.serg.websocketserver.domain.pojo.PlayerColour;
@@ -18,7 +17,6 @@ import at.aau.serg.websocketserver.mapper.PlayerMapper;
 import at.aau.serg.websocketserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketserver.service.GameSessionEntityService;
 import at.aau.serg.websocketserver.service.PlayerEntityService;
-import at.aau.serg.websocketserver.service.impl.TileDeckEntityServiceImpl;
 import at.aau.serg.websocketserver.statuscode.ErrorCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
@@ -58,11 +56,10 @@ public class GameSessionControllerIntegrationTest {
     private final GameSessionEntityService gameSessionEntityService;
     private final GameLobbyEntityService gameLobbyEntityService;
     private final PlayerEntityService playerEntityService;
-    private final TileDeckEntityServiceImpl tileDeckEntityService;
     private final TileDeckRepository tileDeckRepository;
 
     @Autowired
-    public GameSessionControllerIntegrationTest(ObjectMapper objectMapper, GameLobbyMapper gameLobbyMapper, PlayerMapper playerMapper, GameSessionMapper gameSessionMapper, GameSessionEntityService gameSessionEntityService, GameLobbyEntityService gameLobbyEntityService, PlayerEntityService playerEntityService, TileDeckEntityServiceImpl tileDeckEntityService, TileDeckRepository tileDeckRepository) {
+    public GameSessionControllerIntegrationTest(ObjectMapper objectMapper, GameLobbyMapper gameLobbyMapper, PlayerMapper playerMapper, GameSessionMapper gameSessionMapper, GameSessionEntityService gameSessionEntityService, GameLobbyEntityService gameLobbyEntityService, PlayerEntityService playerEntityService, TileDeckRepository tileDeckRepository) {
         this.objectMapper = objectMapper;
         this.gameLobbyMapper = gameLobbyMapper;
         this.playerMapper = playerMapper;
@@ -70,7 +67,6 @@ public class GameSessionControllerIntegrationTest {
         this.gameSessionEntityService = gameSessionEntityService;
         this.gameLobbyEntityService = gameLobbyEntityService;
         this.playerEntityService = playerEntityService;
-        this.tileDeckEntityService = tileDeckEntityService;
         this.tileDeckRepository = tileDeckRepository;
     }
 
@@ -83,8 +79,7 @@ public class GameSessionControllerIntegrationTest {
     BlockingQueue<String> messages4;
     @Autowired
     private GameSessionEntityRepository gameSessionEntityRepository;
-    @Autowired
-    private GameLobbyEntityRepository gameLobbyEntityRepository;
+
 
 
     @BeforeEach
@@ -608,7 +603,7 @@ public class GameSessionControllerIntegrationTest {
 
         StompSession session2 = initStompSession("/topic/game-session-" + gameLobbyDtoA.getId() + "/game-finished", messages3);
 //        Subscribe to topic for the game state finish
-        StompSession session3 = initStompSession("/topic/game-session-" + gameLobbyDtoA.getId() + "/game-finished", messages4);
+        initStompSession("/topic/game-session-" + gameLobbyDtoA.getId() + "/game-finished", messages4);
 //        Try to draw a tile
         session2.send("/app/next-turn", gameSessionDtoA.getId() + "");
 
@@ -734,21 +729,11 @@ public class GameSessionControllerIntegrationTest {
     void testThatPlaceTileForwardsPlacedTileDtoToAllPlayers() throws Exception {
 
         GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
-        //gameLobbyEntityService.createLobby(testGameLobbyEntityA);
-
-        PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(testGameLobbyEntityA);
-        PlayerEntity testPlayerEntityB = TestDataUtil.createTestPlayerEntityB(testGameLobbyEntityA);
-        PlayerEntity testPlayerEntityC = TestDataUtil.createTestPlayerEntityC(testGameLobbyEntityA);
-
-        //playerEntityService.createPlayer(testPlayerEntityA);
-        //playerEntityService.createPlayer(testPlayerEntityB);
-        //playerEntityService.createPlayer(testPlayerEntityC);
 
         GameSessionEntity gameSessionEntity = TestDataUtil.createTestGameSessionEntityWith3Players();
-        //GameSessionEntity databaseGameSession = gameSessionEntityService.createGameSession(testGameLobbyEntityA.getId());
 
         StompSession session = initStompSession("/topic/game-session-" + gameSessionEntity.getId() + "/tile", messages);
-        StompSession session2 = initStompSession("/topic/game-session-" + gameSessionEntity.getId() + "/tile", messages2);
+        initStompSession("/topic/game-session-" + gameSessionEntity.getId() + "/tile", messages2);
 
         PlacedTileDto placedTileDto = TestDataUtil.createTestPlacedTileDto(gameSessionEntity.getId());
 

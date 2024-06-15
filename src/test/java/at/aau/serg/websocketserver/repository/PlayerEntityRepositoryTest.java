@@ -19,7 +19,7 @@ import java.util.Optional;
 @SpringBootTest // starts up a test version of our app when the test runs
 @ExtendWith(SpringExtension.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)    // clean context changes after each test to avoid test pollution in database
-public class PlayerEntityRepositoryTest {
+class PlayerEntityRepositoryTest {
 
     private final PlayerEntityRepository underTest;
    @Autowired
@@ -39,7 +39,7 @@ public class PlayerEntityRepositoryTest {
 
         assertThat(result).isPresent();
 
-        assertThat(result.get()).isEqualTo(playerEntity);
+        assertThat(result).contains(playerEntity);
     }
 
     @Test
@@ -76,7 +76,7 @@ public class PlayerEntityRepositoryTest {
 
         assertThat(result).isPresent();
 
-        assertThat(result.get()).isEqualTo(playerEntity);
+        assertThat(result).contains(playerEntity);
 
     }
 

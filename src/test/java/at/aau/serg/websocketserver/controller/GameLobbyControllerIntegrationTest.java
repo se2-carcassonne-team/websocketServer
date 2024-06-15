@@ -41,7 +41,7 @@ import java.util.concurrent.TimeUnit;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ExtendWith(SpringExtension.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-public class GameLobbyControllerIntegrationTest {
+class GameLobbyControllerIntegrationTest {
 
     private final ObjectMapper objectMapper;
     private final GameLobbyEntityService gameLobbyEntityService;
@@ -116,12 +116,11 @@ public class GameLobbyControllerIntegrationTest {
 
         String payload = gameLobbyDtoJson + "|" + playerDtoJson;
 
-        assertThat(gameLobbyEntityService.findById(gameLobbyDto.getId()).isEmpty()).isTrue();
-        assertThat(playerEntityService.findPlayerById(playerDto.getId()).isPresent()).isTrue();
+        assertThat(gameLobbyEntityService.findById(gameLobbyDto.getId())).isNotPresent();
+        assertThat(playerEntityService.findPlayerById(playerDto.getId())).isPresent();
         session.send("/app/lobby-create", payload);
 
         gameLobbyDto.setNumPlayers(gameLobbyDto.getNumPlayers() + 1);
-        //gameLobbyDto.setAvailableColours(TestDataUtil.getTestPlayerColoursAsEnumList());
         playerDto.setGameLobbyId(gameLobbyDto.getId());
 
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
@@ -157,8 +156,8 @@ public class GameLobbyControllerIntegrationTest {
 
         String payload = gameLobbyDtoJson + "|" + playerDtoJson;
 
-        assertThat(gameLobbyEntityService.findById(gameLobbyDto.getId()).isEmpty()).isTrue();
-        assertThat(playerEntityService.findPlayerById(playerDto.getId()).isPresent()).isTrue();
+        assertThat(gameLobbyEntityService.findById(gameLobbyDto.getId())).isNotPresent();
+        assertThat(playerEntityService.findPlayerById(playerDto.getId())).isPresent();
         session.send("/app/lobby-create", payload);
 
         gameLobbyDto.setNumPlayers(gameLobbyDto.getNumPlayers() + 1);
@@ -199,8 +198,8 @@ public class GameLobbyControllerIntegrationTest {
 
         String payload = gameLobbyDtoJson + "|" + playerDtoJson;
 
-        assertThat(gameLobbyEntityService.findById(gameLobbyDto.getId()).isEmpty()).isTrue();
-        assertThat(playerEntityService.findPlayerById(playerDto.getId()).isPresent()).isTrue();
+        assertThat(gameLobbyEntityService.findById(gameLobbyDto.getId())).isNotPresent();
+        assertThat(playerEntityService.findPlayerById(playerDto.getId())).isPresent();
         session.send("/app/lobby-create", payload);
 
         gameLobbyDto.setNumPlayers(gameLobbyDto.getNumPlayers() + 1);
@@ -272,7 +271,7 @@ public class GameLobbyControllerIntegrationTest {
         PlayerDto playerDto = playerMapper.mapToDto(playerEntity);
         GameLobbyDto gameLobbyDto = TestDataUtil.createTestGameLobbyDtoA();
         gameLobbyEntityService.createLobby(gameLobbyMapper.mapToEntity(gameLobbyDto));
-        assertThat(gameLobbyEntityService.findById(gameLobbyDto.getId()).isPresent()).isTrue();
+        assertThat(gameLobbyEntityService.findById(gameLobbyDto.getId())).isPresent();
 
         String playerDtoJson = objectMapper.writeValueAsString(playerDto);
         String gameLobbyDtoJson = objectMapper.writeValueAsString(gameLobbyDto);
@@ -293,7 +292,7 @@ public class GameLobbyControllerIntegrationTest {
 
         GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
         gameLobbyEntityService.createLobby(gameLobbyMapper.mapToEntity(gameLobbyDtoA));
-        assertThat(gameLobbyEntityService.findById(gameLobbyDtoA.getId()).isPresent()).isTrue();
+        assertThat(gameLobbyEntityService.findById(gameLobbyDtoA.getId())).isPresent();
 
         GameLobbyDto gameLobbyDtoB = TestDataUtil.createTestGameLobbyDtoB();
         gameLobbyDtoB.setName(gameLobbyDtoA.getName());
@@ -317,7 +316,7 @@ public class GameLobbyControllerIntegrationTest {
 
         GameLobbyDto gameLobbyDtoA = TestDataUtil.createTestGameLobbyDtoA();
         gameLobbyDtoA.setLobbyAdminId(playerEntity.getId());
-        assertThat(gameLobbyEntityService.findById(gameLobbyDtoA.getId()).isEmpty()).isTrue();
+        assertThat(gameLobbyEntityService.findById(gameLobbyDtoA.getId())).isNotPresent();
 
         String playerDtoJson = objectMapper.writeValueAsString(playerDto);
         String gameLobbyDtoJson = objectMapper.writeValueAsString(gameLobbyDtoA);
@@ -437,14 +436,14 @@ public class GameLobbyControllerIntegrationTest {
         GameLobbyDto gameLobbyDto = TestDataUtil.createTestGameLobbyDtoA();
 
         gameLobbyEntityService.createLobby(gameLobbyMapper.mapToEntity(gameLobbyDto));
-        assertThat(gameLobbyEntityService.findById(gameLobbyDto.getId()).isPresent()).isTrue();
+        assertThat(gameLobbyEntityService.findById(gameLobbyDto.getId())).isPresent();
 
         session.send("/app/lobby-delete", gameLobbyDto.getId() + "");
 
         String expectedResponse = "deleted";
         String actualResponse = messages.poll(1, TimeUnit.SECONDS);
 
-        assertThat(gameLobbyEntityService.findById(gameLobbyDto.getId()).isPresent()).isFalse();
+        assertThat(gameLobbyEntityService.findById(gameLobbyDto.getId())).isNotPresent();
         assertThat(actualResponse).isEqualTo(expectedResponse);
     }
 
