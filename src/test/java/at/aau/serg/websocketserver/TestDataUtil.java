@@ -170,6 +170,15 @@ public class TestDataUtil {
                 .build();
     }
 
+    public static GameSessionDto createTestGameSessionDtoB(PlayerDto lobbyCreator) {
+        return GameSessionDto.builder()
+                .id(2L)
+                .turnPlayerId(lobbyCreator.getId())
+                .gameState(GameState.IN_GAME)
+                .playerIds(null)
+                .build();
+    }
+
     public static GameSessionEntity createTestGameSessionEntityA(PlayerEntity lobbyCreator) {
         return GameSessionEntity.builder()
                 .id(1L)

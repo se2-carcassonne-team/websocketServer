@@ -21,7 +21,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -90,20 +90,23 @@ public class GameSessionController {
 
         if (gameSession.isPresent()) {
             List<PlayerEntity> allPlayersInLobby = playerEntityService.getAllPlayersForLobby(scoreboardDto.getGameLobbyId());
-            List<String> playerNames = new ArrayList<>();
+            HashMap<Long, String> playerIdsWithNames = new HashMap<>();
 
             for (PlayerEntity playerEntity : allPlayersInLobby) {
-                if (scoreboardDto.getPlayerIds().contains(playerEntity.getId())){
-                    playerNames.add(playerEntity.getUsername());
+                if (scoreboardDto.getPlayerIdsWithNames().containsKey(playerEntity.getId())) {
+                    playerIdsWithNames.put(playerEntity.getId(), playerEntity.getUsername());
                 }
+                // remove each player from the lobby
+                playerEntityService.leaveLobby(playerEntity);
             }
 
-            scoreboardDto.setPlayerNames(playerNames);
+            scoreboardDto.setPlayerIdsWithNames(playerIdsWithNames);
             this.template.convertAndSend("/topic/game-end-" + scoreboardDto.getGameSessionId() + "/scoreboard", objectMapper.writeValueAsString(scoreboardDto));
         } else {
             throw new IllegalStateException("GameSession not found.");
         }
     }
+
 
     /**
      * Topics/Queues for the Endpoint /app/next-turn

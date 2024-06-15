@@ -37,6 +37,7 @@ import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 import org.springframework.web.socket.messaging.WebSocketStompClient;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -839,12 +840,12 @@ public class GameSessionControllerIntegrationTest {
         assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isPresent();
         assertThat(actualResponse).isEqualTo(gameSessionDtoA.getId() + "");
 
-        List<Long> playerIds = new ArrayList<>();
-        playerIds.add(playerEntityA.getId());
-        playerIds.add(playerEntityB.getId());
-        playerIds.add(playerEntityC.getId());
+        HashMap<Long, String> playerIdsWithNames = new HashMap<>();
+        playerIdsWithNames.put(playerEntityA.getId(), playerEntityA.getUsername());
+        playerIdsWithNames.put(playerEntityB.getId(), playerEntityB.getUsername());
+        playerIdsWithNames.put(playerEntityC.getId(), playerEntityC.getUsername());
 
-        ScoreboardDto scoreboardDto = new ScoreboardDto(gameSessionDtoA.getId(), gameLobbyDtoA.getId(), playerIds, null);
+        ScoreboardDto scoreboardDto = new ScoreboardDto(gameSessionDtoA.getId(), gameLobbyDtoA.getId(), playerIdsWithNames);
         session = initStompSession("/topic/game-end-" + gameSessionDtoA.getId() + "/scoreboard", messages);
         session.send("/app/scoreboard", objectMapper.writeValueAsString(scoreboardDto));
 
@@ -853,12 +854,9 @@ public class GameSessionControllerIntegrationTest {
 
         ScoreboardDto responseDto = objectMapper.readValue(actualResponse2, ScoreboardDto.class);
 
-        List<String> expectedPlayerNames = new ArrayList<>();
-        expectedPlayerNames.add(playerEntityA.getUsername());
-        expectedPlayerNames.add(playerEntityB.getUsername());
-        expectedPlayerNames.add(playerEntityC.getUsername());
+        List<String> expectedPlayerNames = new ArrayList<>(playerIdsWithNames.values());
 
-        assertThat(responseDto.getPlayerNames()).containsExactlyInAnyOrderElementsOf(expectedPlayerNames);
+        assertThat(responseDto.getPlayerIdsWithNames().values()).containsExactlyInAnyOrderElementsOf(expectedPlayerNames);
     }
 
 
@@ -869,7 +867,7 @@ public class GameSessionControllerIntegrationTest {
         ScoreboardDto scoreboardDto = new ScoreboardDto();
         scoreboardDto.setGameSessionId(999L); // Non-existent game session ID
         scoreboardDto.setGameLobbyId(1L);
-        scoreboardDto.setPlayerIds(List.of(1L, 2L, 3L));
+        scoreboardDto.setPlayerIdsWithNames(new HashMap<>());
 
         session.send("/app/scoreboard", objectMapper.writeValueAsString(scoreboardDto));
 
@@ -911,23 +909,46 @@ public class GameSessionControllerIntegrationTest {
         assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isPresent();
         assertThat(actualResponse).isEqualTo(gameSessionDtoA.getId() + "");
 
+        GameLobbyDto gameLobbyDtoB = TestDataUtil.createTestGameLobbyDtoB();
+        GameLobbyEntity gameLobbyEntityB= gameLobbyMapper.mapToEntity(gameLobbyDtoB);
+
         PlayerEntity playerEntityD = TestDataUtil.createTestPlayerEntityD(null);
+        PlayerEntity playerEntityE = TestDataUtil.createTestPlayerEntityE(null);
+
         playerEntityService.createPlayer(playerEntityD);
+        playerEntityService.createPlayer(playerEntityE);
 
-        List<Long> playerIds = new ArrayList<>();
-        playerIds.add(playerEntityD.getId());
+        gameLobbyEntityService.createLobby(gameLobbyEntityB);
+        assertThat(gameLobbyEntityService.findById(gameLobbyDtoB.getId())).isPresent();
 
-        ScoreboardDto scoreboardDto = new ScoreboardDto(gameSessionDtoA.getId(), gameLobbyDtoA.getId(), playerIds, null);
-        session = initStompSession("/topic/game-end-" + gameSessionDtoA.getId() + "/scoreboard", messages);
+        playerEntityService.joinLobby(gameLobbyEntityB.getId(), playerEntityD);
+        playerEntityService.joinLobby(gameLobbyEntityB.getId(), playerEntityE);
+
+        GameSessionDto gameSessionDtoB = TestDataUtil.createTestGameSessionDtoB(playerMapper.mapToDto(playerEntityD));
+        assertThat(gameSessionEntityService.findById(gameSessionDtoB.getId())).isEmpty();
+
+        StompSession session2 = initStompSession("/topic/lobby-" + gameLobbyDtoB.getId() + "/game-start", messages);
+        session2.send("/app/game-start", gameLobbyDtoB.getId() + "");
+
+        HashMap<Long, String> playerIdsWithNames = new HashMap<>();
+        playerIdsWithNames.put(playerEntityD.getId(), playerEntityD.getUsername());
+        playerIdsWithNames.put(playerEntityE.getId(), playerEntityE.getUsername());
+
+        String actualResponse2 = messages.poll(1, TimeUnit.SECONDS);
+
+        assertThat(gameSessionEntityService.findById(gameSessionDtoB.getId())).isPresent();
+        assertThat(actualResponse2).isEqualTo(gameSessionDtoB.getId() + "");
+
+        ScoreboardDto scoreboardDto = new ScoreboardDto(gameSessionDtoB.getId(), gameLobbyDtoB.getId(), playerIdsWithNames);
+        session = initStompSession("/topic/game-end-" + gameSessionDtoB.getId() + "/scoreboard", messages);
         session.send("/app/scoreboard", objectMapper.writeValueAsString(scoreboardDto));
 
-        String actualResponse2 = messages.poll(3, TimeUnit.SECONDS);
-        assertThat(actualResponse2).isNotNull();
+        String actualResponse3 = messages.poll(3, TimeUnit.SECONDS);
+        assertThat(actualResponse3).isNotNull();
 
-        ScoreboardDto responseDto = objectMapper.readValue(actualResponse2, ScoreboardDto.class);
+        ScoreboardDto responseDto = objectMapper.readValue(actualResponse3, ScoreboardDto.class);
 
-        assertThat(responseDto.getPlayerNames()).isEmpty();
-
+        assertThat(responseDto.getPlayerIdsWithNames()).isNotEmpty();
     }
 
     @Test
@@ -961,11 +982,12 @@ public class GameSessionControllerIntegrationTest {
         assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isPresent();
         assertThat(actualResponse).isEqualTo(gameSessionDtoA.getId() + "");
 
-        List<Long> playerIds = new ArrayList<>();
-        playerIds.add(playerEntityA.getId());
-        playerIds.add(playerEntityC.getId()); // playerEntityC is not in the lobby
+        HashMap<Long, String> playerIdsWithNames = new HashMap<>();
+        playerIdsWithNames.put(playerEntityA.getId(), playerEntityA.getUsername());
+        playerIdsWithNames.put(playerEntityC.getId(), playerEntityC.getUsername()); // playerEntityC is not in the lobby
 
-        ScoreboardDto scoreboardDto = new ScoreboardDto(gameSessionDtoA.getId(), gameLobbyDtoA.getId(), playerIds, null);
+
+        ScoreboardDto scoreboardDto = new ScoreboardDto(gameSessionDtoA.getId(), gameLobbyDtoA.getId(), playerIdsWithNames);
         session = initStompSession("/topic/game-end-" + gameSessionDtoA.getId() + "/scoreboard", messages);
         session.send("/app/scoreboard", objectMapper.writeValueAsString(scoreboardDto));
 
@@ -974,10 +996,10 @@ public class GameSessionControllerIntegrationTest {
 
         ScoreboardDto responseDto = objectMapper.readValue(actualResponse2, ScoreboardDto.class);
 
-        List<String> expectedPlayerNames = new ArrayList<>();
-        expectedPlayerNames.add(playerEntityA.getUsername());
+        HashMap<Long, String> expectedPlayerIdsWithNames = new HashMap<>();
+        expectedPlayerIdsWithNames.put(playerEntityA.getId(), playerEntityA.getUsername());
 
-        assertThat(responseDto.getPlayerNames()).containsExactlyInAnyOrderElementsOf(expectedPlayerNames);
+        assertThat(responseDto.getPlayerIdsWithNames().values()).containsExactlyInAnyOrderElementsOf(expectedPlayerIdsWithNames.values());
     }
 
     @Test
@@ -1012,9 +1034,9 @@ public class GameSessionControllerIntegrationTest {
         assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isPresent();
         assertThat(actualResponse).isEqualTo(gameSessionDtoA.getId() + "");
 
-        List<Long> playerIds = new ArrayList<>();
+        HashMap<Long, String> playerIdsWithNames = new HashMap<>();
 
-        ScoreboardDto scoreboardDto = new ScoreboardDto(gameSessionDtoA.getId(), gameLobbyDtoA.getId(), playerIds, null);
+        ScoreboardDto scoreboardDto = new ScoreboardDto(gameSessionDtoA.getId(), gameLobbyDtoA.getId(), playerIdsWithNames);
         session = initStompSession("/topic/game-end-" + gameSessionDtoA.getId() + "/scoreboard", messages);
         session.send("/app/scoreboard", objectMapper.writeValueAsString(scoreboardDto));
 
@@ -1023,7 +1045,7 @@ public class GameSessionControllerIntegrationTest {
 
         ScoreboardDto responseDto = objectMapper.readValue(actualResponse2, ScoreboardDto.class);
 
-        assertThat(responseDto.getPlayerNames()).isEmpty();
+        assertThat(responseDto.getPlayerIdsWithNames().values()).isEmpty();
     }
     @Test
     void testGameFinishesWhenOnlyOnePlayerRemainsInGameSession() throws Exception {

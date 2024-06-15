@@ -5,7 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
+import java.util.HashMap;
 
 @Data
 @AllArgsConstructor
@@ -14,6 +14,5 @@ import java.util.List;
 public class ScoreboardDto {
     private Long gameSessionId;
     private Long gameLobbyId;
-    private List<Long> playerIds;
-    private List<String> playerNames;
+    private HashMap<Long, String> playerIdsWithNames;
 }
