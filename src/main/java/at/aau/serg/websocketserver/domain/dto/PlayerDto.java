@@ -18,5 +18,6 @@ public class PlayerDto {
     private Long gameSessionId;
     private Long gameLobbyId;
     private PlayerColour playerColour;
+    private Boolean canCheat;
 
 }

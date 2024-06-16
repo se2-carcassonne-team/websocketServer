@@ -245,4 +245,9 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
     public Optional<PlayerEntity> findPlayerBySessionId(String sessionId) {
         return playerEntityRepository.findBySessionId(sessionId);
     }
+
+    @Override
+    public List<PlayerEntity> findAllPlayers(List<Long> ids) {
+        return playerEntityRepository.findAllById(ids);
+    }
 }

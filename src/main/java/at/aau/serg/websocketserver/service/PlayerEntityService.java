@@ -22,4 +22,5 @@ public interface PlayerEntityService {
 
     Optional<PlayerEntity> findPlayerById(Long id);
     Optional<PlayerEntity> findPlayerBySessionId(String sessionId);
+    List<PlayerEntity> findAllPlayers(List<Long> ids);
 }

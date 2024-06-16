@@ -9,6 +9,7 @@ import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
 import at.aau.serg.websocketserver.domain.entity.TileDeckEntity;
 import at.aau.serg.websocketserver.domain.entity.repository.TileDeckRepository;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
+import at.aau.serg.websocketserver.service.CheatService;
 import at.aau.serg.websocketserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketserver.service.GameSessionEntityService;
 import at.aau.serg.websocketserver.service.PlayerEntityService;
@@ -36,12 +37,13 @@ public class GameSessionController {
     private final PlayerEntityService playerEntityService;
     private TileDeckRepository tileDeckRepository;
     private TileDeckEntityServiceImpl tileDeckEntityServiceImpl;
+    private CheatService cheatService;
     private static final String GAME_SESSION_TOPIC = "/topic/game-session-";
     private final GameSessionEntityRepository gameSessionEntityRepository;
 
 
     public GameSessionController(SimpMessagingTemplate template, GameSessionEntityService gameSessionEntityService, ObjectMapper objectMapper, GameLobbyMapper gameLobbyMapper, GameLobbyEntityService gameLobbyEntityService, PlayerEntityService playerEntityService, TileDeckRepository tileDeckRepository, TileDeckEntityServiceImpl tileDeckEntityServiceImpl,
-                                 GameSessionEntityRepository gameSessionEntityRepository) {
+                                 GameSessionEntityRepository gameSessionEntityRepository, CheatService cheatService) {
         this.template = template;
         this.gameSessionEntityService = gameSessionEntityService;
         this.objectMapper = objectMapper;
@@ -51,12 +53,20 @@ public class GameSessionController {
         this.tileDeckRepository = tileDeckRepository;
         this.tileDeckEntityServiceImpl = tileDeckEntityServiceImpl;
         this.gameSessionEntityRepository = gameSessionEntityRepository;
+        this.cheatService = cheatService;
     }
+
+
+
+
+
 
     /**
      * Topics/Queues for the Endpoint /app/game-start
-     * <p>1) /topic/lobby-$id-game-start -> id of the created gameSession (acts as a signal for all players in a lobby that a gameSession has started)</p>
-     * <p>2) /user/queue/lobby-list-response -> updated list of gameLobbies</p>
+     * <p>1) /topic/lobby-$id/player-list -> list of the player ids in the gamesession</p>
+     * <p>2) /topic/lobby-$id-game-start -> id of the created gameSession (acts as a signal for all players in a lobby that a gameSession has started)</p>
+     * <p>2) /topic/lobby-list -> updated list of gameLobbies</p>
+     * <p>3) /topic/lobby-$id/player-$id/cheat -> playerEntity that can cheat</p>
      * <p>3) /user/queue/errors -> relay for Exceptions (once a exception occurs it will be sent to this topic)</p>
      *
      * @param gameLobbyIdString Id of the GameLobby, that serves as a basis for the GameSession
@@ -64,10 +74,12 @@ public class GameSessionController {
      * @throws JsonProcessingException
      */
     @MessageMapping("/game-start")
-    @SendToUser("/queue/lobby-list-response")
-    public String createGameSession(String gameLobbyIdString) throws JsonProcessingException {
+    public void createGameSession(String gameLobbyIdString) throws JsonProcessingException {
         Long gameLobbyId = Long.parseLong(gameLobbyIdString);
         GameSessionEntity gameSessionEntity = gameSessionEntityService.createGameSession(gameLobbyId);
+
+        List<PlayerEntity> sessionPlayers = playerEntityService.findAllPlayers(gameSessionEntity.getPlayerIds());
+        cheatService.assignCheatFunctionality(sessionPlayers);
 
         // Get list of lobbies and broadcast it to all subscribers
         List<GameLobbyDto> gameLobbyDtoList = HelperMethods.getGameLobbyDtoList(gameLobbyEntityService, gameLobbyMapper);
@@ -79,7 +91,12 @@ public class GameSessionController {
 
         this.template.convertAndSend("/topic/lobby-list", objectMapper.writeValueAsString(gameLobbyDtoList));
 
-        return objectMapper.writeValueAsString(gameLobbyDtoList);
+        // Send the updated playerEntity to the player that can cheat
+        for (PlayerEntity playerEntity : sessionPlayers) {
+            if(playerEntity.isCanCheat()) {
+                this.template.convertAndSend("/topic/lobby-" + gameLobbyId + "/player-" + playerEntity.getId() + "/cheat", objectMapper.writeValueAsString(playerEntity));
+            }
+        }
     }
 
     @MessageMapping("/scoreboard")
