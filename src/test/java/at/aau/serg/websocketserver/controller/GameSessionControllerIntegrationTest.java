@@ -175,7 +175,7 @@ public class GameSessionControllerIntegrationTest {
         GameSessionDto gameSessionDtoA = TestDataUtil.createTestGameSessionDtoA(playerMapper.mapToDto(playerEntityA));
         assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isEmpty();
 
-        StompSession session = initStompSession("/user/queue/lobby-list-response", messages);
+        StompSession session = initStompSession("/topic/lobby-list", messages);
         session.send("/app/game-start", gameLobbyDtoA.getId() + "");
 
         List<GameLobbyDto> gameLobbyDtoList = new ArrayList<>();
@@ -275,7 +275,7 @@ public class GameSessionControllerIntegrationTest {
         GameSessionDto gameSessionDtoA = TestDataUtil.createTestGameSessionDtoA(playerMapper.mapToDto(playerEntityA));
         assertThat(gameSessionEntityService.findById(gameSessionDtoA.getId())).isEmpty();
 
-        StompSession session = initStompSession("/user/queue/lobby-list-response", messages);
+        StompSession session = initStompSession("/topic/lobby-list", messages);
         initStompSession("/topic/lobby-" + gameLobbyDtoA.getId() + "/game-start", messages2);
         session.send("/app/game-start", gameLobbyDtoA.getId() + "");
 
