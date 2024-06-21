@@ -37,8 +37,36 @@ public class CheatController {
         // Notify all other player that points changed
         this.template.convertAndSend("/topic/game-session-" + finishedTurnDto.getGameSessionId() + "/points-meeples", objectMapper.writeValueAsString(finishedTurnDto));
 
-        // Notify cheating player how much points were added for him
+        // Notify cheating player how much points were added
         return objectMapper.writeValueAsString(cheatPoints);
+    }
+
+    @MessageMapping("/cheat/accuse")
+    @SendToUser("/queue/cheat-accusation-result")
+    public String handleCheatAccusation(String playerIdStringAndAccusedPlayerIdStringAndFinishedTurnDtoString) throws JsonProcessingException {
+        String[] splitJsonStrings = playerIdStringAndAccusedPlayerIdStringAndFinishedTurnDtoString.split("\\|");
+
+        Long playerId = Long.parseLong(splitJsonStrings[0]);
+        Long accusedPlayerId = Long.parseLong(splitJsonStrings[1]);
+        FinishedTurnDto finishedTurnDto = objectMapper.readValue(splitJsonStrings[2], FinishedTurnDto.class);
+
+        Boolean accusedPlayerCheated = cheatService.checkIsPlayerCheater(accusedPlayerId);
+
+        if(accusedPlayerCheated) {
+            Integer cheatPoints = cheatService.getCheatPoints(accusedPlayerId);
+            Integer penaltyPoints = cheatService.generatePenaltyPoints(cheatPoints);
+            cheatService.updatePlayerPoints(playerId, finishedTurnDto, penaltyPoints);
+
+            // Notify all other player that points changed
+            this.template.convertAndSend("/topic/game-session-" + finishedTurnDto.getGameSessionId() + "/points-meeples", objectMapper.writeValueAsString(finishedTurnDto));
+
+            // Notify cheater that he got penalized
+            this.template.convertAndSend("/topic/game-session-" + finishedTurnDto.getGameSessionId() + "/player-" + accusedPlayerId + "/cheat-detected", objectMapper.writeValueAsString(penaltyPoints));
+        }
+
+        // TODO: Penalize player who accused in case it was a wrong accusation
+
+        return objectMapper.writeValueAsString(accusedPlayerCheated);
     }
 
     @MessageExceptionHandler

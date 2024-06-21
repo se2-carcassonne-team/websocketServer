@@ -36,4 +36,5 @@ public class PlayerEntity {
     private String playerColour;
 
     private boolean canCheat;
+    private int cheatPoints;
 }
