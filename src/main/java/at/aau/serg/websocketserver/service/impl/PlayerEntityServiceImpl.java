@@ -116,6 +116,9 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
         // Randomly assign player colour
         setPlayerColour(playerEntity, gameLobbyEntity);
 
+        // reset player's points to 0
+        playerEntity.setPoints(0);
+
         // update the numPlayers property of the gameLobbyEntity by 1
         gameLobbyEntity.setNumPlayers(gameLobbyEntity.getNumPlayers()+1);
         gameLobbyEntityRepository.save(gameLobbyEntity);
