@@ -120,6 +120,9 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
         gameLobbyEntity.setNumPlayers(gameLobbyEntity.getNumPlayers()+1);
         gameLobbyEntityRepository.save(gameLobbyEntity);
 
+        // reset playerEntity canCheat property to false
+        playerEntity.setCanCheat(false);
+
         return playerEntityRepository.save(playerEntity);
     }
 

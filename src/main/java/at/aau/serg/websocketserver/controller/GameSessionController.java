@@ -91,12 +91,12 @@ public class GameSessionController {
 
         this.template.convertAndSend("/topic/lobby-list", objectMapper.writeValueAsString(gameLobbyDtoList));
 
-        // Send the updated playerEntity to the player that can cheat
-        for (PlayerEntity playerEntity : sessionPlayers) {
-            if(playerEntity.isCanCheat()) {
-                this.template.convertAndSend("/topic/lobby-" + gameLobbyId + "/player-" + playerEntity.getId() + "/cheat", objectMapper.writeValueAsString(playerEntity));
-            }
-        }
+//        // Send the updated playerEntity to the player that can cheat
+//        for (PlayerEntity playerEntity : sessionPlayers) {
+//            if(playerEntity.isCanCheat()) {
+//                this.template.convertAndSend("/topic/lobby-" + gameLobbyId + "/player-" + playerEntity.getId() + "/cheat", objectMapper.writeValueAsString(playerEntity));
+//            }
+//        }
     }
 
     @MessageMapping("/scoreboard")
