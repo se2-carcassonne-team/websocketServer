@@ -34,4 +34,7 @@ public class PlayerEntity {
     private boolean isMyTurn;
 
     private String playerColour;
+
+    private boolean canCheat;
+    private int cheatPoints;
 }

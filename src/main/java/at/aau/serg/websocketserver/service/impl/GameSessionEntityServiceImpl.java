@@ -6,6 +6,7 @@ import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
 import at.aau.serg.websocketserver.domain.entity.repository.GameLobbyEntityRepository;
 import at.aau.serg.websocketserver.domain.entity.repository.GameSessionEntityRepository;
+import at.aau.serg.websocketserver.service.CheatService;
 import at.aau.serg.websocketserver.service.GameSessionEntityService;
 import at.aau.serg.websocketserver.statuscode.ErrorCode;
 import jakarta.persistence.EntityExistsException;
@@ -23,16 +24,19 @@ public class GameSessionEntityServiceImpl implements GameSessionEntityService {
     GameSessionEntityRepository gameSessionEntityRepository;
     PlayerEntityServiceImpl playerEntityService;
     TileDeckEntityServiceImpl tileDeckEntityService;
+    CheatService cheatService;
 
 
     public GameSessionEntityServiceImpl(GameLobbyEntityRepository gameLobbyEntityRepository,
                                         GameSessionEntityRepository gameSessionEntityRepository,
                                         PlayerEntityServiceImpl playerEntityService,
-                                        TileDeckEntityServiceImpl tileDeckEntityService) {
+                                        TileDeckEntityServiceImpl tileDeckEntityService,
+                                        CheatService cheatService) {
         this.gameLobbyEntityRepository = gameLobbyEntityRepository;
         this.gameSessionEntityRepository = gameSessionEntityRepository;
         this.playerEntityService = playerEntityService;
         this.tileDeckEntityService = tileDeckEntityService;
+        this.cheatService = cheatService;
     }
 
     @Override

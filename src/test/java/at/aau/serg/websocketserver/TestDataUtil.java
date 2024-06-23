@@ -26,6 +26,7 @@ public class TestDataUtil {
                 .username("usernameA")
                 .gameLobbyEntity(gameLobbyEntity)
                 .playerColour(null)
+                .canCheat(false)
                 .build();
     }
 
@@ -40,6 +41,7 @@ public class TestDataUtil {
                 .username("usernameB")
                 .gameLobbyEntity(gameLobbyEntity)
                 .playerColour(null)
+                .canCheat(false)
                 .build();
     }
 
@@ -54,6 +56,7 @@ public class TestDataUtil {
                 .username("usernameC")
                 .gameLobbyEntity(gameLobbyEntity)
                 .playerColour(null)
+                .canCheat(false)
                 .build();
     }
     public static PlayerEntity createTestPlayerEntityD(final GameLobbyEntity gameLobbyEntity){
@@ -62,6 +65,7 @@ public class TestDataUtil {
                 .username("usernameD")
                 .gameLobbyEntity(gameLobbyEntity)
                 .playerColour(null)
+                .canCheat(false)
                 .build();
     }
     public static PlayerEntity createTestPlayerEntityE(final GameLobbyEntity gameLobbyEntity){
@@ -70,6 +74,7 @@ public class TestDataUtil {
                 .username("usernameE")
                 .gameLobbyEntity(gameLobbyEntity)
                 .playerColour(null)
+                .canCheat(false)
                 .build();
     }
     public static PlayerEntity createTestPlayerEntityF(final GameLobbyEntity gameLobbyEntity){
@@ -78,6 +83,7 @@ public class TestDataUtil {
                 .username("usernameF")
                 .gameLobbyEntity(gameLobbyEntity)
                 .playerColour(null)
+                .canCheat(false)
                 .build();
     }
 
@@ -87,6 +93,7 @@ public class TestDataUtil {
                 .username("usernameG")
                 .gameLobbyEntity(gameLobbyEntity)
                 .playerColour(null)
+                .canCheat(false)
                 .build();
     }
 
@@ -134,6 +141,7 @@ public class TestDataUtil {
                 .username("usernameA")
                 .gameLobbyId(gameLobbyId)
                 .playerColour(null)
+                .canCheat(false)
                 .build();
     }
 
@@ -282,6 +290,14 @@ public class TestDataUtil {
         FinishedTurnDto finishedTurnDto = new FinishedTurnDto();
         finishedTurnDto.setGameSessionId(1L);
         finishedTurnDto.setPoints(Map.of(1L, 0));
+        finishedTurnDto.setPlayersWithMeeples(Map.of(1L, new ArrayList<>()));
+        return finishedTurnDto;
+    }
+
+    public static FinishedTurnDto getTestFinishedTurnDtoWithCheatPoints(Integer cheatPoints) {
+        FinishedTurnDto finishedTurnDto = new FinishedTurnDto();
+        finishedTurnDto.setGameSessionId(1L);
+        finishedTurnDto.setPoints(Map.of(1L, cheatPoints));
         finishedTurnDto.setPlayersWithMeeples(Map.of(1L, new ArrayList<>()));
         return finishedTurnDto;
     }
