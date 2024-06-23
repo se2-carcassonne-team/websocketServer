@@ -91,6 +91,7 @@ class PlayerControllerIntegrationTest {
         assertThat(playerEntityService.findPlayerById(testPlayerEntity.getId())).isEmpty();
 
         // manually transform the PlayerDto object to a JSON-string:
+        testPlayerDto.setCheatPoints(0);
         String playerDtoJson = objectMapper.writeValueAsString(testPlayerDto);
 
         session.send("/app/player-create", playerDtoJson);
