@@ -60,34 +60,34 @@ public class CheatServiceImpl implements CheatService {
         }
     }
 
-    @Override
-    public Integer getCheatPoints(Long playerId) {
-        Optional<PlayerEntity> playerEntityOptional = playerEntityRepository.findById(playerId);
+//    @Override
+//    public Integer getCheatPoints(Long playerId) {
+//        Optional<PlayerEntity> playerEntityOptional = playerEntityRepository.findById(playerId);
+//
+//        if (playerEntityOptional.isPresent()) {
+//            PlayerEntity playerEntity = playerEntityOptional.get();
+//            return playerEntity.getCheatPoints();
+//        } else {
+//            throw new IllegalArgumentException(ErrorCode.ERROR_2001.getCode());
+//        }
+//    }
 
-        if (playerEntityOptional.isPresent()) {
-            PlayerEntity playerEntity = playerEntityOptional.get();
-            return playerEntity.getCheatPoints();
-        } else {
-            throw new IllegalArgumentException(ErrorCode.ERROR_2001.getCode());
-        }
-    }
+//    @Override
+//    public Boolean checkIsPlayerCheater(Long playerId) {
+//        Optional<PlayerEntity> playerEntityOptional = playerEntityRepository.findById(playerId);
+//
+//        if (playerEntityOptional.isPresent()) {
+//            PlayerEntity playerEntity = playerEntityOptional.get();
+//            return playerEntity.getCheatPoints() != 0;
+//        } else {
+//            throw new IllegalArgumentException(ErrorCode.ERROR_2001.getCode());
+//        }
+//    }
 
-    @Override
-    public Boolean checkIsPlayerCheater(Long playerId) {
-        Optional<PlayerEntity> playerEntityOptional = playerEntityRepository.findById(playerId);
-
-        if (playerEntityOptional.isPresent()) {
-            PlayerEntity playerEntity = playerEntityOptional.get();
-            return playerEntity.getCheatPoints() != 0;
-        } else {
-            throw new IllegalArgumentException(ErrorCode.ERROR_2001.getCode());
-        }
-    }
-
-    @Override
-    public Integer generatePenaltyPoints(Integer cheatPoints) {
-        return Math.round(cheatPoints * 1.25f) * -1;
-    }
+//    @Override
+//    public Integer generatePenaltyPoints(Integer cheatPoints) {
+////        return Math.round(cheatPoints * 1.25f) * -1;
+//    }
 
     @Override
     public int generateCheatPoints() {
