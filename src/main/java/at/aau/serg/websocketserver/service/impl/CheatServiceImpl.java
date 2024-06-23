@@ -92,7 +92,7 @@ public class CheatServiceImpl implements CheatService {
     @Override
     public int generateCheatPoints() {
         int maxPoints = 10;
-        int minPoints = 2;
+        int minPoints = 4;
         return random.nextInt(maxPoints - minPoints + 1) + minPoints;
     }
 }
