@@ -177,6 +177,46 @@ public class CheatControllerIntegrationTest {
         return session;
     }
 
+    @Test
+    void testHandleCanICheatTrue() throws Exception {
+        // Arrange
+        PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        testPlayerEntityA.setCanCheat(true);
+        playerEntityService.createPlayer(testPlayerEntityA);
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isPresent();
+
+        String playerIdJson = objectMapper.writeValueAsString(testPlayerEntityA.getId());
+
+        // Act
+        StompSession session = initStompSession("/user/queue/cheat-can-i-cheat", messages);
+        session.send("/app/cheat/can-i-cheat", playerIdJson);
+
+        // Assert
+        String expectedResponse = "true";
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+    }
+
+    @Test
+    void testHandleCanICheatFalse() throws Exception {
+        // Arrange
+        PlayerEntity testPlayerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        testPlayerEntityA.setCanCheat(false);
+        playerEntityService.createPlayer(testPlayerEntityA);
+        assertThat(playerEntityService.findPlayerById(testPlayerEntityA.getId())).isPresent();
+
+        String playerIdJson = objectMapper.writeValueAsString(testPlayerEntityA.getId());
+
+        // Act
+        StompSession session = initStompSession("/user/queue/cheat-can-i-cheat", messages);
+        session.send("/app/cheat/can-i-cheat", playerIdJson);
+
+        // Assert
+        String expectedResponse = "false";
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+    }
+
     public StompSession initStompSessionWithTopicAndQueue(String topic, BlockingQueue<String> messages, String queue, BlockingQueue<String> messages2) throws Exception {
         StompSession session = initStompSession(topic, messages);
         session.subscribe(queue, new StompFrameHandlerClientImpl(messages2));
