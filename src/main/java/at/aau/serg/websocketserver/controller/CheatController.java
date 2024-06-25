@@ -59,8 +59,8 @@ public class CheatController {
 
         if(accusedPlayerCheated) {
             Integer cheatPoints = cheatService.getCheatPoints(accusedPlayerId);
-            //Integer penaltyPoints = cheatService.generatePenaltyPoints(cheatPoints);
-            cheatService.updatePlayerPoints(playerId, finishedTurnDto, cheatPoints, 0);
+            Integer penaltyPoints = cheatService.generatePenaltyPoints(cheatPoints);
+            cheatService.updatePlayerPoints(playerId, finishedTurnDto, cheatPoints, penaltyPoints);
 
             // Notify all player that points changed
             this.template.convertAndSend("/topic/game-session-" + finishedTurnDto.getGameSessionId() + "/points-meeples", objectMapper.writeValueAsString(finishedTurnDto));
