@@ -11,6 +11,8 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
 
+import java.util.Random;
+
 @Controller
 public class CheatController {
 
@@ -35,7 +37,7 @@ public class CheatController {
         FinishedTurnDto finishedTurnDto = objectMapper.readValue(splitJsonStrings[1], FinishedTurnDto.class);
 
         int cheatPoints = cheatService.generateCheatPoints();
-        cheatService.updatePlayerPoints(playerId, finishedTurnDto, cheatPoints);
+        cheatService.updatePlayerPoints(playerId, finishedTurnDto, cheatPoints, 0);
 
         // Notify all other player that points changed
         this.template.convertAndSend("/topic/game-session-" + finishedTurnDto.getGameSessionId() + "/points-meeples", objectMapper.writeValueAsString(finishedTurnDto));
@@ -44,33 +46,46 @@ public class CheatController {
         return objectMapper.writeValueAsString(cheatPoints);
     }
 
-//    @MessageMapping("/cheat/accuse")
-//    @SendToUser("/queue/cheat-accusation-result")
-//    public String handleCheatAccusation(String playerIdStringAndAccusedPlayerIdStringAndFinishedTurnDtoString) throws JsonProcessingException {
-//        String[] splitJsonStrings = playerIdStringAndAccusedPlayerIdStringAndFinishedTurnDtoString.split("\\|");
-//
-//        Long playerId = Long.parseLong(splitJsonStrings[0]);
-//        Long accusedPlayerId = Long.parseLong(splitJsonStrings[1]);
-//        FinishedTurnDto finishedTurnDto = objectMapper.readValue(splitJsonStrings[2], FinishedTurnDto.class);
-//
-//        Boolean accusedPlayerCheated = cheatService.checkIsPlayerCheater(accusedPlayerId);
-//
-//        if(accusedPlayerCheated) {
-//            Integer cheatPoints = cheatService.getCheatPoints(accusedPlayerId);
-//            Integer penaltyPoints = cheatService.generatePenaltyPoints(cheatPoints);
-//            cheatService.updatePlayerPoints(playerId, finishedTurnDto, penaltyPoints);
-//
-//            // Notify all other player that points changed
-//            this.template.convertAndSend("/topic/game-session-" + finishedTurnDto.getGameSessionId() + "/points-meeples", objectMapper.writeValueAsString(finishedTurnDto));
-//
-//            // Notify cheater that he got penalized
-//            this.template.convertAndSend("/topic/game-session-" + finishedTurnDto.getGameSessionId() + "/player-" + accusedPlayerId + "/cheat-detected", objectMapper.writeValueAsString(penaltyPoints));
-//        }
-//
-//        // TODO: Penalize player who accused in case it was a wrong accusation
-//
-//        return objectMapper.writeValueAsString(accusedPlayerCheated);
-//    }
+    @MessageMapping("/cheat/accuse")
+    @SendToUser("/queue/cheat-accusation-result")
+    public String handleCheatAccusation(String playerIdStringAndAccusedPlayerIdStringAndFinishedTurnDtoString) throws JsonProcessingException {
+        String[] splitJsonStrings = playerIdStringAndAccusedPlayerIdStringAndFinishedTurnDtoString.split("\\|");
+
+        Long playerId = Long.parseLong(splitJsonStrings[0]);
+        Long accusedPlayerId = Long.parseLong(splitJsonStrings[1]);
+        FinishedTurnDto finishedTurnDto = objectMapper.readValue(splitJsonStrings[2], FinishedTurnDto.class);
+
+        Boolean accusedPlayerCheated = cheatService.checkIsPlayerCheater(accusedPlayerId);
+
+        if(accusedPlayerCheated) {
+            Integer cheatPoints = cheatService.getCheatPoints(accusedPlayerId);
+            //Integer penaltyPoints = cheatService.generatePenaltyPoints(cheatPoints);
+            cheatService.updatePlayerPoints(playerId, finishedTurnDto, cheatPoints, 0);
+
+            // Notify all player that points changed
+            this.template.convertAndSend("/topic/game-session-" + finishedTurnDto.getGameSessionId() + "/points-meeples", objectMapper.writeValueAsString(finishedTurnDto));
+
+            // not used
+            // Notify cheater that he got penalized
+            //this.template.convertAndSend("/topic/game-session-" + finishedTurnDto.getGameSessionId() + "/player-" + accusedPlayerId + "/cheat-detected", objectMapper.writeValueAsString(penaltyPoints));
+
+            // Notify all players in the session that a player was caught cheating --> send bool signifying that no other players can accuse other players of cheating
+            this.template.convertAndSend("/topic/game-session-" + finishedTurnDto.getGameSessionId() + "/cheat-detected", objectMapper.writeValueAsString(true));
+        } else {
+            // TODO: Penalize player who accused in case it was a wrong accusation
+            // Penalize player who accused since in this case it was a wrong accusation
+            // penalty: randum number between -10 and -4
+            int penaltyPoints = (new Random().nextInt(10 - 4 + 1) + 4) * -1;
+            cheatService.penalizeForWrongAccusation(playerId, finishedTurnDto,  penaltyPoints);
+
+            // Notify all player that points changed
+            this.template.convertAndSend("/topic/game-session-" + finishedTurnDto.getGameSessionId() + "/points-meeples", objectMapper.writeValueAsString(finishedTurnDto));
+        }
+
+
+
+        return objectMapper.writeValueAsString(accusedPlayerCheated);
+    }
 
     // endpoint for:             webSocketClient.sendMessage("/app/cheat/can-i-cheat", objectMapper.writeValueAsString(id));
     @MessageMapping("/cheat/can-i-cheat")
