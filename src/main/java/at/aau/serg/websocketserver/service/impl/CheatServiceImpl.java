@@ -35,64 +35,89 @@ public class CheatServiceImpl implements CheatService {
     }
 
     @Override
-    public void updatePlayerPoints(Long playerId, FinishedTurnDto finishedTurnDto, int cheatPoints) {
+    public void updatePlayerPoints(Long playerId, FinishedTurnDto finishedTurnDto, int cheatPoints, int penaltyPoints) {
         Optional<PlayerEntity> playerEntityOptional = playerEntityRepository.findById(playerId);
 
         if (playerEntityOptional.isPresent()) {
             PlayerEntity playerEntity = playerEntityOptional.get();
-            if (!playerEntity.isCanCheat()) {
-                throw new IllegalArgumentException(ErrorCode.ERROR_3005.getCode());
-            }
 
-            for (Long turnPlayerId : finishedTurnDto.getPoints().keySet()) {
-                if (turnPlayerId.equals(playerId)) {
-                    int currentPoints = finishedTurnDto.getPoints().get(turnPlayerId);
-                    int updatedPoints = currentPoints + cheatPoints;
-                    finishedTurnDto.getPoints().put(turnPlayerId, Math.max(updatedPoints, 0));
+            if (playerEntity.isCanCheat()) {
+                // cheater: add points to his points in the finishedTurnDto
+                for (Long turnPlayerId : finishedTurnDto.getPoints().keySet()) {
+                    if (turnPlayerId.equals(playerId)) {
+                        int currentPoints = finishedTurnDto.getPoints().get(turnPlayerId);
+                        int updatedPoints = currentPoints + cheatPoints;
+                        finishedTurnDto.getPoints().put(turnPlayerId, Math.max(updatedPoints, 0));
+                    }
+                }
+
+                playerEntity.setCanCheat(false);
+                playerEntity.setCheatPoints(cheatPoints);
+                playerEntityRepository.save(playerEntity);
+            } else {
+                // if not cheater, reward the player and deduct points from the cheater
+                for (Long turnPlayerId : finishedTurnDto.getPoints().keySet()) {
+                    if (checkIsPlayerCheater(turnPlayerId)) {
+                        // cheater: deduct points in finishedTurnDto
+                        finishedTurnDto.getPoints().put(turnPlayerId, penaltyPoints);
+                        // assert that the points in the finishedTurnDto are negative
+                        assert finishedTurnDto.getPoints().get(turnPlayerId) < 0;
+                    } else if (turnPlayerId.equals(playerId)){
+                        // non-cheater: reward by adding the cheatpoints to his points in the finishedTurnDto
+                        finishedTurnDto.getPoints().put(turnPlayerId, cheatPoints);
+                    }
                 }
             }
 
-            playerEntity.setCanCheat(false);
-            playerEntity.setCheatPoints(cheatPoints);
-            playerEntityRepository.save(playerEntity);
         } else {
             throw new IllegalArgumentException(ErrorCode.ERROR_2001.getCode());
         }
     }
 
-//    @Override
-//    public Integer getCheatPoints(Long playerId) {
-//        Optional<PlayerEntity> playerEntityOptional = playerEntityRepository.findById(playerId);
-//
-//        if (playerEntityOptional.isPresent()) {
-//            PlayerEntity playerEntity = playerEntityOptional.get();
-//            return playerEntity.getCheatPoints();
-//        } else {
-//            throw new IllegalArgumentException(ErrorCode.ERROR_2001.getCode());
-//        }
-//    }
+    @Override
+    public Integer getCheatPoints(Long playerId) {
+        Optional<PlayerEntity> playerEntityOptional = playerEntityRepository.findById(playerId);
 
-//    @Override
-//    public Boolean checkIsPlayerCheater(Long playerId) {
-//        Optional<PlayerEntity> playerEntityOptional = playerEntityRepository.findById(playerId);
-//
-//        if (playerEntityOptional.isPresent()) {
-//            PlayerEntity playerEntity = playerEntityOptional.get();
-//            return playerEntity.getCheatPoints() != 0;
-//        } else {
-//            throw new IllegalArgumentException(ErrorCode.ERROR_2001.getCode());
-//        }
-//    }
+        if (playerEntityOptional.isPresent()) {
+            PlayerEntity playerEntity = playerEntityOptional.get();
+            return playerEntity.getCheatPoints();
+        } else {
+            throw new IllegalArgumentException(ErrorCode.ERROR_2001.getCode());
+        }
+    }
 
-//    @Override
-//    public Integer generatePenaltyPoints(Integer cheatPoints) {
-////        return Math.round(cheatPoints * 1.25f) * -1;
-//    }
+    @Override
+    public Boolean checkIsPlayerCheater(Long playerId) {
+        Optional<PlayerEntity> playerEntityOptional = playerEntityRepository.findById(playerId);
+
+        if (playerEntityOptional.isPresent()) {
+            PlayerEntity playerEntity = playerEntityOptional.get();
+            return playerEntity.getCheatPoints() != 0;
+        } else {
+            throw new IllegalArgumentException(ErrorCode.ERROR_2001.getCode());
+        }
+    }
+
+    @Override
+    public Integer generatePenaltyPoints(Integer cheatPoints) {
+//        return Math.round(cheatPoints * 1.25f) * -1;
+        return cheatPoints * -1;
+    }
 
     @Override
     public int generateCheatPoints() {
         int maxPoints = 10;
         int minPoints = 4;
         return random.nextInt(maxPoints - minPoints + 1) + minPoints;
+    }
+
+    @Override
+    public void penalizeForWrongAccusation(Long playerId, FinishedTurnDto finishedTurnDto, Integer penaltyPoints) {
+        // update the points map of the finishedturnDto by deducting the penaltyPoints from the players points
+        for (Long turnPlayerId : finishedTurnDto.getPoints().keySet()) {
+            if (turnPlayerId.equals(playerId)) {
+                finishedTurnDto.getPoints().put(turnPlayerId, penaltyPoints);
+            }
+        }
     }
 }

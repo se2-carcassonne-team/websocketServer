@@ -294,6 +294,15 @@ public class TestDataUtil {
         return finishedTurnDto;
     }
 
+    public static FinishedTurnDto getTestFinishedTurnDto2() {
+        // finishedTurnDto for 2 players (--> points map has 2 keys: 1L and 2L)
+        FinishedTurnDto finishedTurnDto = new FinishedTurnDto();
+        finishedTurnDto.setGameSessionId(1L);
+        finishedTurnDto.setPoints(Map.of(1L, 0, 2L, 0));
+        finishedTurnDto.setPlayersWithMeeples(Map.of(1L, new ArrayList<>(), 2L, new ArrayList<>()));
+        return finishedTurnDto;
+    }
+
     public static FinishedTurnDto getTestFinishedTurnDtoWithCheatPoints(Integer cheatPoints) {
         FinishedTurnDto finishedTurnDto = new FinishedTurnDto();
         finishedTurnDto.setGameSessionId(1L);
