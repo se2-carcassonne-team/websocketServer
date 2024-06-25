@@ -123,6 +123,9 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
         gameLobbyEntity.setNumPlayers(gameLobbyEntity.getNumPlayers()+1);
         gameLobbyEntityRepository.save(gameLobbyEntity);
 
+        // reset playerEntity canCheat property to false
+        playerEntity.setCanCheat(false);
+
         return playerEntityRepository.save(playerEntity);
     }
 
@@ -246,5 +249,10 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
     @Override
     public Optional<PlayerEntity> findPlayerBySessionId(String sessionId) {
         return playerEntityRepository.findBySessionId(sessionId);
+    }
+
+    @Override
+    public List<PlayerEntity> findAllPlayers(List<Long> ids) {
+        return playerEntityRepository.findAllById(ids);
     }
 }

@@ -13,7 +13,9 @@ public enum ErrorCode {
     ERROR_2004("invalid playerDto JSON", "2004"),
     ERROR_2005("player is not in a gameLobby", "2005"),
     ERROR_2006("player still exists", "2006"),
-    ERROR_3003("gameSession with the id does not exist", "3003");
+    ERROR_3003("gameSession with the id does not exist", "3003"),
+    ERROR_3004("no players in the gamesession", "3004"),
+    ERROR_3005("player is not allowed to cheat", "3005");
 
     private final String errorDescription;
     private final String code;
