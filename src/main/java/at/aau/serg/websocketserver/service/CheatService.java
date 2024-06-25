@@ -7,9 +7,11 @@ import java.util.List;
 
 public interface CheatService {
     void assignCheatFunctionality(List<PlayerEntity> playerEntityList);
-    void updatePlayerPoints(Long playerId, FinishedTurnDto finishedTurnDto, int cheatPoints);
-//    Integer getCheatPoints(Long playerId);
-//    Boolean checkIsPlayerCheater(Long playerId);
-//    Integer generatePenaltyPoints(Integer cheatPoints);
+    void updatePlayerPoints(Long playerId, FinishedTurnDto finishedTurnDto, int cheatPoints, int penaltyPoints);
+    Integer getCheatPoints(Long playerId);
+    Boolean checkIsPlayerCheater(Long playerId);
+    Integer generatePenaltyPoints(Integer cheatPoints);
     int generateCheatPoints();
+
+    void penalizeForWrongAccusation(Long playerId, FinishedTurnDto finishedTurnDto, Integer penaltyPoints);
 }
