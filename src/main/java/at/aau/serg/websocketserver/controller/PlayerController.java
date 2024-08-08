@@ -4,6 +4,8 @@ import at.aau.serg.websocketserver.domain.dto.GameLobbyDto;
 import at.aau.serg.websocketserver.domain.dto.PlayerDto;
 import at.aau.serg.websocketserver.domain.entity.GameSessionEntity;
 import at.aau.serg.websocketserver.domain.entity.PlayerEntity;
+import at.aau.serg.websocketserver.domain.entity.TileDeckEntity;
+import at.aau.serg.websocketserver.domain.entity.repository.TileDeckRepository;
 import at.aau.serg.websocketserver.mapper.GameLobbyMapper;
 
 import at.aau.serg.websocketserver.mapper.GameSessionMapper;
@@ -11,6 +13,7 @@ import at.aau.serg.websocketserver.mapper.PlayerMapper;
 import at.aau.serg.websocketserver.service.GameLobbyEntityService;
 import at.aau.serg.websocketserver.service.GameSessionEntityService;
 import at.aau.serg.websocketserver.service.PlayerEntityService;
+import at.aau.serg.websocketserver.service.impl.TileDeckEntityServiceImpl;
 import at.aau.serg.websocketserver.statuscode.ErrorCode;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -251,18 +254,33 @@ public class PlayerController {
             PlayerEntity playerEntity = playerMapper.mapToEntity(playerDto);
 
             long gameSessionId = playerDto.getGameSessionId();
+            Optional<GameSessionEntity> optionalGameSessiontwo = gameSessionEntityService.findById(gameSessionId);
+            if (optionalGameSessiontwo.isPresent()) {
+                GameSessionEntity gameSessiontwo = optionalGameSessiontwo.get();
+                List <Long> numplayerlisttwo= gameSessiontwo.getPlayerIds();
+
+                if(numplayerlisttwo.size()==2){
+                    playerEntityService.setnumplayerstwo(playerEntity);
+                    gameSessiontwo = gameSessionEntityService.terminateGameSession(gameSessionId);
+                    return gameSessiontwo.getGameState();
+                }}
             playerEntityService.leaveGameSession(playerEntity);
             playerEntityService.leaveLobby(playerEntity);
             Optional<GameSessionEntity> optionalGameSession = gameSessionEntityService.findById(gameSessionId);
+
+
+
 
 
             if (optionalGameSession.isPresent()) {
                 GameSessionEntity gameSession = optionalGameSession.get();
                 List <Long> numplayerlist= gameSession.getPlayerIds();
 
+
+
+
                 if(numplayerlist.size()<=1){
                     gameSession = gameSessionEntityService.terminateGameSession(gameSessionId);
-
                     return gameSession.getGameState();
 
                 }
@@ -273,10 +291,12 @@ public class PlayerController {
                             "/topic/gamesession_" + gameSessionId + UPDATE_TOPIC,
                             objectMapper.writeValueAsString(gameSessionMapper.mapToDto(gameSession))
                     );
-
+                    System.out.println("In der Entfernungsabfrage "+gameSession);
                     return objectMapper.writeValueAsString(gameSessionMapper.mapToDto(gameSession));
                 }
             }
+
+
 
             else {
 

@@ -205,16 +205,45 @@ public class PlayerEntityServiceImpl implements PlayerEntityService {
         playerIds.remove(existingPlayer.getId());
 
 
+
         // Aktualisieren der Anzahl der Spieler in der Spielsitzung
 
         gameSessionEntity.setNumPlayers(playerIds.size());
 
         // Speichern der aktualisierten Spielsitzung
-
+        //System.out.println("Im leave: "+playerIds.size());
         gameSessionEntityRepository.save(gameSessionEntity);
         // Optional: Setzen des Spielers auf null, um sicherzustellen, dass er nicht mehr in der Spielsitzung ist
         if(playerIds.size()<=1){
             existingPlayer.setGameSessionEntity(null);}
+
+        return playerEntityRepository.save(existingPlayer);
+    }
+
+    public PlayerEntity setnumplayerstwo(PlayerEntity playerEntity){
+
+
+        Optional<PlayerEntity> optionalPlayer = playerEntityRepository.findById(playerEntity.getId());
+        GameSessionEntity gameSessionEntity= playerEntity.getGameSessionEntity();
+
+
+        if (optionalPlayer.isEmpty()) {
+            throw new EntityNotFoundException(ErrorCode.ERROR_2001.getCode());
+        }
+        PlayerEntity existingPlayer = optionalPlayer.get();
+
+
+        // Überprüfen, ob der Spieler einer Spielsitzung zugeordnet ist
+        if (gameSessionEntity == null) {
+
+            throw new EntityNotFoundException(ErrorCode.ERROR_3003.getCode());
+        }
+
+        List<Long> playerIds = gameSessionEntity.getPlayerIds();
+
+        gameSessionEntity.setNumPlayers(playerIds.size());
+
+        gameSessionEntityRepository.save(gameSessionEntity);
 
         return playerEntityRepository.save(existingPlayer);
     }

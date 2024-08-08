@@ -196,11 +196,29 @@ public class GameSessionController {
 
     }
 
-
-
     @MessageExceptionHandler
     @SendToUser("/queue/errors")
     public String handleException(Throwable exception) {
         return "ERROR: " + exception.getMessage();
     }
+
+    @MessageMapping("playerrequest")
+    public void getPlayersinGameSession(Long gameSessionId) {
+        Optional<GameSessionEntity> gameSessionEntity = gameSessionEntityService.findById(gameSessionId);
+        if (gameSessionEntity.isPresent()) {
+            GameSessionEntity gameSession = gameSessionEntity.get();
+            int players = gameSession.getNumPlayers();
+
+            try {
+                this.template.convertAndSend("/topic/playerrequest-" + gameSessionId, objectMapper.writeValueAsString(players));
+
+            } catch (JsonProcessingException e) {
+                e.printStackTrace();
+            }
+        } else {
+            this.template.convertAndSend("/topic/playerrequest-" + gameSessionId, "Gamesession Players not found");
+        }
+
+        }
+
 }
