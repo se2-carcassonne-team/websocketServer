@@ -761,6 +761,16 @@ public class GameSessionControllerIntegrationTest {
     }
 
     @Test
+    void testThatGetPlayersInGameSessionSendsCorrectPlayerCount() throws Exception {
+        GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
+
+        GameSessionEntity gameSessionEntity = TestDataUtil.createTestGameSessionEntityWith3Players();
+
+        StompSession session = initStompSession("/topic/playerrequest-" + gameSessionEntity.getId(), messages);
+        initStompSession("/topic/playerrequest-" + gameSessionEntity.getId(), messages2);
+    }
+
+    @Test
     void testThatGameStartSendsListOfPlayersInGameSession() throws Exception {
 
         GameLobbyEntity testGameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
@@ -1083,6 +1093,8 @@ public class GameSessionControllerIntegrationTest {
     }
 
 
+
+
     @Test
     void testOnePlayerLeaveWhenMoreThanTwoPlayersRemain3() throws Exception {
         // Erstellen einer Spiellobby
@@ -1115,7 +1127,7 @@ public class GameSessionControllerIntegrationTest {
         playerEntityB.setGameSessionEntity(gameSessionEntityWith3Players);
         playerEntityC.setGameSessionEntity(gameSessionEntityWith3Players);
 
-        //System.out.println("PLAYERIDS im TEST: "+gameSessionEntity.findById(gameSessionEntityWith3Players.getId()));
+        //System.out.println("PLAYERIDS im TEST: "+ gameSessionEntity.findById(gameSessionEntityWith3Players.getId()));
         assertThat(gameSessionEntityService.findById(gameSessionEntityWith3Players.getId())).isPresent();
 
         StompSession session = initStompSession("/user/queue/response", messages);
@@ -1156,6 +1168,69 @@ public class GameSessionControllerIntegrationTest {
 
         return session;
     }
+    @Test
+    void testOnePlayerLeaveWhenMoreThanTwoPlayersRemainGameFinished() throws Exception {
+        // Erstellen einer Spiellobby
+        GameLobbyEntity gameLobbyEntityA = TestDataUtil.createTestGameLobbyEntityA();
+
+        // Erstellen von 3 Spielern
+        PlayerEntity playerEntityA = TestDataUtil.createTestPlayerEntityA(null);
+        PlayerEntity playerEntityB = TestDataUtil.createTestPlayerEntityB(null);
+        PlayerEntity playerEntityC = TestDataUtil.createTestPlayerEntityC(null);
+        gameLobbyEntityA.setLobbyAdminId(playerEntityA.getId());
+
+        playerEntityService.createPlayer(playerEntityA);
+        playerEntityService.createPlayer(playerEntityB);
+        playerEntityService.createPlayer(playerEntityC);
+
+        gameLobbyEntityService.createLobby(gameLobbyEntityA);
+
+        GameLobbyDto gameLobbyDtoA = gameLobbyMapper.mapToDto(gameLobbyEntityA);
+        assertThat(gameLobbyEntityService.findById(gameLobbyDtoA.getId())).isPresent();
+
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityA);
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityB);
+        playerEntityService.joinLobby(gameLobbyEntityA.getId(), playerEntityC);
+
+        // save gameSession to database
+        GameSessionEntity gameSessionEntityWith3Players = TestDataUtil.createTestGameSessionEntityWith3Players();
+        gameSessionEntityService.createGameSession(gameLobbyEntityA.getId());
+
+        playerEntityA.setGameSessionEntity(gameSessionEntityWith3Players);
+        playerEntityB.setGameSessionEntity(gameSessionEntityWith3Players);
+        playerEntityC.setGameSessionEntity(gameSessionEntityWith3Players);
+
+
+        assertThat(gameSessionEntityService.findById(gameSessionEntityWith3Players.getId())).isPresent();
+
+        StompSession session = initStompSession("/user/queue/response", messages);
+
+
+        session.send("/app/player-leave-gamesession", objectMapper.writeValueAsString(playerMapper.mapToDto(playerEntityC)));
+
+        gameSessionEntityWith3Players.setNumPlayers(2);
+        gameSessionEntityWith3Players.getPlayerIds().remove(playerEntityC.getId());
+
+        initStompSession("/topic/gamesession-" + gameSessionEntityWith3Players.getId() + "/update", messages2);
+        session.send("/app/player-leave-gamesession", objectMapper.writeValueAsString(playerMapper.mapToDto(playerEntityB)));
+
+        GameSessionDto testGamesessionDtoA = gameSessionMapper.mapToDto(gameSessionEntityWith3Players);
+        String payload = objectMapper.writeValueAsString(testGamesessionDtoA);
+
+        session.send("/topic/gamesession-" + gameSessionEntityWith3Players.getId() + "/update", payload);
+
+        String expectedResponse = objectMapper.writeValueAsString(gameSessionMapper.mapToDto(gameSessionEntityWith3Players));
+
+
+        String actualResponse = messages.poll(1, TimeUnit.SECONDS);
+
+        assertThat(gameSessionEntityService.findById(gameSessionEntityWith3Players.getId())).isPresent();
+        assertThat(actualResponse).isEqualTo(expectedResponse);
+
+
+    }
+
+
 
 
 
